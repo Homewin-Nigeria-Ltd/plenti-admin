@@ -3,14 +3,14 @@ import Image from "next/image";
 
 const LoginPage = () => {
   return (
-    <div className="h-screen w-screen grid grid-cols-2 p-10 gap-10">
-      <div className="place-content-center">
+    <div className="min-h-screen w-screen grid grid-cols-2 p-10 overflow-hidden">
+      <div className="place-items-center place-content-center">
         <Image
           src={"/login-display.svg"}
           alt="Plenti"
           width={170}
           height={70}
-          className="h-full w-full"
+          className="h-[90vh] w-auto"
           fetchPriority="high"
         />
       </div>

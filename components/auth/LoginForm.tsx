@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Raleway } from "next/font/google";
+import { useRouter } from "next/navigation";
 
 const loginFormSchema = z.object({
   email: z.email({ error: "Invalid email" }),
@@ -30,6 +31,7 @@ const raleway = Raleway({
 });
 
 const LoginForm = () => {
+  const router = useRouter();
   const form = useForm<LoginFormSchema>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -40,6 +42,7 @@ const LoginForm = () => {
 
   function onSubmit(values: LoginFormSchema) {
     console.log(values);
+    router.push("/dashboard");
   }
   return (
     <Form {...form}>
