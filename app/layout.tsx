@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter } from "next/font/google";
-
-const inter = Inter({ subsets: ["latin"] });
+import { inter } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: "Plenti Admin",
@@ -15,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className={inter.variable}>
+      <body className={`${inter.className} bg-white`}>{children}</body>
     </html>
   );
 }
