@@ -14,8 +14,8 @@ const Sidebar = () => {
   }
 
   return (
-    <aside className="w-[--sidebar-width] px-8 pb-8 pt-16 h-screen flex flex-col justify-between bg-white md:sticky md:top-0 md:left-0 md:h-screen md:z-20 md:overflow-auto sm:fixed sm:inset-0 sm:h-auto sm:flex-col sm:justify-start sm:px-4">
-      <div className="mb-6">
+    <aside className="w-[--sidebar-width] px-8 pb-8 pt-10 h-screen flex flex-col justify-between bg-white md:sticky md:top-0 md:left-0 md:h-screen md:z-20 md:overflow-auto sm:fixed sm:inset-0 sm:h-auto sm:flex-col sm:justify-start sm:px-4">
+      <div className="mb-3">
         <Image
           src={"/icons/plenti-logo-blue.svg"}
           alt="Plenti"
@@ -25,7 +25,7 @@ const Sidebar = () => {
         />
       </div>
       <SidebarLinks />
-      <div className="border-t-[0.5px] border-gray-300 flex justify-between items-center gap-5 pb-8 pt-4 px-4">
+      <div className="border-t-[0.5px] border-gray-300 flex justify-between items-center gap-5 pb-2 pt-4 px-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-10">
             <AvatarImage src="https://github.com/shadcn.png" />
@@ -33,13 +33,11 @@ const Sidebar = () => {
           </Avatar>
           <div>
             <h5
-              className={`text-gray-400 text-[16px] font-medium ${dmSans.className}`}
-            >
+              className={`text-gray-400 text-[16px] font-medium ${dmSans.className}`}>
               Amarachi Anigbogu
             </h5>
             <p
-              className={`${dmSans.className} font-normal text-gray-400 text-[16px] max-w-42.5 truncate`}
-            >
+              className={`${dmSans.className} font-normal text-gray-400 text-[16px] max-w-42.5 truncate`}>
               amarachianigbogu@hotmail.com
             </p>
           </div>
