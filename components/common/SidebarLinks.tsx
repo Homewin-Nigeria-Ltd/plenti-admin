@@ -4,47 +4,47 @@ import { dmSans } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 
+export const links = [
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+  },
+  {
+    name: "Inventory Management",
+    href: "/inventory",
+  },
+  {
+    name: "Product Management",
+    href: "/product",
+  },
+  {
+    name: "Order Management",
+    href: "/order",
+  },
+  {
+    name: "Analytics & Reporting",
+    href: "/analytics",
+  },
+  {
+    name: "Finance Management",
+    href: "/finance",
+  },
+  {
+    name: "Marketing & Engagement",
+    href: "/marketing",
+  },
+  {
+    name: "User Management",
+    href: "/user",
+  },
+];
+
 const SidebarLinks = () => {
   const pathname = usePathname();
   const router = useRouter();
 
-  const links = [
-    {
-      name: "Dashboard",
-      href: "/dashboard",
-    },
-    {
-      name: "Inventory Management",
-      href: "/inventory",
-    },
-    {
-      name: "Product Management",
-      href: "/product",
-    },
-    {
-      name: "Order Management",
-      href: "/order",
-    },
-    {
-      name: "Analytics & Reporting",
-      href: "/analytics",
-    },
-    {
-      name: "Finance Management",
-      href: "/finance",
-    },
-    {
-      name: "Marketing & Engagement",
-      href: "/marketing",
-    },
-    {
-      name: "User Management",
-      href: "/user",
-    },
-  ];
-
   return (
-    <ul className={`${dmSans.className} flex-1 overflow-auto mt-6 space-y-2`}>
+    <ul className={`${dmSans.className} flex-1 overflow-auto mt-3 space-y-2`}>
       {links.map((link, idx) => {
         const isActive = pathname === link.href;
 
@@ -55,8 +55,7 @@ const SidebarLinks = () => {
               isActive ? "bg-primary text-white rounded-lg" : "text-[#98A2B3]",
               "text-[16px] font-semibold h-13.75 px-4 flex items-center cursor-pointer"
             )}
-            onClick={() => router.push(link.href)}
-          >
+            onClick={() => router.push(link.href)}>
             {link.name}
           </li>
         );
@@ -74,8 +73,7 @@ const SidebarLinks = () => {
                   : "text-[#98A2B3]",
                 "text-[16px] font-semibold h-13.75 px-4 flex items-center cursor-pointer"
               )}
-              onClick={() => router.push("/customer")}
-            >
+              onClick={() => router.push("/customer")}>
               Customer Support
             </li>
             <li
@@ -83,8 +81,7 @@ const SidebarLinks = () => {
                 configActive ? "bg-primary text-white" : "text-[#98A2B3]",
                 "text-[16px] font-semibold h-13.75 px-4 flex items-center cursor-pointer"
               )}
-              onClick={() => router.push("/configuration")}
-            >
+              onClick={() => router.push("/configuration")}>
               Systems Configuration
             </li>
           </>

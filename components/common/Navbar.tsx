@@ -3,6 +3,7 @@ import { Bell } from "lucide-react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Input } from "../ui/input";
+import { links } from "@/components/common/SidebarLinks";
 
 const formatTitle = (segment: string) =>
   segment
@@ -14,7 +15,8 @@ const Navbar = () => {
   const pathname = usePathname() || "/";
   const segments = pathname.split("/").filter(Boolean);
   const section = segments[0] || "dashboard";
-  const title = formatTitle(section);
+  const matchedLink = links.find((l) => l.href === pathname);
+  const title = matchedLink?.name ?? formatTitle(section);
 
   return (
     <nav className="h-(--navbar-height) px-6 md:px-16 bg-[#F5F5F5] w-full flex items-center justify-between sticky top-0 z-30">
@@ -26,7 +28,7 @@ const Navbar = () => {
           <Input
             className="border-0 shadow-none outline-none w-75 focus-visible:ring-0"
             type="text"
-            placeholder="Search"
+            placeholder={`Search ${section}`}
           />
         </div>
         <div className="bg-white size-15 flex items-center justify-center rounded-full relative border border-[#EEF1F6] cursor-pointer">
