@@ -82,17 +82,15 @@ export default function ProductCard({ product, formatCurrency }: ProductCardProp
         />
       </div>
 
-      <div className="p-5 space-y-3">
+      <div className="p-4 sm:p-5 space-y-3">
         <div>
-          <h3 className="font-semibold text-primary text-lg mb-1">
+          <h3 className="font-semibold text-primary text-base sm:text-lg mb-1 line-clamp-2">
             {product.name}
           </h3>
-          <p className="text-neutral-500 text-sm">{product.description}</p>
+          <p className="text-neutral-500 text-xs sm:text-sm line-clamp-2">{product.description}</p>
         </div>
 
-        {/* Details Section */}
         <div className="space-y-2">
-          {/* Price */}
           <div className="flex justify-between items-center text-sm">
             <span className="text-neutral-500">Price:</span>
             <span className="font-semibold text-primary">
@@ -133,10 +131,11 @@ export default function ProductCard({ product, formatCurrency }: ProductCardProp
           </div>
         </div>
 
-        <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
-          <button className="flex items-center gap-2 text-primary font-medium text-sm hover:underline">
-            View Product
-            <ArrowRight className="size-4" />
+        <div className="pt-2 border-t border-neutral-100 flex items-center justify-between gap-2">
+          <button className="flex items-center gap-1 sm:gap-2 text-primary font-medium text-xs sm:text-sm hover:underline shrink-0">
+            <span className="hidden sm:inline">View Product</span>
+            <span className="sm:hidden">View</span>
+            <ArrowRight className="size-3 sm:size-4" />
           </button>
           <Switch 
             checked={status === "Available"} 
@@ -149,7 +148,6 @@ export default function ProductCard({ product, formatCurrency }: ProductCardProp
         </div>
       </div>
 
-      {/* Edit Product Modal */}
       <EditProductModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}

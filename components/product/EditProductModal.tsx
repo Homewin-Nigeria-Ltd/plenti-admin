@@ -118,7 +118,6 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-        {/* Fixed Header */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
           <DialogTitle className="text-2xl font-semibold">
             Edit Product
@@ -128,9 +127,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
           </DialogDescription>
         </DialogHeader>
 
-        {/* Scrollable Content */}
         <form id="edit-product-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-          {/* Product Name */}
           <div className="space-y-2">
             <Label htmlFor="edit-productName">Product Name</Label>
             <Input
@@ -155,7 +152,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-category">Select Category</Label>
               <Select value={category} onValueChange={(value) => {
@@ -223,7 +220,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-minBulkQuantity">Min Bulk Quantity</Label>
               <Input
@@ -297,7 +294,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
 
         </form>
 
-        <div className="px-6 py-4 border-t border-neutral-100">
+        <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
           <Button type="submit" form="edit-product-form" className="bg-primary hover:bg-primary/90 w-full">
             Update Product
           </Button>

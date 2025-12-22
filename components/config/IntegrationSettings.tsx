@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import Image from "next/image";
 import { AddIntegrationModal } from "./AddIntegrationModal";
 import { ConfigureIntegrationModal } from "./ConfigureIntegrationModal";
 
@@ -52,58 +53,56 @@ export default function IntegrationSettings() {
   const [isConfigureModalOpen, setIsConfigureModalOpen] = React.useState(false);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-end">
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-white">
+          className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto">
           <Plus className="size-4 mr-2" />
           Add New Integration
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {integrations.map((integration) => (
           <div
             key={integration.id}
-            className="bg-white rounded-lg border border-neutral-100 shadow-sm p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                {integration.id === "paystack-1" ? (
-                  <div className="size-10 rounded-lg flex items-center justify-center">
-                    <div className="relative size-8">
-                      <div className="absolute top-0 left-0 size-4 bg-orange-500 rounded-full"></div>
-                      <div className="absolute bottom-0 right-0 size-4 bg-green-400 rounded-full"></div>
-                    </div>
+            className="bg-white rounded-lg border border-neutral-100 p-4 sm:p-6">
+            <div className="mb-3 sm:mb-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="relative size-10 rounded-lg overflow-hidden shrink-0">
+                    <Image
+                      src="/placeholder.png"
+                      alt={integration.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
-                ) : (
-                  <div className="size-10 rounded-lg bg-primary-50 flex items-center justify-center">
-                    <div className="flex flex-col gap-0.5">
-                      <div className="w-5 h-0.5 bg-primary rounded"></div>
-                      <div className="w-5 h-0.5 bg-primary rounded"></div>
-                      <div className="w-5 h-0.5 bg-primary rounded"></div>
-                    </div>
-                  </div>
-                )}
-                <div>
                   <h3 className="font-semibold text-primary-700 text-base">
                     {integration.name}
                   </h3>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    {integration.category}
-                  </p>
                 </div>
+                <span className="badge badge-success whitespace-nowrap">
+                  {integration.status}
+                </span>
               </div>
-              <span className="badge badge-success whitespace-nowrap">
-                {integration.status}
-              </span>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-neutral-500">
+                  {integration.category}
+                </p>
+                <p className="text-xs text-neutral-500">
+                  Last sync: {integration.lastSync}
+                </p>
+              </div>
             </div>
 
-            <p className="text-xs text-neutral-500 mb-4">
-              Last sync: {integration.lastSync}
-            </p>
-
-            <Button className="w-full bg-primary hover:bg-primary/90 text-white">
+            <Button 
+              onClick={() => {
+                setSelectedIntegration(integration);
+                setIsConfigureModalOpen(true);
+              }}
+              className="w-full bg-primary hover:bg-primary/90 text-white">
               Configure
             </Button>
           </div>

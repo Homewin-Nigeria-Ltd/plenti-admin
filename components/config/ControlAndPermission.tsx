@@ -66,37 +66,37 @@ export default function ControlAndPermission() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-end">
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-white">
+          className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto">
           <Plus className="size-4 mr-2" />
           Create New Role
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {roles.map((role) => (
           <div
             key={role.id}
-            className="bg-white rounded-lg border border-neutral-100 shadow-sm p-6 hover:shadow-md transition-shadow">
-            <h3 className="font-semibold text-primary-700 text-lg mb-2">
+            className="bg-white rounded-lg border border-neutral-100 shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow">
+            <h3 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
               {role.title}
             </h3>
-            <p className="text-sm text-neutral-500 mb-4">
+            <p className="text-xs sm:text-sm text-neutral-500 mb-3 sm:mb-4">
               {role.description}
             </p>
             <div className="flex flex-wrap gap-2">
               {role.permissions.map((permission, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 bg-primary-50 text-primary-700 text-xs font-medium rounded-full">
+                  className="badge badge-secondary">
                   {permission}
                 </span>
               ))}
               {role.additionalCount && (
-                <span className="px-3 py-1 bg-primary-50 text-primary-700 text-xs font-medium rounded-full">
+                <span className="badge badge-secondary">
                   +{role.additionalCount}...
                 </span>
               )}

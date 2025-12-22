@@ -98,19 +98,17 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
-          <DialogTitle className="text-2xl font-semibold">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 w-[95vw] sm:w-full">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100">
+          <DialogTitle className="text-xl sm:text-2xl font-semibold">
             Create New Product
           </DialogTitle>
-          <DialogDescription className="text-sm text-neutral-500">
+          <DialogDescription className="text-xs sm:text-sm text-neutral-500">
             Create a new product listing
           </DialogDescription>
         </DialogHeader>
 
-        {/* Scrollable Content */}
-        <form id="create-product-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-          {/* Product Name */}
+        <form id="create-product-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6">
           <div className="space-y-2">
             <Label htmlFor="productName">Product Name</Label>
             <Input
@@ -135,7 +133,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Select Category</Label>
               <Select value={category} onValueChange={(value) => {
@@ -175,7 +173,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="amount">Enter Amount</Label>
               <Input
@@ -203,7 +201,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="minBulkQuantity">Min Bulk Quantity</Label>
               <Input
@@ -231,7 +229,6 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
             </div>
           </div>
 
-          {/* File Upload */}
           <div className="space-y-2">
             <Label>Upload Product Image</Label>
             <div
@@ -274,7 +271,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
 
         </form>
 
-        <div className="px-6 py-4 border-t border-neutral-100">
+        <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
           <Button type="submit" form="create-product-form" className="bg-primary hover:bg-primary/90 w-full">
             Create New Product
           </Button>

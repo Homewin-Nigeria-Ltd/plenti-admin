@@ -35,17 +35,17 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6">
+      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold">
+          <DialogTitle className="text-xl sm:text-2xl font-semibold">
             API Keys & Credentials
           </DialogTitle>
-          <DialogDescription className="text-sm text-neutral-500">
+          <DialogDescription className="text-xs sm:text-sm text-neutral-500">
             Enter your current password to make update
           </DialogDescription>
         </DialogHeader>
 
-        <form id="add-integration-form" onSubmit={handleSubmit} className="space-y-6 mt-6">
+        <form id="add-integration-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
           <div className="space-y-2">
             <Label htmlFor="secretKey" className="text-sm font-medium text-primary-700">
               Secret Key
@@ -83,7 +83,7 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" form="add-integration-form" className="bg-primary hover:bg-primary/90 text-white">
+            <Button type="submit" form="add-integration-form" className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto">
               Add New Provider
             </Button>
           </div>

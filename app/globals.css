@@ -127,7 +127,7 @@
   }
 
   .badge-secondary {
-    @apply bg-secondary text-secondary-foreground;
+    @apply bg-[#E8EEFF] text-primary;
   }
 
   /* Semantic / System Badges */

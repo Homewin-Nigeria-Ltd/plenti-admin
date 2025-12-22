@@ -37,7 +37,6 @@ export default function ProductTable({
   const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
 
-ss
   const columns = [
     { key: "brandName", label: "Brand Name" },
     { key: "status", label: "Status" },
@@ -147,14 +146,16 @@ ss
 
   return (
     <>
-      <DataTable
-        columns={columns}
-        rows={tableRows}
-        page={page}
-        pageSize={pageSize}
-        total={total}
-        onPageChange={onPageChange}
-      />
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <DataTable
+          columns={columns}
+          rows={tableRows}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={onPageChange}
+        />
+      </div>
       <EditProductModal
         isOpen={isEditModalOpen}
         onClose={() => {

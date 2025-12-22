@@ -31,27 +31,27 @@ export function DeleteProductModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6">
+      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full">
         <DialogTitle className="sr-only">
           Delete Product Confirmation
         </DialogTitle>
-        <div className="space-y-6">
-          <p className="text-center text-neutral-700 text-base font-medium">
+        <div className="space-y-4 sm:space-y-6">
+          <p className="text-center text-neutral-700 text-sm sm:text-base font-medium">
             Are you sure you want to delete this product?
           </p>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={handleDelete}
-              className="flex-1 border-primary text-primary hover:bg-primary/5">
+              className="flex-1 border-primary text-primary hover:bg-primary/5 order-2 sm:order-1">
               Delete Product
             </Button>
             <Button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-primary hover:bg-primary/90 text-white">
+              className="flex-1 bg-primary hover:bg-primary/90 text-white order-1 sm:order-2">
               Close
             </Button>
           </div>

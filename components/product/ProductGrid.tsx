@@ -44,15 +44,15 @@ export default function ProductGrid({
         ))}
       </div>
 
-      <div className="flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-neutral-100">
-        <p className="text-sm text-neutral-500">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white rounded-xl border border-neutral-100">
+        <p className="text-xs sm:text-sm text-neutral-500">
           Page {page} of {pageCount}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             disabled={!canPrev}
             onClick={() => onPageChange(page - 1)}
-            className={`rounded-full border border-neutral-100 px-3 py-1 text-sm ${
+            className={`flex-1 sm:flex-none rounded-full border border-neutral-100 px-3 py-1 text-xs sm:text-sm ${
               !canPrev ? "opacity-50 cursor-not-allowed" : ""
             }`}>
             Previous
@@ -60,7 +60,7 @@ export default function ProductGrid({
           <button
             disabled={!canNext}
             onClick={() => onPageChange(page + 1)}
-            className={`rounded-full border border-neutral-100 px-3 py-1 text-sm ${
+            className={`flex-1 sm:flex-none rounded-full border border-neutral-100 px-3 py-1 text-xs sm:text-sm ${
               !canNext ? "opacity-50 cursor-not-allowed" : ""
             }`}>
             Next

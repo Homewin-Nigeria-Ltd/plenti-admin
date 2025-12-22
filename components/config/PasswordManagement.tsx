@@ -12,22 +12,22 @@ export default function PasswordManagement() {
   const [confirmPassword, setConfirmPassword] = React.useState("");
 
   return (
-    <div className="flex gap-8">
-      <div className="w-64 flex-shrink-0">
-        <h2 className="font-semibold text-primary-700 text-lg mb-2">
+    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+      <div className="w-full lg:w-64 flex-shrink-0">
+        <h2 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
           Update Password
         </h2>
-        <p className="text-sm text-neutral-500">
+        <p className="text-xs sm:text-sm text-neutral-500">
           Last update 29th July 2023
         </p>
       </div>
 
-      <div className="flex-1 bg-white rounded-lg border border-neutral-100 shadow-sm p-6">
-        <div className="mb-6">
-          <h2 className="font-semibold text-primary-700 text-lg mb-2">
+      <div className="flex-1 bg-white rounded-lg border border-neutral-100 shadow-sm p-4 sm:p-6">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
             Update Password
           </h2>
-          <p className="text-sm text-neutral-500">
+          <p className="text-xs sm:text-sm text-neutral-500">
             Enter your current password to make update
           </p>
         </div>
@@ -51,7 +51,7 @@ export default function PasswordManagement() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="newPassword" className="text-sm font-medium text-primary-700">
+            <Label htmlFor="newPassword" className="text-xs sm:text-sm font-medium text-primary-700">
               New Password
             </Label>
             <div className="relative">
@@ -85,7 +85,7 @@ export default function PasswordManagement() {
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button className="bg-primary hover:bg-primary/90 text-white">
+            <Button className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto">
               Update Password
             </Button>
           </div>

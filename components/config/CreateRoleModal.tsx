@@ -69,6 +69,13 @@ const permissions: Permission[] = [
 type CreateRoleModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: (roleData: RoleData) => void;
+};
+
+type RoleData = {
+  roleName: string;
+  description: string;
+  permissions: Permission[];
 };
 
 export function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalProps) {
@@ -108,17 +115,17 @@ export function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
-          <DialogTitle className="text-2xl font-semibold">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 w-[95vw] sm:w-full">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100">
+          <DialogTitle className="text-xl sm:text-2xl font-semibold">
             Create New Role
           </DialogTitle>
-          <DialogDescription className="text-sm text-neutral-500">
+          <DialogDescription className="text-xs sm:text-sm text-neutral-500">
             Define a new role with specific permissions for your team.
           </DialogDescription>
         </DialogHeader>
 
-        <form id="create-role-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+        <form id="create-role-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6">
           <div className="space-y-2">
             <Label htmlFor="roleName" className="text-sm font-medium text-primary-700">
               Role Name
@@ -177,7 +184,7 @@ export function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalP
           </div>
         </form>
 
-        <div className="px-6 py-4 border-t border-neutral-100">
+        <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
           <Button type="submit" form="create-role-form" className="bg-primary hover:bg-primary/90 text-white w-full">
             Create Role
           </Button>

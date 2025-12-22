@@ -33,20 +33,20 @@ export function RolePreviewModal({
 }: RolePreviewModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
-          <DialogTitle className="text-2xl font-semibold">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 w-[95vw] sm:w-full">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100">
+          <DialogTitle className="text-xl sm:text-2xl font-semibold">
             {roleName}
           </DialogTitle>
-          <DialogDescription className="text-sm text-neutral-500">
+          <DialogDescription className="text-xs sm:text-sm text-neutral-500">
             View role details, permissions, and assigned users.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6">
           <div className="space-y-4">
-            <h3 className="font-semibold text-primary-700 text-lg">Permissions</h3>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+            <h3 className="font-semibold text-primary-700 text-base sm:text-lg">Permissions</h3>
+            <div className="space-y-3 max-h-[300px] sm:max-h-[400px] overflow-y-auto pr-2">
               {permissions.map((permission) => (
                 <div
                   key={permission.id}
@@ -70,31 +70,31 @@ export function RolePreviewModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-4 border-t border-neutral-100">
             <div className="flex items-center gap-2">
               <User className="size-4 text-neutral-500" />
-              <span className="text-sm text-neutral-700">
+              <span className="text-xs sm:text-sm text-neutral-700">
                 User with this role ({userCount})
               </span>
             </div>
-            <button className="text-sm text-primary hover:underline font-medium">
+            <button className="text-xs sm:text-sm text-primary hover:underline font-medium">
               View User
             </button>
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-neutral-100 flex items-center gap-4">
+        <div className="px-4 sm:px-6 py-4 border-t border-neutral-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
           <Button
             type="button"
             variant="outline"
             onClick={onEdit}
-            className="flex-1 border-primary text-primary">
+            className="flex-1 border-primary text-primary order-2 sm:order-1">
             Edit Role
           </Button>
           <Button
             type="button"
             onClick={onClose}
-            className="flex-1 bg-primary hover:bg-primary/90 text-white">
+            className="flex-1 bg-primary hover:bg-primary/90 text-white order-1 sm:order-2">
             Close
           </Button>
         </div>

@@ -57,27 +57,27 @@ export default function SystemConfigList() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {configItems.map((item) => {
         const Icon = item.icon;
         return (
           <div
             key={item.id}
             onClick={() => handleItemClick(item)}
-            className="flex items-center gap-4 p-4 bg-white rounded-lg border border-neutral-100 hover:bg-neutral-50 cursor-pointer transition-colors">
+            className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-neutral-100 hover:bg-neutral-50 cursor-pointer transition-colors">
             <div className="flex-shrink-0">
-              <Icon className="size-6 text-primary" strokeWidth={1.5} />
+              <Icon className="size-5 sm:size-6 text-primary" strokeWidth={1.5} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-primary-700 text-base mb-1">
+              <h3 className="font-semibold text-primary-700 text-sm sm:text-base mb-1">
                 {item.title}
               </h3>
-              <p className="text-sm text-neutral-500">
+              <p className="text-xs sm:text-sm text-neutral-500">
                 {item.description}
               </p>
             </div>
             <div className="flex-shrink-0">
-              <ChevronRight className="size-5 text-primary-700" />
+              <ChevronRight className="size-4 sm:size-5 text-primary-700" />
             </div>
           </div>
         );
