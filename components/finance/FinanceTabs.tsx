@@ -26,7 +26,8 @@ export function FinanceTabs({ value, onValueChange }: FinanceTabsProps) {
           active === "overview"
             ? "text-[#0B1E66] font-medium rounded-[3px] bg-[#E8EEFF] px-3 py-1"
             : "text-[#808080]"
-        }>
+        }
+      >
         Overview
       </button>
       <button
@@ -35,7 +36,8 @@ export function FinanceTabs({ value, onValueChange }: FinanceTabsProps) {
           active === "transaction"
             ? "text-[#0B1E66] font-medium rounded-[3px] bg-[#E8EEFF] px-3 py-1"
             : "text-[#808080]"
-        }>
+        }
+      >
         Transaction
       </button>
       <button
@@ -44,7 +46,8 @@ export function FinanceTabs({ value, onValueChange }: FinanceTabsProps) {
           active === "refund"
             ? "text-[#0B1E66] font-medium rounded-[3px] bg-[#E8EEFF] px-3 py-1"
             : "text-[#808080]"
-        }>
+        }
+      >
         Refund Request
       </button>
     </div>
