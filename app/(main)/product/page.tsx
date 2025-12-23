@@ -1,12 +1,13 @@
 export const metadata = {
-  title: "Product Management",
+  title: "Product Management | Plenti Admin",
 };
+
+import ProductCatalog from "@/components/product/ProductCatalog";
 
 export default function ProductPage() {
   return (
-    <div>
-      <h1>Product Management</h1>
-      <p>Placeholder page for product management.</p>
+    <div className="space-y-6">
+      <ProductCatalog />
     </div>
   );
 }

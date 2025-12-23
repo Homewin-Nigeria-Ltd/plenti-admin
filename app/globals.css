@@ -115,4 +115,36 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@layer components {
+  /* Base Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full;
+  }
+
+  /* Brand Badges */
+  .badge-primary {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .badge-secondary {
+    @apply bg-[#E8EEFF] text-primary;
+  }
+
+  /* Semantic / System Badges */
+  .badge-success {
+    @apply font-sans font-medium text-[10px] leading-[145%] tracking-[-0.5%] text-[#0F973D] bg-[#E7F6EC] rounded-[69px] py-1 px-4 gap-2 min-h-[23px];
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-red-700;
+  }
+
+  .badge-neutral {
+    @apply bg-gray-100 text-gray-700;
+  }
+}
 
