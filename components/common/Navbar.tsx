@@ -19,7 +19,7 @@ const Navbar = () => {
   const title = matchedLink?.name ?? formatTitle(section);
 
   return (
-    <nav className="h-(--navbar-height) px-6 md:px-16 bg-[#F5F5F5] w-full flex items-center justify-between sticky top-0 z-30">
+    <nav className="h-(--navbar-height) px-6 md:px-6 bg-[#F5F5F5] w-full flex items-center justify-between sticky top-0 z-30">
       <h1 className="text-lg font-semibold">{title}</h1>
 
       <div className="flex items-center gap-10">
