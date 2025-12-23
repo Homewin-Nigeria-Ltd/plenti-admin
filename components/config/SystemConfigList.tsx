@@ -8,7 +8,7 @@ type ConfigItem = {
   id: string;
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: React.ComponentType<{ className?: string }>;
   href?: string;
 };
 
