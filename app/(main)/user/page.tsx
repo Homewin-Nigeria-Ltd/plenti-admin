@@ -2,11 +2,8 @@ export const metadata = {
   title: "User Management",
 };
 
+import UserManagement from "@/components/user/UserManagement";
+
 export default function UserPage() {
-  return (
-    <div>
-      <h1>User Management</h1>
-      <p>Placeholder page for user management.</p>
-    </div>
-  );
+  return <UserManagement />;
 }

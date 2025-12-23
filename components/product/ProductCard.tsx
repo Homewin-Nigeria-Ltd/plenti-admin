@@ -112,7 +112,6 @@ export default function ProductCard({ product, formatCurrency }: ProductCardProp
             </span>
           </div>
 
-          {/* Sub-category */}
           <div className="flex justify-between items-center text-sm">
             <span className="text-neutral-500">Sub-category:</span>
             <span className="font-semibold text-primary">

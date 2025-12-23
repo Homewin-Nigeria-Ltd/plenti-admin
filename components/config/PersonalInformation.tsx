@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check } from "lucide-react";
+import { Check, X, Upload } from "lucide-react";
 
 export default function PersonalInformation() {
   const [firstName, setFirstName] = React.useState("Oluwanifemi");
@@ -38,6 +38,13 @@ export default function PersonalInformation() {
     fileInputRef.current?.click();
   };
 
+  const handleRemoveImage = () => {
+    setProfileImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
       <div className="w-full lg:w-64 shrink-0">
@@ -55,13 +62,34 @@ export default function PersonalInformation() {
             accept="image/png,image/jpeg,image/jpg"
             className="hidden"
           />
-          <Button 
-            variant="outline" 
-            className="border-primary text-primary w-full sm:w-auto"
-            onClick={handleChangePhotoClick}
-            type="button">
-            Change Photo
-          </Button>
+          {profileImage ? (
+            <div className="flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                className="border-primary text-primary w-full sm:w-auto"
+                onClick={handleChangePhotoClick}
+                type="button">
+                <Upload className="size-4 mr-2" />
+                Replace
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-red-500 text-red-500 hover:bg-red-50 w-full sm:w-auto"
+                onClick={handleRemoveImage}
+                type="button">
+                <X className="size-4 mr-2" />
+                Remove
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              variant="outline" 
+              className="border-primary text-primary w-full sm:w-auto"
+              onClick={handleChangePhotoClick}
+              type="button">
+              Change Photo
+            </Button>
+          )}
         </div>
         <div>
           <h2 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
@@ -74,9 +102,9 @@ export default function PersonalInformation() {
       </div>
 
       <div className="flex-1 bg-white rounded-lg border border-neutral-100 shadow-sm p-4 sm:p-6">
-        <div className="mb-6">
-          <div className="relative w-fit mb-4">
-            <Avatar className="size-24">
+        <div className="mb-4 sm:mb-6">
+          <div className="relative w-fit mb-3 sm:mb-4">
+            <Avatar className="size-20 sm:size-24">
               {profileImage ? (
                 <AvatarImage src={profileImage} alt="Profile" />
               ) : null}
@@ -84,22 +112,22 @@ export default function PersonalInformation() {
                 OO
               </AvatarFallback>
             </Avatar>
-            <div className="absolute bottom-0 right-0 size-6 bg-primary-700 rounded-full flex items-center justify-center">
-              <Check className="size-4 text-white" />
+            <div className="absolute bottom-0 right-0 size-5 sm:size-6 bg-primary-700 rounded-full flex items-center justify-center">
+              <Check className="size-3 sm:size-4 text-white" />
             </div>
           </div>
           <div>
-            <h2 className="font-semibold text-primary-700 text-lg mb-2">
+            <h2 className="font-semibold text-primary-700 text-base sm:text-lg mb-1 sm:mb-2">
               Personal Information
             </h2>
-            <p className="text-sm text-neutral-500">
+            <p className="text-xs sm:text-sm text-neutral-500">
               Update your personal details here.
             </p>
           </div>
         </div>
 
-        <div className="space-y-6 mb-6">
-          <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-4 sm:space-y-6 mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-2">
               <Label htmlFor="firstName" className="text-sm font-medium text-primary-700">
                 First name
