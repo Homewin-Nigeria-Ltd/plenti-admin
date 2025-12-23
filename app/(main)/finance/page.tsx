@@ -1,12 +1,9 @@
 export const metadata = {
-  title: "Finance Management",
+  title: "Finance Management | Plenti Admin",
 };
 
+import { FinanceContent } from "@/components/finance/FinanceContent";
+
 export default function FinancePage() {
-  return (
-    <div>
-      <h1>Finance Management</h1>
-      <p>Placeholder page for finance management.</p>
-    </div>
-  );
+  return <FinanceContent />;
 }

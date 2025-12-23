@@ -55,7 +55,8 @@ const SidebarLinks = () => {
               isActive ? "bg-primary text-white rounded-lg" : "text-[#98A2B3]",
               "text-[16px] font-semibold h-13.75 px-4 flex items-center cursor-pointer"
             )}
-            onClick={() => router.push(link.href)}>
+            onClick={() => router.push(link.href)}
+          >
             {link.name}
           </li>
         );
@@ -73,7 +74,8 @@ const SidebarLinks = () => {
                   : "text-[#98A2B3]",
                 "text-[16px] font-semibold h-13.75 px-4 flex items-center cursor-pointer"
               )}
-              onClick={() => router.push("/customer")}>
+              onClick={() => router.push("/customer")}
+            >
               Customer Support
             </li>
             <li
@@ -81,7 +83,8 @@ const SidebarLinks = () => {
                 configActive ? "bg-primary text-white" : "text-[#98A2B3]",
                 "text-[16px] font-semibold h-13.75 px-4 flex items-center cursor-pointer"
               )}
-              onClick={() => router.push("/configuration")}>
+              onClick={() => router.push("/configuration")}
+            >
               Systems Configuration
             </li>
           </>

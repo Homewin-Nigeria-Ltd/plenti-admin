@@ -49,7 +49,8 @@ const integrations: Integration[] = [
 
 export default function IntegrationSettings() {
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [selectedIntegration, setSelectedIntegration] = React.useState<Integration | null>(null);
+  const [selectedIntegration, setSelectedIntegration] =
+    React.useState<Integration | null>(null);
   const [isConfigureModalOpen, setIsConfigureModalOpen] = React.useState(false);
 
   return (
@@ -57,7 +58,8 @@ export default function IntegrationSettings() {
       <div className="flex justify-end">
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto">
+          className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
+        >
           <Plus className="size-4 mr-2" />
           Add New Integration
         </Button>
@@ -67,7 +69,8 @@ export default function IntegrationSettings() {
         {integrations.map((integration) => (
           <div
             key={integration.id}
-            className="bg-white rounded-lg border border-neutral-100 p-4 sm:p-6">
+            className="bg-white rounded-lg border border-neutral-100 p-4 sm:p-6"
+          >
             <div className="mb-3 sm:mb-4">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-3">
@@ -97,12 +100,13 @@ export default function IntegrationSettings() {
               </div>
             </div>
 
-            <Button 
+            <Button
               onClick={() => {
                 setSelectedIntegration(integration);
                 setIsConfigureModalOpen(true);
               }}
-              className="w-full bg-primary hover:bg-primary/90 text-white">
+              className="w-full bg-primary h-[40px] rounded-[8px] mt-10 hover:bg-primary/90 text-white"
+            >
               Configure
             </Button>
           </div>
