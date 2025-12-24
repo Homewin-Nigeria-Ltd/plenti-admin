@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, X } from "lucide-react";
+import { Lock, X, Eye, EyeOff } from "lucide-react";
 
 type ConfigureIntegrationModalProps = {
   isOpen: boolean;
@@ -32,6 +32,8 @@ export function ConfigureIntegrationModal({
 }: ConfigureIntegrationModalProps) {
   const [secretKey, setSecretKey] = React.useState("");
   const [publicKey, setPublicKey] = React.useState("");
+  const [showSecretKey, setShowSecretKey] = React.useState(false);
+  const [showPublicKey, setShowPublicKey] = React.useState(false);
 
   React.useEffect(() => {
     if (integration) {
@@ -82,13 +84,23 @@ export function ConfigureIntegrationModal({
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none z-10" />
               <Input
                 id="configure-secretKey"
-                type="password"
+                type={showSecretKey ? "text" : "password"}
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
                 placeholder="Enter Secret Key"
-                className="form-control !pl-[48px]"
+                className="form-control !pl-[48px] !pr-12"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowSecretKey(!showSecretKey)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10">
+                {showSecretKey ? (
+                  <EyeOff className="size-5" />
+                ) : (
+                  <Eye className="size-5" />
+                )}
+              </button>
             </div>
           </div>
 
@@ -100,13 +112,23 @@ export function ConfigureIntegrationModal({
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none z-10" />
               <Input
                 id="configure-publicKey"
-                type="password"
+                type={showPublicKey ? "text" : "password"}
                 value={publicKey}
                 onChange={(e) => setPublicKey(e.target.value)}
                 placeholder="Enter Public Key"
-                className="form-control !pl-[48px]"
+                className="form-control !pl-[48px] !pr-12"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPublicKey(!showPublicKey)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10">
+                {showPublicKey ? (
+                  <EyeOff className="size-5" />
+                ) : (
+                  <Eye className="size-5" />
+                )}
+              </button>
             </div>
           </div>
 

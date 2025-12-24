@@ -65,7 +65,7 @@ export default function ViewUser({ user }: ViewUserProps) {
               <Input
                 value={user.firstName}
                 readOnly
-                className="form-control !bg-neutral-50 !border-0 focus-visible:ring-0 focus-visible:outline-none"
+                className="form-control !bg-neutral-50 !border-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -73,7 +73,7 @@ export default function ViewUser({ user }: ViewUserProps) {
               <Input
                 value={user.lastName}
                 readOnly
-                className="form-control !bg-neutral-50 !border-0 focus-visible:ring-0 focus-visible:outline-none"
+                className="form-control !bg-neutral-50 !border-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
@@ -82,7 +82,7 @@ export default function ViewUser({ user }: ViewUserProps) {
                 type="email"
                 value={user.email}
                 readOnly
-                className="form-control !bg-neutral-50 !border-0 focus-visible:ring-0 focus-visible:outline-none"
+                className="form-control !bg-neutral-50 !border-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -90,7 +90,7 @@ export default function ViewUser({ user }: ViewUserProps) {
               <Input
                 value={user.department || "Enjoyment"}
                 readOnly
-                className="form-control !bg-neutral-50 !border-0 focus-visible:ring-0 focus-visible:outline-none"
+                className="form-control !bg-neutral-50 !border-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -98,13 +98,13 @@ export default function ViewUser({ user }: ViewUserProps) {
               <Input
                 value={user.role || "Chairman"}
                 readOnly
-                className="form-control !bg-neutral-50 !border-0 focus-visible:ring-0 focus-visible:outline-none"
+                className="form-control !bg-neutral-50 !border-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <label className="text-xs sm:text-sm text-neutral-500 font-medium">Position</label>
               <Select value={position} onValueChange={setPosition}>
-                <SelectTrigger className="form-control !bg-neutral-50 !border-0 !w-full focus-visible:ring-0 focus-visible:outline-none">
+                <SelectTrigger className="form-control !bg-neutral-50 !border-0 !w-full focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -140,7 +140,8 @@ export default function ViewUser({ user }: ViewUserProps) {
             <div className="flex flex-col gap-3 sm:gap-4 w-full lg:w-auto lg:min-w-[280px]">
               <Button
                 onClick={() => setIsApproveModalOpen(true)}
-                className="btn w-full bg-[#0F973D] hover:bg-[#0d7d33] text-white font-medium flex items-center gap-3 justify-start">
+                variant={undefined}
+                className="btn btn-success w-full font-medium flex items-center gap-3 justify-start">
                 <div className="size-6 rounded-full bg-white/20 flex items-center justify-center">
                   <Check className="size-4" />
                 </div>
@@ -148,7 +149,8 @@ export default function ViewUser({ user }: ViewUserProps) {
               </Button>
               <Button
                 onClick={() => setIsRejectModalOpen(true)}
-                className="btn w-full bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-3 justify-start">
+                variant={undefined}
+                className="btn btn-danger w-full font-medium flex items-center gap-3 justify-start">
                 <div className="size-6 rounded-md bg-white/20 flex items-center justify-center">
                   <X className="size-4" />
                 </div>
@@ -156,7 +158,8 @@ export default function ViewUser({ user }: ViewUserProps) {
               </Button>
               <Button
                 onClick={() => setIsSuspendModalOpen(true)}
-                className="btn w-full bg-neutral-400 hover:bg-neutral-500 text-white font-medium flex items-center gap-3 justify-start">
+                variant={undefined}
+                className="btn btn-neutral w-full font-medium flex items-center gap-3 justify-start">
                 <div className="size-6 rounded-full bg-white/20 flex items-center justify-center">
                   <UserX className="size-4" />
                 </div>

@@ -61,8 +61,9 @@ export function RejectUserModal({
             </Button>
             <Button
               type="button"
+              variant={undefined}
               onClick={handleReject}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white order-1 sm:order-2 rounded-md">
+              className="btn btn-danger flex-1 order-1 sm:order-2">
               Reject Account
             </Button>
           </div>

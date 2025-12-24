@@ -61,8 +61,9 @@ export function ApproveUserModal({
             </Button>
             <Button
               type="button"
+              variant={undefined}
               onClick={handleApprove}
-              className="flex-1 bg-[#0F973D] hover:bg-[#0d7d33] text-white order-1 sm:order-2 rounded-md">
+              className="btn btn-success flex-1 order-1 sm:order-2">
               Approve
             </Button>
           </div>

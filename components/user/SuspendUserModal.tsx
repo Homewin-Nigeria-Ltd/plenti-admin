@@ -61,8 +61,9 @@ export function SuspendUserModal({
             </Button>
             <Button
               type="button"
+              variant={undefined}
               onClick={handleSuspend}
-              className="flex-1 bg-neutral-400 hover:bg-neutral-500 text-white order-1 sm:order-2 rounded-md">
+              className="btn btn-neutral flex-1 order-1 sm:order-2">
               Suspend
             </Button>
           </div>
