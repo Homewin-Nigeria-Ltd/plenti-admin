@@ -104,7 +104,7 @@ export function ConfigureIntegrationModal({
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" form="configure-integration-form" className="btn-primary w-full sm:w-auto">
+            <Button type="submit" form="configure-integration-form" className="btn btn-primary w-full sm:w-auto">
               Update Provider
             </Button>
           </div>

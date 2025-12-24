@@ -47,13 +47,13 @@ export function SuspendUserModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-neutral-200 text-neutral-700 hover:bg-neutral-50 order-2 sm:order-1">
+              className="btn btn-outline flex-1 order-2 sm:order-1">
               Cancel
             </Button>
             <Button
               type="button"
               onClick={handleSuspend}
-              className="flex-1 bg-neutral-400 hover:bg-neutral-500 text-white order-1 sm:order-2">
+              className="flex-1 bg-neutral-400 hover:bg-neutral-500 text-white order-1 sm:order-2 rounded-md">
               Suspend
             </Button>
           </div>

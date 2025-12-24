@@ -12,12 +12,12 @@ export default function AccountSettings() {
       <div className="flex gap-4 sm:gap-6 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <button
           onClick={() => setActiveTab("personal")}
-          className={`btn-secondary ${activeTab === "personal" ? "bg-[#E8EEFF] text-primary hover:bg-[#E8EEFF]" : ""}`}>
+          className={`btn btn-secondary ${activeTab === "personal" ? "bg-[#E8EEFF] text-primary hover:bg-[#E8EEFF]" : ""}`}>
           Personal Information
         </button>
         <button
           onClick={() => setActiveTab("password")}
-          className={`btn-secondary ${activeTab === "password" ? "bg-[#E8EEFF] text-primary hover:bg-[#E8EEFF]" : ""}`}>
+          className={`btn btn-secondary ${activeTab === "password" ? "bg-[#E8EEFF] text-primary hover:bg-[#E8EEFF]" : ""}`}>
           Password Management
         </button>
       </div>

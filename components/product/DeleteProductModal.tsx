@@ -45,13 +45,13 @@ export function DeleteProductModal({
               type="button"
               variant="outline"
               onClick={handleDelete}
-              className="flex-1 border-primary text-primary hover:bg-primary/5 order-2 sm:order-1">
+              className="btn btn-outline flex-1 order-2 sm:order-1">
               Delete Product
             </Button>
             <Button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-primary hover:bg-primary/90 text-white order-1 sm:order-2">
+              className="btn btn-primary flex-1 order-1 sm:order-2">
               Close
             </Button>
           </div>

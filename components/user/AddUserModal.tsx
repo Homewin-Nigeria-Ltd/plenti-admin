@@ -124,7 +124,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="First Name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                  className="form-control !bg-neutral-100 !border-0"
                   required
                 />
               </div>
@@ -133,7 +133,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="Last Name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                  className="form-control !bg-neutral-100 !border-0"
                   required
                 />
               </div>
@@ -145,7 +145,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                className="form-control !bg-neutral-100 !border-0"
                 required
               />
             </div>
@@ -156,7 +156,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="Department"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                  className="form-control !bg-neutral-100 !border-0"
                   required
                 />
               </div>
@@ -165,7 +165,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="Position"
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                  className="form-control !bg-neutral-100 !border-0"
                   required
                 />
               </div>
@@ -173,7 +173,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
 
             <div className="space-y-2">
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="w-full bg-neutral-100 border-0 focus-visible:ring-0 h-11">
+                <SelectTrigger className="form-control !bg-neutral-100 !border-0 !w-full">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -193,7 +193,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11 pr-28 sm:pr-40"
+                  className="form-control !bg-neutral-100 !border-0 !pr-[300px] sm:!pr-56"
                   required
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -224,7 +224,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
           <div className="pt-4 pb-4 sm:pb-6 px-4 sm:px-6 border-t border-neutral-100">
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 sm:h-12 font-semibold rounded-md transition-colors">
+              className="btn btn-primary w-full h-11 sm:h-12 font-semibold rounded-md">
               Submit
             </button>
           </div>

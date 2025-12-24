@@ -295,7 +295,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
         </form>
 
         <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
-          <Button type="submit" form="edit-product-form" className="bg-primary hover:bg-primary/90 w-full">
+          <Button type="submit" form="edit-product-form" className="btn btn-primary w-full">
             Update Product
           </Button>
         </div>

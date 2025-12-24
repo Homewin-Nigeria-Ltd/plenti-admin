@@ -185,7 +185,7 @@ export function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalP
         </form>
 
         <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
-          <Button type="submit" form="create-role-form" className="bg-primary hover:bg-primary/90 text-white w-full">
+          <Button type="submit" form="create-role-form" className="btn btn-primary w-full">
             Create Role
           </Button>
         </div>

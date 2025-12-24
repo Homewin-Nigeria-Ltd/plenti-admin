@@ -166,7 +166,7 @@ export default function UserManagement() {
         {activeTab === "admin" && (
           <Button
             onClick={() => setIsAddUserModalOpen(true)}
-            className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto h-[50px]">
+            className="btn btn-primary w-full sm:w-auto">
             <Plus className="size-4 mr-2" />
             Add Admin User
           </Button>

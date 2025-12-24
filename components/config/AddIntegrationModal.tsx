@@ -83,7 +83,7 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" form="add-integration-form" className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto">
+            <Button type="submit" form="add-integration-form" className="btn btn-primary w-full sm:w-auto">
               Add New Provider
             </Button>
           </div>

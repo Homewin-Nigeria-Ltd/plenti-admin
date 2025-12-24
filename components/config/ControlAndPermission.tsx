@@ -70,7 +70,7 @@ export default function ControlAndPermission() {
       <div className="flex justify-end">
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto">
+          className="btn btn-primary w-full sm:w-auto">
           <Plus className="size-4 mr-2" />
           Create New Role
         </Button>
