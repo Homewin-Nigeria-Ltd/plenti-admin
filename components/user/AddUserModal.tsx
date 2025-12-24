@@ -111,7 +111,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                 Add User
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm text-neutral-500 text-left mt-1">
-                This feature allows admins to easily add new users to the Plenti admin. Each user's access level is set based on their role, ensuring they have the right permissions for their tasks.
+                This feature allows admins to easily add new users to the Plenti admin. Each user&apos;s access level is set based on their role, ensuring they have the right permissions for their tasks.
               </DialogDescription>
             </div>
           </div>
