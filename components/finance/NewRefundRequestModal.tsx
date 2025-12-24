@@ -45,7 +45,8 @@ export function NewRefundRequestModal({ isOpen, onClose }: Props) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
         className="sm:max-w-xl rounded-[12px]"
-        showCloseButton={false}>
+        showCloseButton={false}
+      >
         <div className="relative">
           <div className="">
             <div className="flex items-start justify-between">
@@ -60,7 +61,8 @@ export function NewRefundRequestModal({ isOpen, onClose }: Props) {
               <button
                 aria-label="Close"
                 className="size-8 rounded-full bg-[#E8EEFF] flex items-center justify-center"
-                onClick={onClose}>
+                onClick={onClose}
+              >
                 <X color="#0B1E66" />
               </button>
             </div>
@@ -71,7 +73,8 @@ export function NewRefundRequestModal({ isOpen, onClose }: Props) {
               <div className="space-y-1">
                 <Label
                   htmlFor="order-id"
-                  className="text-[#878787] text-[16px]">
+                  className="text-[#878787] text-[16px]"
+                >
                   Order ID
                 </Label>
                 <Input
@@ -131,8 +134,9 @@ export function NewRefundRequestModal({ isOpen, onClose }: Props) {
 
             <div className="mt-4">
               <Button
-                type="sumbit"
-                className="w-full h-[52px] rounded-[8px] bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90">
+                type="submit"
+                className="w-full h-[52px] rounded-[8px] bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90"
+              >
                 Create Refund Request
               </Button>
             </div>
