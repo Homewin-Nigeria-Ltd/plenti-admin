@@ -85,10 +85,11 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
         showCloseButton={false}>
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 relative">
           <button
+            type="button"
             onClick={handleClose}
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 size-8 flex items-center justify-center hover:bg-neutral-100 rounded-full transition-colors z-10">
-            <X className="size-5 text-neutral-500 hover:text-neutral-700" />
-            <span className="sr-only">Close</span>
+            aria-label="Close dialog"
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
           <div className="flex items-center gap-2 sm:gap-3 pr-10 sm:pr-12">
             <div className="size-8 sm:size-10 rounded-lg bg-gradient-to-br from-purple-400 via-blue-400 to-green-400 flex items-center justify-center shrink-0">

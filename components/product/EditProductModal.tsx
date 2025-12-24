@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import type { Product, ProductCategory } from "@/data/products";
 import { toast } from "sonner";
 
@@ -117,14 +117,21 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0" showCloseButton={false}>
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100 relative">
           <DialogTitle className="text-2xl font-semibold">
             Edit Product
           </DialogTitle>
           <DialogDescription className="text-sm text-neutral-500">
             Update product information
           </DialogDescription>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="absolute top-6 right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
+          </button>
         </DialogHeader>
 
         <form id="edit-product-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">

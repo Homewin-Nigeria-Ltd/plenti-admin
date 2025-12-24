@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock } from "lucide-react";
+import { Lock, X } from "lucide-react";
 
 type AddIntegrationModalProps = {
   isOpen: boolean;
@@ -35,14 +35,21 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full">
-        <DialogHeader>
+      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full" showCloseButton={false}>
+        <DialogHeader className="relative">
           <DialogTitle className="text-xl sm:text-2xl font-semibold">
             API Keys & Credentials
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-neutral-500">
             Enter your API keys and credentials to add a new integration
           </DialogDescription>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="absolute top-0 right-0 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
+          </button>
         </DialogHeader>
 
         <form id="add-integration-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">

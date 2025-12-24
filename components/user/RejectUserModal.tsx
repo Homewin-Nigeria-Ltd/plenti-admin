@@ -30,8 +30,17 @@ export function RejectUserModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full">
-        <DialogTitle className="sr-only">Reject User Confirmation</DialogTitle>
+      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full" showCloseButton={false}>
+        <div className="relative">
+          <DialogTitle className="sr-only">Reject User Confirmation</DialogTitle>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="absolute top-0 right-0 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
+          </button>
+        </div>
         <div className="space-y-4 sm:space-y-6">
           <div className="flex flex-col items-center gap-4">
             <div className="size-16 rounded-md bg-red-600/10 flex items-center justify-center">
