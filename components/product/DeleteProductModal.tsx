@@ -4,9 +4,12 @@ import * as React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import type { Product } from "@/data/products";
 import { toast } from "sonner";
 
@@ -31,14 +34,23 @@ export function DeleteProductModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full">
-        <DialogTitle className="sr-only">
-          Delete Product Confirmation
-        </DialogTitle>
-        <div className="space-y-4 sm:space-y-6">
-          <p className="text-center text-neutral-700 text-sm sm:text-base font-medium">
+      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full" showCloseButton={false}>
+        <DialogHeader className="relative">
+          <DialogTitle className="text-xl sm:text-2xl font-semibold">
+            Delete Product
+          </DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm text-neutral-500">
             Are you sure you want to delete this product?
-          </p>
+          </DialogDescription>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="absolute top-0 right-0 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
+          </button>
+        </DialogHeader>
+        <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Button
