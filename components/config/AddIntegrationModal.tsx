@@ -41,7 +41,7 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
             API Keys & Credentials
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-neutral-500">
-            Enter your current password to make update
+            Enter your API keys and credentials to add a new integration
           </DialogDescription>
         </DialogHeader>
 
@@ -51,14 +51,14 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
               Secret Key
             </Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none z-10" />
               <Input
                 id="secretKey"
                 type="password"
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
-                placeholder="Enter Password"
-                className="focus-visible:ring-0 pl-10"
+                placeholder="Enter Secret Key"
+                className="form-control !pl-[48px]"
                 required
               />
             </div>
@@ -69,14 +69,14 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
               Public Key
             </Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none z-10" />
               <Input
                 id="publicKey"
                 type="password"
                 value={publicKey}
                 onChange={(e) => setPublicKey(e.target.value)}
-                placeholder="Enter New Password"
-                className="focus-visible:ring-0 pl-10"
+                placeholder="Enter Public Key"
+                className="form-control !pl-[48px]"
                 required
               />
             </div>

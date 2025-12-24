@@ -26,7 +26,7 @@ export default function Notifications() {
       <div className="flex-1 bg-white rounded-lg  p-4 sm:p-6 space-y-6 sm:space-y-8">
         <div className="space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-8">
-            <div className="lg:w-64 shrink-0">
+            <div className="lg:flex-1">
               <h3 className="font-semibold text-primary-700 text-lg mb-2">
                 Login attempts
               </h3>
@@ -34,7 +34,7 @@ export default function Notifications() {
                 These are notifications to notify you when your account is being accessed.
               </p>
             </div>
-            <div className="flex-1">
+            <div className="lg:flex-1">
               <RadioGroup value={loginAttempts} onValueChange={setLoginAttempts}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="email" id="login-email" />
@@ -59,7 +59,7 @@ export default function Notifications() {
           </div>
 
           <div className="pt-4 border-t border-neutral-100 flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-8">
-            <div className="lg:w-64 shrink-0">
+            <div className="lg:flex-1">
               <h3 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
                 Push Notifications
               </h3>
@@ -67,7 +67,7 @@ export default function Notifications() {
                 These are notifications generated when the app is not open, notifying you of new update, news and messages.
               </p>
             </div>
-            <div className="flex-1">
+            <div className="lg:flex-1">
               <RadioGroup value={pushNotifications} onValueChange={setPushNotifications}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="do-not-notify" id="push-do-not" />
@@ -91,7 +91,7 @@ export default function Notifications() {
           </div>
 
           <div className="pt-4 border-t border-neutral-100 flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-8">
-            <div className="lg:w-64 shrink-0">
+            <div className="lg:flex-1">
               <h3 className="font-semibold text-primary-700 text-lg mb-2">
                 Reminders
               </h3>
@@ -99,7 +99,7 @@ export default function Notifications() {
                 These are notifications to remind you of updates you might have missed.
               </p>
             </div>
-            <div className="flex-1">
+            <div className="lg:flex-1">
               <RadioGroup value={reminders} onValueChange={setReminders}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="do-not-notify" id="reminder-do-not" />
@@ -134,7 +134,7 @@ export default function Notifications() {
           </div>
 
           <div className="pt-4 border-t border-neutral-100 flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-8">
-            <div className="lg:w-64 shrink-0">
+            <div className="lg:flex-1">
               <h3 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
                 Email Notification
               </h3>
@@ -142,7 +142,7 @@ export default function Notifications() {
                 Receive the latest news, updates and industry tutorials from us.
               </p>
             </div>
-            <div className="flex-1">
+            <div className="lg:flex-1">
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <Checkbox

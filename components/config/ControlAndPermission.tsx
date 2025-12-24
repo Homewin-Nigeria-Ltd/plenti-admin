@@ -80,7 +80,7 @@ export default function ControlAndPermission() {
         {roles.map((role) => (
           <div
             key={role.id}
-            className="bg-white rounded-lg border border-neutral-100 shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow">
+            className="bg-white rounded-lg border border-[#EAECF0] p-4 sm:p-6">
             <h3 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
               {role.title}
             </h3>

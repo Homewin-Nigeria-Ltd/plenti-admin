@@ -58,7 +58,7 @@ export default function IntegrationSettings() {
       <div className="flex justify-end">
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
+          className="btn-primary w-full sm:w-auto"
         >
           <Plus className="size-4 mr-2" />
           Add New Integration
@@ -105,7 +105,7 @@ export default function IntegrationSettings() {
                 setSelectedIntegration(integration);
                 setIsConfigureModalOpen(true);
               }}
-              className="w-full bg-primary h-[40px] rounded-[8px] mt-10 hover:bg-primary/90 text-white"
+              className="btn-primary w-full h-[40px] rounded-[8px] mt-10"
             >
               Configure
             </Button>

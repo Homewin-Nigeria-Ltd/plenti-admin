@@ -72,14 +72,14 @@ export function ConfigureIntegrationModal({
               Secret Key
             </Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none z-10" />
               <Input
                 id="configure-secretKey"
                 type="password"
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
-                placeholder="Enter Password"
-                className="focus-visible:ring-0 pl-10"
+                placeholder="Enter Secret Key"
+                className="form-control !pl-[48px]"
                 required
               />
             </div>
@@ -90,21 +90,21 @@ export function ConfigureIntegrationModal({
               Public Key
             </Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-neutral-500 pointer-events-none z-10" />
               <Input
                 id="configure-publicKey"
                 type="password"
                 value={publicKey}
                 onChange={(e) => setPublicKey(e.target.value)}
-                placeholder="Enter New Password"
-                className="focus-visible:ring-0 pl-10"
+                placeholder="Enter Public Key"
+                className="form-control !pl-[48px]"
                 required
               />
             </div>
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" form="configure-integration-form" className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto">
+            <Button type="submit" form="configure-integration-form" className="btn-primary w-full sm:w-auto">
               Update Provider
             </Button>
           </div>
