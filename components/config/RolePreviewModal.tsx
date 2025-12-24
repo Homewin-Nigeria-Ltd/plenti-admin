@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,13 @@ export function RolePreviewModal({
   userCount = 0,
   onEdit,
 }: RolePreviewModalProps) {
+  const router = useRouter();
+
+  const handleViewUsers = () => {
+    onClose();
+    router.push("/user");
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 w-[95vw] sm:w-full">
@@ -77,7 +85,9 @@ export function RolePreviewModal({
                 User with this role ({userCount})
               </span>
             </div>
-            <button className="text-xs sm:text-sm text-primary hover:underline font-medium">
+            <button
+              onClick={handleViewUsers}
+              className="text-xs sm:text-sm text-primary hover:underline font-medium">
               View User
             </button>
           </div>

@@ -78,7 +78,16 @@ export default function UserManagement() {
 
   const pageCount = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
 
-  const columns = [
+  type TableRow = {
+    dateCreated: React.ReactNode;
+    customerName: React.ReactNode;
+    orders: React.ReactNode;
+    amountSpent: React.ReactNode;
+    phoneNumber: React.ReactNode;
+    status: React.ReactNode;
+  };
+
+  const columns: Array<{ key: keyof TableRow; label: string }> = [
     { key: "dateCreated", label: "Date created" },
     { key: "customerName", label: "Customer Name" },
     { key: "orders", label: "Orders" },
@@ -87,7 +96,7 @@ export default function UserManagement() {
     { key: "status", label: "Status" },
   ];
 
-  const tableRows = React.useMemo(() => {
+  const tableRows = React.useMemo<TableRow[]>(() => {
     return paginatedUsers.map((user) => ({
       dateCreated: (
         <span className="text-neutral-700 text-sm">{user.dateCreated}</span>
@@ -202,7 +211,7 @@ export default function UserManagement() {
                   className="cursor-pointer hover:bg-neutral-50 transition-colors">
                   {columns.map((c) => (
                     <TableCell key={c.key}>
-                      {row[c.key]}
+                      {row[c.key as keyof TableRow]}
                     </TableCell>
                   ))}
                 </TableRow>
