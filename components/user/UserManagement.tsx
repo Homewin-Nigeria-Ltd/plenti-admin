@@ -36,13 +36,13 @@ export default function UserManagement() {
   const getStatusBadgeClass = (status: UserStatus) => {
     switch (status) {
       case "Active":
-        return "bg-[#0F973D] text-white";
+        return "badge-success";
       case "Inactive":
-        return "bg-red-600 text-white";
+        return "badge-danger";
       case "Suspended":
-        return "bg-orange-500 text-white";
+        return "badge-warning";
       default:
-        return "bg-gray-500 text-white";
+        return "badge-neutral";
     }
   };
 
