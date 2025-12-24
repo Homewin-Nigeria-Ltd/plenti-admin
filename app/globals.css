@@ -146,5 +146,29 @@
   .badge-neutral {
     @apply bg-gray-100 text-gray-700;
   }
+
+  .form-control {
+    @apply !h-[56px] !rounded-md pt-4 pr-4 pb-4 pl-4 !border !border-[#D0D5DD] outline-none focus:!border-[#2E5CDB] focus:!border focus-visible:!border-[#2E5CDB] focus-visible:!border focus-visible:!ring-0;
+  }
+
+  .form-control:disabled {
+    @apply !bg-neutral-50 !text-neutral-500 !cursor-not-allowed;
+  }
+
+  .btn-group-item {
+    @apply w-full sm:w-1/2;
+  }
+
+  .btn-outline {
+    @apply border-primary text-primary;
+  }
+
+  .btn-primary {
+    @apply bg-primary hover:bg-primary/90 text-white;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 font-medium text-sm sm:text-base transition-colors whitespace-nowrap rounded-md bg-transparent text-neutral-500 hover:bg-neutral-50;
+  }
 }
 

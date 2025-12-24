@@ -115,7 +115,7 @@ export function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 w-[95vw] sm:w-full">
+      <DialogContent className="max-h-[90vh] flex flex-col p-0 w-[95vw] !max-w-[557px] sm:!w-[557px] sm:!max-w-[557px]">
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100">
           <DialogTitle className="text-xl sm:text-2xl font-semibold">
             Create New Role
@@ -135,7 +135,7 @@ export function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalP
               placeholder="Role Name"
               value={roleName}
               onChange={(e) => setRoleName(e.target.value)}
-              className="focus-visible:ring-0"
+              className="form-control"
               required
             />
           </div>
@@ -149,7 +149,7 @@ export function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalP
               placeholder="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-0 resize-none"
+              className="form-control w-full !h-auto min-h-[100px] resize-none"
               required
             />
           </div>
