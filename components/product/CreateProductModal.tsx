@@ -147,7 +147,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
                 setCategory(value as ProductCategory);
                 setSubCategory("");
               }}>
-                <SelectTrigger id="category" className="w-full focus-visible:ring-0">
+                <SelectTrigger id="category" className="form-control !w-full">
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>

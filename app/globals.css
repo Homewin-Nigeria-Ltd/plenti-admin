@@ -155,6 +155,11 @@
     @apply !bg-neutral-50 !text-neutral-500 !cursor-not-allowed;
   }
 
+  [data-slot="select-trigger"].form-control,
+  .form-control[data-slot="select-trigger"] {
+    height: 53px !important;
+  }
+
   .btn {
     @apply !h-[53px] px-4 py-2 font-medium text-sm sm:text-base transition-colors whitespace-nowrap rounded-md flex items-center justify-center;
   }
