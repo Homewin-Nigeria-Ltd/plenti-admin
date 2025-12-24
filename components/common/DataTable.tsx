@@ -53,7 +53,8 @@ export default function DataTable<T extends Record<string, React.ReactNode>>({
                 className={cn(
                   c.className,
                   "text-[#667085] bg-white text-[14px] font-normal"
-                )}>
+                )}
+              >
                 {c.label}
               </TableHead>
             ))}
@@ -64,7 +65,8 @@ export default function DataTable<T extends Record<string, React.ReactNode>>({
             <TableRow
               key={idx}
               onClick={() => onRowClick?.(row, idx)}
-              className={cn(onRowClick && "cursor-pointer")}>
+              className={cn(onRowClick && "cursor-pointer")}
+            >
               {columns.map((c) => (
                 <TableCell key={c.key} className={cn(c.className)}>
                   {row[c.key]}
@@ -84,9 +86,10 @@ export default function DataTable<T extends Record<string, React.ReactNode>>({
             disabled={!canPrev}
             onClick={() => onPageChange?.(page - 1)}
             className={cn(
-              "rounded-full border border-[#EEF1F6] px-3 py-1 text-sm",
+              "rounded-full border border-[#EEF1F6] px-3 py-1 text-sm ml-2",
               !canPrev && "opacity-50 cursor-not-allowed"
-            )}>
+            )}
+          >
             Previous
           </button>
           <button
@@ -95,7 +98,8 @@ export default function DataTable<T extends Record<string, React.ReactNode>>({
             className={cn(
               "rounded-full border border-[#EEF1F6] px-3 py-1 text-sm",
               !canNext && "opacity-50 cursor-not-allowed"
-            )}>
+            )}
+          >
             Next
           </button>
         </div>

@@ -16,7 +16,8 @@ const configItems: ConfigItem[] = [
   {
     id: "account",
     title: "Account Settings",
-    description: "Profile settings for individual admins, including name, email, profile picture,",
+    description:
+      "Profile settings for individual admins, including name, email, profile picture,",
     icon: User,
   },
   {
@@ -28,13 +29,15 @@ const configItems: ConfigItem[] = [
   {
     id: "notifications",
     title: "Notifications",
-    description: "Ability to customize notification preferences based on user roles",
+    description:
+      "Ability to customize notification preferences based on user roles",
     icon: Bell,
   },
   {
     id: "integration",
     title: "Integration Setting",
-    description: "API settings for developers to integrate custom functionalities",
+    description:
+      "API settings for developers to integrate custom functionalities",
     icon: Link2,
   },
 ];
@@ -64,9 +67,13 @@ export default function SystemConfigList() {
           <div
             key={item.id}
             onClick={() => handleItemClick(item)}
-            className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-neutral-100 hover:bg-neutral-50 cursor-pointer transition-colors">
-            <div className="flex-shrink-0">
-              <Icon className="size-5 sm:size-6 text-primary" strokeWidth={1.5} />
+            className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-neutral-100 hover:bg-neutral-50 cursor-pointer transition-colors"
+          >
+            <div className="shrink-0">
+              <Icon
+                className="size-5 sm:size-6 text-primary"
+                // strokeWidth={1.25}
+              />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-primary-700 text-sm sm:text-base mb-1">
@@ -76,7 +83,7 @@ export default function SystemConfigList() {
                 {item.description}
               </p>
             </div>
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <ChevronRight className="size-4 sm:size-5 text-primary-700" />
             </div>
           </div>
@@ -85,4 +92,3 @@ export default function SystemConfigList() {
     </div>
   );
 }
-
