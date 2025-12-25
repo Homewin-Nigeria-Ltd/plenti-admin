@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { X } from "lucide-react";
 
 export type Permission = {
   id: string;
@@ -115,14 +116,21 @@ export function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] flex flex-col p-0 w-[95vw] !max-w-[557px] sm:!w-[557px] sm:!max-w-[557px]">
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100">
+      <DialogContent className="max-h-[90vh] flex flex-col p-0 w-[95vw] !max-w-[557px] sm:!w-[557px] sm:!max-w-[557px]" showCloseButton={false}>
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
           <DialogTitle className="text-xl sm:text-2xl font-semibold">
             Create New Role
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-neutral-500">
             Define a new role with specific permissions for your team.
           </DialogDescription>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
+          </button>
         </DialogHeader>
 
         <form id="create-role-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6">
@@ -185,7 +193,7 @@ export function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalP
         </form>
 
         <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
-          <Button type="submit" form="create-role-form" className="bg-primary hover:bg-primary/90 text-white w-full">
+          <Button type="submit" form="create-role-form" className="btn btn-primary w-full">
             Create Role
           </Button>
         </div>

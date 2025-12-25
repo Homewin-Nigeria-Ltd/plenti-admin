@@ -79,7 +79,7 @@ export default function ProductCatalog() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
-            className="bg-primary hover:bg-primary/90 h-[50px] w-full sm:w-auto"
+            className="btn btn-primary w-full sm:w-auto"
             onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="size-4" />
             <span className="hidden sm:inline">Add New Product</span>

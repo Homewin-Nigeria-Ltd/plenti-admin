@@ -85,10 +85,11 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
         showCloseButton={false}>
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 relative">
           <button
+            type="button"
             onClick={handleClose}
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 size-8 flex items-center justify-center hover:bg-neutral-100 rounded-full transition-colors z-10">
-            <X className="size-5 text-neutral-500 hover:text-neutral-700" />
-            <span className="sr-only">Close</span>
+            aria-label="Close dialog"
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
           <div className="flex items-center gap-2 sm:gap-3 pr-10 sm:pr-12">
             <div className="size-8 sm:size-10 rounded-lg bg-gradient-to-br from-purple-400 via-blue-400 to-green-400 flex items-center justify-center shrink-0">
@@ -110,7 +111,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                 Add User
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm text-neutral-500 text-left mt-1">
-                This feature allows admins to easily add new users to the Plenti admin. Each user's access level is set based on their role, ensuring they have the right permissions for their tasks.
+                This feature allows admins to easily add new users to the Plenti admin. Each user&apos;s access level is set based on their role, ensuring they have the right permissions for their tasks.
               </DialogDescription>
             </div>
           </div>
@@ -124,7 +125,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="First Name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                  className="form-control !bg-neutral-100 !border-0"
                   required
                 />
               </div>
@@ -133,7 +134,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="Last Name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                  className="form-control !bg-neutral-100 !border-0"
                   required
                 />
               </div>
@@ -145,7 +146,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                className="form-control !bg-neutral-100 !border-0"
                 required
               />
             </div>
@@ -156,7 +157,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="Department"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                  className="form-control !bg-neutral-100 !border-0"
                   required
                 />
               </div>
@@ -165,7 +166,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="Position"
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11"
+                  className="form-control !bg-neutral-100 !border-0"
                   required
                 />
               </div>
@@ -173,7 +174,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
 
             <div className="space-y-2">
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="w-full bg-neutral-100 border-0 focus-visible:ring-0 h-11">
+                <SelectTrigger className="form-control !bg-neutral-100 !border-0 !w-full">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -193,7 +194,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-neutral-100 border-0 focus-visible:ring-0 h-11 pr-28 sm:pr-40"
+                  className="form-control !bg-neutral-100 !border-0 !pr-[300px] sm:!pr-56"
                   required
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -224,7 +225,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
           <div className="pt-4 pb-4 sm:pb-6 px-4 sm:px-6 border-t border-neutral-100">
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 sm:h-12 font-semibold rounded-md transition-colors">
+              className="btn btn-primary w-full h-11 sm:h-12 font-semibold rounded-md">
               Submit
             </button>
           </div>
