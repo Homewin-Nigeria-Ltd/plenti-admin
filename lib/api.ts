@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BASE_URL,
+  baseURL: "/api/proxy",
   headers: {
     "Content-Type": "application/json",
   },
@@ -9,13 +9,23 @@ const api = axios.create({
 
 // Axios Intercept api request
 api.interceptors.request.use((config) => {
+  // The token is automatically sent via HTTP-only cookie through the proxy
   return config;
 });
 
 // Axios Intercept api response
-// api.interceptors.response.use(
-//   (res) => res,
-//   async (err) => {}
-// );
+api.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    // Handle 401 errors (unauthorized) - token might be expired
+    if (err.response?.status === 401) {
+      // Optionally redirect to login or clear auth state
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(err);
+  }
+);
 
 export default api;

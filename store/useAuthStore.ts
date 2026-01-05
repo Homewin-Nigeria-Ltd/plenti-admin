@@ -1,5 +1,3 @@
-import api from "@/lib/api";
-import { AxiosError } from "axios";
 import { create } from "zustand";
 
 type AuthState = {
@@ -25,13 +23,25 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true });
 
     try {
-      const res = await api.post("/auth/login", { email, password });
-      console.log("login response ->", res);
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      set({ loading: false });
       return true;
     } catch (error) {
-      if (error instanceof AxiosError) {
-        console.log("Axios error =>", error);
-      }
+      console.error("Login error =>", error);
+      set({ loading: false });
       throw error;
     }
   },
