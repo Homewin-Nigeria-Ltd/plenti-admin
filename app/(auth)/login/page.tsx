@@ -11,7 +11,8 @@ const LoginPage = () => {
           width={170}
           height={70}
           className="h-[90vh] w-auto"
-          fetchPriority="high"
+          priority
+          loading="eager"
         />
       </div>
       <div className="place-content-center">
