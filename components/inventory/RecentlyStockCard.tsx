@@ -26,7 +26,18 @@ export default function RecentlyStockCard({ recentStocks }: RecentlyStockCardPro
             className={`flex items-center gap-3 sm:gap-4 py-3 sm:py-4 ${
               index < recentStocks.length - 1 ? "border-b border-neutral-200" : ""
             }`}>
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#0B1E66] text-white flex items-center justify-center text-sm sm:text-base font-semibold shrink-0">
+            <div 
+              className="bg-[#0B1E66] text-white flex items-center justify-center font-semibold shrink-0"
+              style={{ 
+                width: '20.4061279296875px', 
+                height: '18.773761749267578px', 
+                opacity: 1, 
+                transform: 'rotate(0deg)',
+                borderRadius: '97.17px',
+                padding: '3.89px',
+                gap: '9.72px',
+                fontSize: '9px'
+              }}>
               {index + 1}
             </div>
             <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden shrink-0">
