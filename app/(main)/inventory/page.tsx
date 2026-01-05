@@ -1,12 +1,13 @@
 export const metadata = {
-  title: "Inventory Management",
+  title: "Inventory Management | Plenti Admin",
 };
+
+import InventoryManagement from "@/components/inventory/InventoryManagement";
 
 export default function InventoryPage() {
   return (
-    <div>
-      <h1>Inventory Management</h1>
-      <p>Placeholder page for inventory management.</p>
+    <div className="space-y-6">
+      <InventoryManagement />
     </div>
   );
 }
