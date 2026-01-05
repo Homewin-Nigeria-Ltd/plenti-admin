@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Raleway } from "next/font/google";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
@@ -36,6 +36,7 @@ const raleway = Raleway({
 const LoginForm = () => {
   const { login, loading } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const form = useForm<LoginFormSchema>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -51,7 +52,9 @@ const LoginForm = () => {
           toast.success("Login successful", {
             description: "You are now logged in",
           });
-          router.push("/dashboard");
+          // Redirect to the original page or dashboard
+          const redirect = searchParams.get("redirect");
+          router.push(redirect || "/dashboard");
         }
       })
       .catch((err) => {

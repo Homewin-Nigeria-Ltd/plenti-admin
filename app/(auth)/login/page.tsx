@@ -1,5 +1,6 @@
 import LoginForm from "@/components/auth/LoginForm";
 import Image from "next/image";
+import { Suspense } from "react";
 
 const LoginPage = () => {
   return (
@@ -21,7 +22,9 @@ const LoginPage = () => {
           Welcome Back! Please enter your credentials to access your account and
           continue managing your business effortlessly.
         </p>
-        <LoginForm />
+        <Suspense fallback={<div>Loading...</div>}>
+          <LoginForm />
+        </Suspense>
         <p className="text-[16px] font-normal text-secondary/50 text-center mt-3">
           Forgot Password?{" "}
           <span className="underline text-primary cursor-pointer">
