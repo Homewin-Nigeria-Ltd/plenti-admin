@@ -27,6 +27,8 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
+import { EditInventoryModal } from "./EditInventoryModal";
+import { DeleteInventoryModal } from "./DeleteInventoryModal";
 
 type InventoryTableProps = {
   items: InventoryItem[];
@@ -55,6 +57,11 @@ export default function InventoryTable({
   warehouses,
   onAddStockClick,
 }: InventoryTableProps) {
+  const [selectedItem, setSelectedItem] = React.useState<InventoryItem | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [itemToDelete, setItemToDelete] = React.useState<InventoryItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   const getStatusBadgeClass = (status: InventoryStatus) => {
@@ -128,8 +135,21 @@ export default function InventoryTable({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem className="text-danger-500">Delete</DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setSelectedItem(item);
+              setIsEditModalOpen(true);
+            }}>
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-danger-500"
+            onClick={() => {
+              setItemToDelete(item);
+              setIsDeleteModalOpen(true);
+            }}>
+            Delete
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     ),
@@ -268,6 +288,26 @@ export default function InventoryTable({
           </div>
         </div>
       )}
+      <EditInventoryModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedItem(null);
+        }}
+        item={selectedItem}
+        warehouses={warehouses}
+      />
+      <DeleteInventoryModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        item={itemToDelete}
+        onConfirm={() => {
+          console.log("Delete inventory item:", itemToDelete?.id);
+        }}
+      />
     </div>
   );
 }

@@ -18,8 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { X, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type AddNewStockModalProps = {
   isOpen: boolean;
@@ -31,7 +38,7 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
   const [supplierName, setSupplierName] = React.useState("");
   const [warehouse, setWarehouse] = React.useState("");
   const [quantity, setQuantity] = React.useState("");
-  const [expiryDate, setExpiryDate] = React.useState("");
+  const [expiryDate, setExpiryDate] = React.useState<Date | undefined>(undefined);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +47,7 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
       supplierName,
       warehouse,
       quantity,
-      expiryDate,
+      expiryDate: expiryDate ? expiryDate.toISOString().split("T")[0] : "",
     });
     toast.success("Product added successfully");
     onClose();
@@ -48,7 +55,7 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
     setSupplierName("");
     setWarehouse("");
     setQuantity("");
-    setExpiryDate("");
+    setExpiryDate(undefined);
   };
 
   return (
@@ -131,13 +138,36 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
 
             <div className="space-y-2">
               <Label htmlFor="expiryDate">Expiry Data</Label>
-              <Input
-                id="expiryDate"
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                className="form-control"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="expiryDate"
+                    variant="outline"
+                    className={cn(
+                      "form-control w-full justify-start text-left font-normal",
+                      !expiryDate && "text-neutral-500"
+                    )}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expiryDate ? (
+                      expiryDate.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={setExpiryDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
