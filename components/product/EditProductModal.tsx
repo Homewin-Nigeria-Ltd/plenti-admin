@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import type { Product, ProductCategory } from "@/data/products";
 import { toast } from "sonner";
 
@@ -117,14 +117,21 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
+      <DialogContent className="max-h-[90vh] flex flex-col p-0 w-[95vw] !max-w-[557px] sm:!w-[557px] sm:!max-w-[557px]" showCloseButton={false}>
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100 relative">
           <DialogTitle className="text-2xl font-semibold">
             Edit Product
           </DialogTitle>
           <DialogDescription className="text-sm text-neutral-500">
             Update product information
           </DialogDescription>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="absolute top-6 right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
+          </button>
         </DialogHeader>
 
         <form id="edit-product-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
@@ -135,7 +142,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
               placeholder="Product Name"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
-              className="focus-visible:ring-0"
+              className="form-control"
               required
             />
           </div>
@@ -147,7 +154,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
               placeholder="Product Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-0 resize-none"
+              className="form-control w-full !h-auto min-h-[100px] resize-none"
               required
             />
           </div>
@@ -159,7 +166,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
                 setCategory(value as ProductCategory);
                 setSubCategory("");
               }}>
-                <SelectTrigger id="edit-category" className="w-full focus-visible:ring-0">
+                <SelectTrigger id="edit-category" className="form-control !w-full">
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -178,7 +185,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
                 value={subCategory}
                 onValueChange={setSubCategory}
                 disabled={!category}>
-                <SelectTrigger id="edit-subCategory" className="w-full focus-visible:ring-0">
+                <SelectTrigger id="edit-subCategory" className="form-control !w-full">
                   <SelectValue placeholder="Select Sub Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -201,7 +208,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
                 placeholder="Enter Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="focus-visible:ring-0"
+                className="form-control"
                 required
               />
             </div>
@@ -214,7 +221,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
                 placeholder="Initial Stock Quantity"
                 value={initialStock}
                 onChange={(e) => setInitialStock(e.target.value)}
-                className="focus-visible:ring-0"
+                className="form-control"
                 required
               />
             </div>
@@ -229,7 +236,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
                 placeholder="Min Bulk Quantity"
                 value={minBulkQuantity}
                 onChange={(e) => setMinBulkQuantity(e.target.value)}
-                className="focus-visible:ring-0"
+                className="form-control"
                 required
               />
             </div>
@@ -242,7 +249,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
                 placeholder="Bulk Price"
                 value={bulkPrice}
                 onChange={(e) => setBulkPrice(e.target.value)}
-                className="focus-visible:ring-0"
+                className="form-control"
                 required
               />
             </div>
@@ -295,7 +302,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
         </form>
 
         <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
-          <Button type="submit" form="edit-product-form" className="bg-primary hover:bg-primary/90 w-full">
+          <Button type="submit" form="edit-product-form" className="btn btn-primary w-full">
             Update Product
           </Button>
         </div>

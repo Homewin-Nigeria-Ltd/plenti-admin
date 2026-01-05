@@ -148,15 +148,20 @@
   }
 
   .form-control {
-    @apply !h-[56px] !rounded-md pt-4 pr-4 pb-4 pl-4 !border !border-[#D0D5DD] outline-none focus:!border-[#2E5CDB] focus:!border focus-visible:!border-[#2E5CDB] focus-visible:!border focus-visible:!ring-0;
+    @apply !h-[53px] !rounded-md pt-4 pr-4 pb-4 pl-4 !border !border-[#D0D5DD] outline-none focus:!border-[#2E5CDB] focus:!border focus-visible:!border-[#2E5CDB] focus-visible:!border focus-visible:!ring-0;
   }
 
   .form-control:disabled {
     @apply !bg-neutral-50 !text-neutral-500 !cursor-not-allowed;
   }
 
-  .btn-group-item {
-    @apply w-full sm:w-1/2;
+  [data-slot="select-trigger"].form-control,
+  .form-control[data-slot="select-trigger"] {
+    height: 53px !important;
+  }
+
+  .btn {
+    @apply !h-[53px] px-4 py-2 font-medium text-sm sm:text-base transition-colors whitespace-nowrap rounded-md flex items-center justify-center;
   }
 
   .btn-outline {
@@ -164,11 +169,56 @@
   }
 
   .btn-primary {
-    @apply bg-primary hover:bg-primary/90 text-white;
+    @apply !bg-primary hover:!bg-primary/90 !text-white;
+  }
+
+  .btn-success,
+  button.btn-success,
+  [data-slot="button"].btn-success,
+  button[data-slot="button"].btn-success {
+    background-color: #0F973D !important;
+    color: white !important;
+  }
+
+  .btn-success:hover,
+  button.btn-success:hover,
+  [data-slot="button"].btn-success:hover,
+  button[data-slot="button"].btn-success:hover {
+    background-color: #0d7d33 !important;
+  }
+
+  .btn-danger,
+  button.btn-danger,
+  [data-slot="button"].btn-danger,
+  button[data-slot="button"].btn-danger {
+    background-color: rgb(220 38 38) !important;
+    color: white !important;
+  }
+
+  .btn-danger:hover,
+  button.btn-danger:hover,
+  [data-slot="button"].btn-danger:hover,
+  button[data-slot="button"].btn-danger:hover {
+    background-color: rgb(185 28 28) !important;
+  }
+
+  .btn-neutral,
+  button.btn-neutral,
+  [data-slot="button"].btn-neutral,
+  button[data-slot="button"].btn-neutral {
+    background-color: rgb(163 163 163) !important;
+    color: white !important;
+  }
+
+  .btn-neutral:hover,
+  button.btn-neutral:hover,
+  [data-slot="button"].btn-neutral:hover,
+  button[data-slot="button"].btn-neutral:hover {
+    background-color: rgb(115 115 115) !important;
   }
 
   .btn-secondary {
-    @apply px-4 py-2 font-medium text-sm sm:text-base transition-colors whitespace-nowrap rounded-md bg-transparent text-neutral-500 hover:bg-neutral-50;
+    @apply bg-transparent text-neutral-500 hover:bg-neutral-50;
   }
 }
 

@@ -116,7 +116,7 @@ export default function PasswordManagement() {
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button className="btn-group-item btn-primary" onClick={handleUpdatePassword}>
+            <Button className="btn btn-group-item btn-primary" onClick={handleUpdatePassword}>
               Update Password
             </Button>
           </div>

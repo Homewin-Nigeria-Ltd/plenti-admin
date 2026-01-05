@@ -72,7 +72,7 @@ export default function PersonalInformation() {
               <div className="flex flex-col gap-2">
                 <Button 
                   variant="outline" 
-                  className="border-primary text-primary w-full sm:w-auto justify-center"
+                  className="btn-outline w-full sm:w-auto justify-center"
                   onClick={handleChangePhotoClick}
                   type="button">
                   <Upload className="size-4 mr-2" />
@@ -80,7 +80,7 @@ export default function PersonalInformation() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-red-500 text-red-500 hover:bg-red-50 w-full sm:w-auto justify-center"
+                  className="btn border-red-500 text-red-500 hover:bg-red-50 w-full sm:w-auto justify-center"
                   onClick={handleRemoveImage}
                   type="button">
                   <X className="size-4 mr-2" />
@@ -91,7 +91,7 @@ export default function PersonalInformation() {
               <div className="flex flex-col gap-2">
                 <Button 
                   variant="outline" 
-                  className="border-primary text-primary w-full sm:w-auto justify-center"
+                  className="btn-outline w-full sm:w-auto justify-center"
                   onClick={handleChangePhotoClick}
                   type="button">
                   Change Photo
@@ -198,10 +198,10 @@ export default function PersonalInformation() {
             </div>
 
             <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-4">
-              <Button variant="outline" className="btn-group-item btn-outline">
-                Cancel
+              <Button variant="outline" className="btn btn-group-item btn-outline">
+              Cancel
               </Button>
-              <Button className="btn-group-item btn-primary" onClick={handleSaveChanges}>
+              <Button className="btn btn-group-item btn-primary" onClick={handleSaveChanges}>
                 Save Changes
               </Button>
             </div>

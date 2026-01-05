@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import type { ProductCategory } from "@/data/products";
 import { toast } from "sonner";
 
@@ -98,14 +98,21 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 w-[95vw] sm:w-full">
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100">
+      <DialogContent className="max-h-[90vh] flex flex-col p-0 w-[95vw] !max-w-[557px] sm:!w-[557px] sm:!max-w-[557px]" showCloseButton={false}>
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
           <DialogTitle className="text-xl sm:text-2xl font-semibold">
             Create New Product
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-neutral-500">
             Create a new product listing
           </DialogDescription>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
+          </button>
         </DialogHeader>
 
         <form id="create-product-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6">
@@ -116,7 +123,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
               placeholder="Product Name"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
-              className="focus-visible:ring-0"
+              className="form-control"
               required
             />
           </div>
@@ -128,7 +135,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
               placeholder="Product Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-0 resize-none"
+              className="form-control w-full !h-auto min-h-[100px] resize-none"
               required
             />
           </div>
@@ -140,7 +147,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
                 setCategory(value as ProductCategory);
                 setSubCategory("");
               }}>
-                <SelectTrigger id="category" className="w-full focus-visible:ring-0">
+                <SelectTrigger id="category" className="form-control !w-full">
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -159,7 +166,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
                 value={subCategory}
                 onValueChange={setSubCategory}
                 disabled={!category}>
-                <SelectTrigger id="subCategory" className="w-full focus-visible:ring-0">
+                <SelectTrigger id="subCategory" className="form-control !w-full">
                   <SelectValue placeholder="Select Sub Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -182,7 +189,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
                 placeholder="Enter Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="focus-visible:ring-0"
+                className="form-control"
                 required
               />
             </div>
@@ -195,7 +202,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
                 placeholder="Initial Stock Quantity"
                 value={initialStock}
                 onChange={(e) => setInitialStock(e.target.value)}
-                className="focus-visible:ring-0"
+                className="form-control"
                 required
               />
             </div>
@@ -210,7 +217,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
                 placeholder="Min Bulk Quantity"
                 value={minBulkQuantity}
                 onChange={(e) => setMinBulkQuantity(e.target.value)}
-                className="focus-visible:ring-0"
+                className="form-control"
                 required
               />
             </div>
@@ -223,7 +230,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
                 placeholder="Bulk Price"
                 value={bulkPrice}
                 onChange={(e) => setBulkPrice(e.target.value)}
-                className="focus-visible:ring-0"
+                className="form-control"
                 required
               />
             </div>
@@ -272,7 +279,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
         </form>
 
         <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
-          <Button type="submit" form="create-product-form" className="bg-primary hover:bg-primary/90 w-full">
+          <Button type="submit" form="create-product-form" className="btn btn-primary w-full">
             Create New Product
           </Button>
         </div>

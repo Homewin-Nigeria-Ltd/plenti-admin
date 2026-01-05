@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { UserX } from "lucide-react";
+import { UserX, X } from "lucide-react";
 import { toast } from "sonner";
 
 type SuspendUserModalProps = {
@@ -30,8 +30,17 @@ export function SuspendUserModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full">
-        <DialogTitle className="sr-only">Suspend User Confirmation</DialogTitle>
+      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full" showCloseButton={false}>
+        <div className="relative">
+          <DialogTitle className="sr-only">Suspend User Confirmation</DialogTitle>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="absolute top-0 right-0 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            <X color="#0B1E66" size={20} cursor="pointer" />
+          </button>
+        </div>
         <div className="space-y-4 sm:space-y-6">
           <div className="flex flex-col items-center gap-4">
             <div className="size-16 rounded-full bg-neutral-400/10 flex items-center justify-center">
@@ -47,13 +56,14 @@ export function SuspendUserModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-neutral-200 text-neutral-700 hover:bg-neutral-50 order-2 sm:order-1">
+              className="btn btn-outline flex-1 order-2 sm:order-1">
               Cancel
             </Button>
             <Button
               type="button"
+              variant={undefined}
               onClick={handleSuspend}
-              className="flex-1 bg-neutral-400 hover:bg-neutral-500 text-white order-1 sm:order-2">
+              className="btn btn-neutral flex-1 order-1 sm:order-2">
               Suspend
             </Button>
           </div>
