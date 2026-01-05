@@ -39,6 +39,7 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
   const [warehouse, setWarehouse] = React.useState("");
   const [quantity, setQuantity] = React.useState("");
   const [expiryDate, setExpiryDate] = React.useState<Date | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +139,7 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
 
             <div className="space-y-2">
               <Label htmlFor="expiryDate">Expiry Data</Label>
-              <Popover>
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     id="expiryDate"
@@ -163,7 +164,10 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
                   <Calendar
                     mode="single"
                     selected={expiryDate}
-                    onSelect={setExpiryDate}
+                    onSelect={(date) => {
+                      setExpiryDate(date);
+                      setIsDatePickerOpen(false);
+                    }}
                     initialFocus
                   />
                 </PopoverContent>

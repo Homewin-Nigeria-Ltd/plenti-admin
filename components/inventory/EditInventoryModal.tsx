@@ -50,6 +50,7 @@ export function EditInventoryModal({
   const [status, setStatus] = React.useState<InventoryStatus | "">("");
   const [batch, setBatch] = React.useState("");
   const [supplier, setSupplier] = React.useState("");
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (item) {
@@ -148,7 +149,7 @@ export function EditInventoryModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-expiryDate">Expiry Date</Label>
-              <Popover>
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     id="edit-expiryDate"
@@ -173,7 +174,10 @@ export function EditInventoryModal({
                   <Calendar
                     mode="single"
                     selected={expiryDate}
-                    onSelect={setExpiryDate}
+                    onSelect={(date) => {
+                      setExpiryDate(date);
+                      setIsDatePickerOpen(false);
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
