@@ -5,11 +5,21 @@ import DataTable from "@/components/common/DataTable";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { mockOrders } from "@/data/orders";
 import { OrderDetailsModal } from "./OrderDetailsModal";
+import { useOrderStore } from "@/store/useOrderStore";
+import { OrderStatus } from "@/types/OrderTypes";
 
 export default function OrderTableWrapper() {
+  const { fetchOrders, orders, setSingleOrder } = useOrderStore();
+
+  console.log("Orders data in component =>", orders);
+
   const [open, setOpen] = React.useState(false);
+  const [selectedId, setSelectedId] = React.useState<number | null>(null);
+
+  // React.useEffect(() => {
+  //   fetchOrders();
+  // }, [fetchOrders]);
 
   const columns = [
     { key: "date", label: "Order Date" },
@@ -27,43 +37,42 @@ export default function OrderTableWrapper() {
       minimumFractionDigits: 2,
     }).format(n);
 
-  const statusChip = (
-    status: "Successful" | "Pending" | "Processing" | "Cancelled"
-  ) => {
+  const statusChip = (status: OrderStatus) => {
     const colorMap = {
-      Successful: "bg-green-100 text-green-700",
-      Pending: "bg-gray-100 text-gray-700",
-      Processing: "bg-yellow-100 text-yellow-700",
-      Cancelled: "bg-red-100 text-red-700",
+      SUCCESSFUL: "bg-green-100 text-green-700",
+      PENDING: "bg-gray-100 text-gray-700",
+      PROCESSING: "bg-yellow-100 text-yellow-700",
+      CANCELLED: "bg-red-100 text-red-700",
     };
     return (
       <span
-        className={`px-3 py-1 rounded-full text-xs font-medium ${colorMap[status]}`}>
+        className={`px-3 py-1 rounded-full text-xs font-medium ${colorMap[status]}`}
+      >
         {status}
       </span>
     );
   };
 
-  const rows = mockOrders.map((o) => {
-    const initial = o.customerName?.charAt(0)?.toUpperCase() || "-";
+  const rows = orders.map((o) => {
+    // const initial = o.customerName?.charAt(0)?.toUpperCase() || "-";
     return {
-      date: o.date,
+      // date: o.date,
       id: o.id,
       customer: (
         <div className="flex items-center gap-3">
           <Avatar className="size-8">
             <AvatarFallback className="bg-[#1F3A78] text-white">
-              {initial}
+              {/* {initial} */}
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium">{o.customerName}</p>
-            <p className="text-[#667085] text-xs">{o.customerEmail}</p>
+            {/* <p className="font-medium">{o.customerName}</p> */}
+            {/* <p className="text-[#667085] text-xs">{o.customerEmail}</p> */}
           </div>
         </div>
       ),
-      value: formatCurrency(o.value),
-      qty: o.qty,
+      value: formatCurrency(o.totalAmount),
+      // qty: o.qty,
       status: statusChip(o.status),
     };
   });
@@ -80,9 +89,19 @@ export default function OrderTableWrapper() {
       <DataTable
         columns={columns}
         rows={rows}
-        onRowClick={() => setOpen(true)}
+        onRowClick={async (order) => {
+          await setSelectedId(order.id);
+          setOpen(true);
+        }}
       />
-      <OrderDetailsModal isOpen={open} onClose={() => setOpen(false)} />
+      <OrderDetailsModal
+        selectedId={selectedId}
+        isOpen={open}
+        onClose={() => {
+          setSingleOrder();
+          setOpen(false);
+        }}
+      />
     </div>
   );
 }

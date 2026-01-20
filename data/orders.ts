@@ -1,14 +1,4 @@
-export type OrderStatus = "Successful" | "Pending" | "Processing" | "Cancelled";
-
-export type Order = {
-  date: string;
-  id: string;
-  customerName: string;
-  customerEmail: string;
-  value: number;
-  qty: number;
-  status: OrderStatus;
-};
+import { Order } from "@/types/OrderTypes";
 
 export const mockOrders: Order[] = [
   {

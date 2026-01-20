@@ -1,47 +1,46 @@
 "use client";
 
-import * as React from "react";
 import DataTable from "@/components/common/DataTable";
 import { Input } from "@/components/ui/input";
+import { useMarketingStore } from "@/store/useMarketingStore";
+import { Banner, BannerStatus } from "@/types/MarketingTypes";
 import { Filter } from "lucide-react";
 import Image from "next/image";
-import { mockBanners, type Banner } from "@/data/banners";
+import * as React from "react";
 import { BannerDetailsModal } from "./BannerDetailsModal";
-
-const StatusBadge = ({
-  status,
-}: {
-  status: "Active Ad" | "Inactive Ad";
-}) => {
-  const isActive = status === "Active Ad";
-  return (
-    <span
-      className={`px-3 py-1 rounded-full text-xs font-medium ${
-        isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-      }`}
-    >
-      {status}
-    </span>
-  );
-};
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export default function BannersContent() {
+  const { fetchMarketingBanners, banners, loadingBanners } =
+    useMarketingStore();
+
+  console.log("Banners data in banner content component =>", banners);
+
+  // LOCAL STATES
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedBanner, setSelectedBanner] = React.useState<Banner | null>(
     null
   );
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  const filteredBanners = React.useMemo(() => {
-    if (!searchQuery) return mockBanners;
-    const query = searchQuery.toLowerCase();
-    return mockBanners.filter(
-      (banner) =>
-        banner.heading.toLowerCase().includes(query) ||
-        banner.subHeading.toLowerCase().includes(query) ||
-        banner.screenLocation.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
+  // FETCH MARKETING BANNERS ON MOUNT
+  // React.useEffect(() => {
+  //   // FETCH BANNERS ONLY WHEN THERE ARE NO BANNERS
+  //   if (banners?.length === 0) {
+  //     fetchMarketingBanners();
+  //   }
+  // }, [fetchMarketingBanners, banners]);
+
+  // const filteredBanners = React.useMemo(() => {
+  //   if (!searchQuery) return mockBanners;
+  //   const query = searchQuery.toLowerCase();
+  //   return mockBanners.filter(
+  //     (banner) =>
+  //       banner.heading.toLowerCase().includes(query) ||
+  //       banner.subHeading.toLowerCase().includes(query) ||
+  //       banner.screenLocation.toLowerCase().includes(query)
+  //   );
+  // }, [searchQuery]);
 
   const columns = [
     { key: "createdDate", label: "Created Date" },
@@ -55,37 +54,34 @@ export default function BannersContent() {
     { key: "status", label: "Status" },
   ];
 
-  const rows = filteredBanners.map((banner) => ({
+  const rows = banners.map((banner) => ({
     ...banner,
-    createdDate: banner.createdDate,
+    createdDate: banner.startDate,
     image: (
       <div className="flex items-center">
-        <Image
-          src={banner.imageUrl}
-          alt={banner.imageAlt}
-          width={60}
-          height={40}
-          className="rounded object-cover"
-        />
+        <Avatar>
+          <AvatarImage src={banner.imageUrl} alt={banner.title} />
+          <AvatarFallback>{banner.title[0]}</AvatarFallback>
+        </Avatar>
       </div>
     ),
-    heading: <span className="font-medium">{banner.heading}</span>,
-    subHeading: <span className="text-[#667085]">{banner.subHeading}</span>,
+    heading: <span className="font-medium">{banner.title}</span>,
+    subHeading: <span className="text-[#667085]">{banner.title}</span>,
     link: (
       <span className="text-[#667085] text-sm truncate max-w-[150px] block">
-        {banner.link}
+        {banner.targetUrl}
       </span>
     ),
-    screenLocation: banner.screenLocation,
-    sort: banner.sort,
-    type: banner.type,
+    screenLocation: "",
+    sort: 1,
+    type: "",
     status: <StatusBadge status={banner.status} />,
   }));
 
   const handleRowClick = (
-    row: Record<string, React.ReactNode> & { id: string }
+    row: Record<string, React.ReactNode> & { title: string }
   ) => {
-    const banner = filteredBanners.find((b) => b.id === row.id);
+    const banner = banners.find((b) => b.title === row.tile);
     if (banner) {
       setSelectedBanner(banner);
       setIsModalOpen(true);
@@ -116,11 +112,11 @@ export default function BannersContent() {
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={rows}
-        onRowClick={handleRowClick}
-      />
+      {!loadingBanners && banners?.length > 0 ? (
+        <DataTable columns={columns} rows={rows} onRowClick={handleRowClick} />
+      ) : (
+        <p className="text-center my-5">No Banners Available </p>
+      )}
 
       <BannerDetailsModal
         isOpen={isModalOpen}
@@ -134,3 +130,15 @@ export default function BannersContent() {
   );
 }
 
+const StatusBadge = ({ status }: { status: BannerStatus }) => {
+  const isActive = status === "ACTIVE";
+  return (
+    <span
+      className={`px-3 py-1 rounded-full text-xs font-medium ${
+        isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+      }`}
+    >
+      {status}
+    </span>
+  );
+};

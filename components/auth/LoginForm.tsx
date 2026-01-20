@@ -46,24 +46,26 @@ const LoginForm = () => {
   });
 
   function onSubmit(values: LoginFormSchema) {
-    login(values)
-      .then((res) => {
-        if (res) {
-          toast.success("Login successful", {
-            description: "You are now logged in",
-          });
-          // Redirect to the original page or dashboard
-          const redirect = searchParams.get("redirect");
-          router.push(redirect || "/dashboard");
-        }
-      })
-      .catch((err) => {
-        const errorMessage =
-          err instanceof Error ? err.message : "Please check your credentials";
-        toast.error("Login failed", {
-          description: errorMessage,
-        });
-      });
+    // login(values)
+    //   .then((res) => {
+    //     if (res) {
+    //       toast.success("Login successful", {
+    //         description: "You are now logged in",
+    //       });
+    //       // Redirect to the original page or dashboard
+    //       const redirect = searchParams.get("redirect");
+    //       router.push(redirect || "/dashboard");
+    //     }
+    //   })
+    //   .catch((err) => {
+    //     const errorMessage =
+    //       err instanceof Error ? err.message : "Please check your credentials";
+    //     toast.error("Login failed", {
+    //       description: errorMessage,
+    //     });
+    //   });
+    const redirect = searchParams.get("redirect");
+    router.push(redirect || "/dashboard");
   }
   return (
     <Form {...form}>

@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { type Banner } from "@/data/banners";
+import { Banner } from "@/types/MarketingTypes";
 
 interface BannerDetailsModalProps {
   isOpen: boolean;
@@ -31,9 +31,9 @@ export function BannerDetailsModal({
 }: BannerDetailsModalProps) {
   if (!banner) return null;
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("en-US").format(num);
-  };
+  // const formatNumber = (num: number) => {
+  //   return new Intl.NumberFormat("en-US").format(num);
+  // };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -45,14 +45,14 @@ export function BannerDetailsModal({
           <div className="flex items-start justify-between gap-4 pr-12">
             <div className="flex-1">
               <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
-                {banner.heading}
+                {banner.title}
               </DialogTitle>
               <DialogDescription className="text-[#667085] text-base font-normal">
-                {banner.subHeading}
+                {/* {banner.subHeading} */}
               </DialogDescription>
             </div>
-            <div className="text-right text-sm text-[#667085] whitespace-nowrap flex-shrink-0">
-              Date Created: {banner.createdDate}
+            <div className="text-right text-sm text-[#667085] whitespace-nowrap shrink-0">
+              Date Created: {banner.startDate}
             </div>
           </div>
 
@@ -96,12 +96,12 @@ export function BannerDetailsModal({
           {/* Link */}
           <div>
             <a
-              href={banner.link}
+              href={banner.targetUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#1F3A78] hover:underline text-sm font-medium break-all"
             >
-              {banner.link}
+              {banner.targetUrl}
             </a>
           </div>
 
@@ -114,14 +114,14 @@ export function BannerDetailsModal({
                   Screen Location
                 </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {banner.screenLocation}
+                  {/* {banner.screenLocation} */}
                 </p>
               </div>
 
               <div>
                 <p className="text-[#667085] text-sm font-medium mb-1">Type</p>
                 <p className="text-[#101928] text-base font-medium">
-                  {banner.type === "Full-Page" ? "Full-page" : banner.type}
+                  {/* {banner.type === "Full-Page" ? "Full-page" : banner.type} */}
                 </p>
               </div>
 
@@ -130,9 +130,9 @@ export function BannerDetailsModal({
                   Number of Clicks
                 </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {banner.numberOfClicks
+                  {/* {banner.numberOfClicks
                     ? formatNumber(banner.numberOfClicks)
-                    : "0"}
+                    : "0"} */}
                 </p>
               </div>
             </div>
@@ -144,14 +144,16 @@ export function BannerDetailsModal({
                   Click Per Day
                 </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {banner.clicksPerDay ? formatNumber(banner.clicksPerDay) : "0"}
+                  {/* {banner.clicksPerDay
+                    ? formatNumber(banner.clicksPerDay)
+                    : "0"} */}
                 </p>
               </div>
 
               <div>
                 <p className="text-[#667085] text-sm font-medium mb-1">Sort</p>
                 <p className="text-[#101928] text-base font-medium">
-                  {banner.sort}
+                  {/* {banner.sort} */}
                 </p>
               </div>
             </div>
@@ -161,4 +163,3 @@ export function BannerDetailsModal({
     </Dialog>
   );
 }
-
