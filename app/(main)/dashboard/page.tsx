@@ -2,13 +2,19 @@
 
 import * as React from "react";
 import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
+import RevenueOverview from "@/components/dashboard/RevenueOverview";
+import MetricCard from "@/components/dashboard/MetricCard";
+import TopProducts from "@/components/dashboard/TopProducts";
+import BestSellingCategory from "@/components/dashboard/BestSellingCategory";
+import CartMetrics from "@/components/dashboard/CartMetrics";
+import OrderTableWrapper from "@/components/order/OrderTableWrapper";
 
 const DashboardPage = () => {
   // Mock trend data for each metric (simulating the wavy line graphs)
-  const revenueTrend = [20, 25, 22, 28, 25, 30, 28, 32, 30, 35, 32, 38];
-  const ordersTrend = [100, 120, 110, 130, 125, 140, 135, 150, 145, 160, 155, 170];
-  const usersTrend = [10, 12, 11, 13, 12, 14, 13, 15, 14, 16, 15, 17];
-  const conversionTrend = [25, 26, 25.5, 27, 26.5, 27.5, 27, 28, 27.5, 28.5, 28, 29];
+  const revenueTrend = [20, 5, 30];
+  const ordersTrend = [100, 79, 20];
+  const usersTrend = [10, 50, 110];
+  const conversionTrend = [25, 70, 75];
 
   const stats = [
     {
@@ -55,6 +61,35 @@ const DashboardPage = () => {
           />
         ))}
       </div>
+
+      <RevenueOverview />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <MetricCard
+          title="Total Deliveries"
+          value="45,678"
+          changePercent={10}
+        />
+        <MetricCard
+          title="Today's Revenue"
+          value="₦234,500"
+          changePercent={10}
+        />
+        <MetricCard title="Number of Products" value="678" changePercent={10} />
+        <MetricCard
+          title="Top Weekly Category"
+          value="Instant Foods"
+          changePercent={10}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <TopProducts />
+        <BestSellingCategory />
+        <CartMetrics />
+      </div>
+
+      <OrderTableWrapper />
     </div>
   );
 };
