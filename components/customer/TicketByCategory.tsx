@@ -48,7 +48,9 @@ export default function TicketByCategory() {
   return (
     <div className="bg-white rounded-xl border border-[#EEF1F6] p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[#0B1E66] text-lg font-semibold">Ticket by Category</h3>
+        <h3 className="text-[#0B1E66] text-lg font-semibold">
+          Ticket by Category
+        </h3>
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-[120px] h-9 border-[#D0D5DD]">
             <SelectValue />
@@ -86,7 +88,11 @@ export default function TicketByCategory() {
             layout="vertical"
             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#EEF1F6" horizontal={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#EEF1F6"
+              horizontal={false}
+            />
             <XAxis
               type="number"
               domain={[0, 200000]}
@@ -105,7 +111,7 @@ export default function TicketByCategory() {
               width={120}
             />
             <Tooltip
-              formatter={(value: number) => formatValue(value)}
+              formatter={(value: number | undefined) => formatValue(value ?? 0)}
               contentStyle={{
                 borderRadius: 8,
                 border: "1px solid #EEF1F6",
