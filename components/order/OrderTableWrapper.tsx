@@ -23,10 +23,10 @@ export default function OrderTableWrapper() {
     const query = searchQuery.toLowerCase();
     return mockOrders.filter(
       (order) =>
-        order.id.toLowerCase().includes(query) ||
-        order.customerName.toLowerCase().includes(query) ||
-        order.customerEmail.toLowerCase().includes(query) ||
-        order.status.toLowerCase().includes(query)
+        order.id.toString().toLowerCase().includes(query) ||
+        // order.customerName?.toLowerCase().includes(query) ||
+        // order.customerEmail?.toLowerCase().includes(query) ||
+        order.status?.toLowerCase().includes(query)
     );
   }, [searchQuery]);
 

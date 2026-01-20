@@ -1,19 +1,21 @@
 import { Order } from "@/types/OrderTypes";
 
-export const mockOrders: Order[] = [
+export const mockOrders = [
   {
     date: "Apr 12, 2023 | 09:32AM",
-    id: "#0001",
-    customerName: "Muhammad Lawan",
+    id: 1,
+    firstName: "Muhammad",
+    lastName: "Lawan",
     customerEmail: "thekdfisher@email.com",
     value: 2300,
     qty: 30,
-    status: "Successful",
+    status: "SUCCESSFUL",
   },
   {
     date: "Apr 12, 2023 | 09:32AM",
     id: "#0001",
-    customerName: "Rahma Rabiu",
+    customerName: "Minabo Dokubo",
+
     customerEmail: "thekdfisher@email.com",
     value: 2300,
     qty: 1,
