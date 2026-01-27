@@ -11,6 +11,18 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.plenti",
       },
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+      },
+      {
+        protocol: "http",
+        hostname: "plenti-laravel.staging-api.motopayng.com",
+      },
+      {
+        protocol: "https",
+        hostname: "devmotopaymp.obs.af-south-1.myhuaweicloud.com",
+      },
     ],
   },
 };

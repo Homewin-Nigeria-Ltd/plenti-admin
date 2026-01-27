@@ -19,7 +19,7 @@ type Product = {
   imageUrl?: string;
 };
 
-const mockProducts: Product[] = [
+const bestSellingCategories: Product[] = [
   {
     rank: 1,
     name: "Mr. Chef Salt",
@@ -85,7 +85,7 @@ export default function BestSellingCategory() {
       </div>
 
       <div className="space-y-4">
-        {mockProducts.map((product) => (
+        {bestSellingCategories.map((product) => (
           <div
             key={product.rank}
             className="flex items-center gap-4 py-3 hover:bg-[#F9FAFB] rounded-lg transition-colors"

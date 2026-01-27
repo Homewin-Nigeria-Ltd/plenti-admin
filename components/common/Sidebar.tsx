@@ -18,6 +18,10 @@ const Sidebar = () => {
     try {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
       });
 
       if (response.ok) {

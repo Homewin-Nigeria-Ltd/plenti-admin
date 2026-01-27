@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Upload, X } from "lucide-react";
 import type { Product, ProductCategory } from "@/data/products";
+import { ALL_PRODUCTS_CATEGORY } from "@/data/products";
 import { toast } from "sonner";
 
 type EditProductModalProps = {
@@ -35,7 +36,7 @@ const categories: ProductCategory[] = [
   "Health & Wellness",
 ];
 
-const subCategories: Record<Exclude<ProductCategory, "All Product">, string[]> = {
+const subCategories: Record<string, string[]> = {
   "Food & Beverages": ["Food", "Beverages", "Snacks"],
   "Personal Care & Hygiene": ["Hygiene", "Oral Care", "Skincare"],
   "Household Care": ["Cleaning", "Laundry", "Kitchen"],
@@ -109,15 +110,14 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
     onClose();
   };
 
-  const availableSubCategories = category && category !== "All Product" 
-    ? subCategories[category as Exclude<ProductCategory, "All Product">] 
-    : [];
+  const availableSubCategories =
+    category && category !== ALL_PRODUCTS_CATEGORY ? subCategories[category] ?? [] : [];
 
   if (!product) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] flex flex-col p-0 w-[95vw] !max-w-[557px] sm:!w-[557px] sm:!max-w-[557px]" showCloseButton={false}>
+      <DialogContent className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[557px]! sm:w-[557px]! sm:max-w-[557px]!" showCloseButton={false}>
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100 relative">
           <DialogTitle className="text-2xl font-semibold">
             Edit Product
@@ -154,7 +154,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
               placeholder="Product Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="form-control w-full !h-auto min-h-[100px] resize-none"
+              className="form-control w-full h-auto! min-h-[100px] resize-none"
               required
             />
           </div>
@@ -166,7 +166,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
                 setCategory(value as ProductCategory);
                 setSubCategory("");
               }}>
-                <SelectTrigger id="edit-category" className="form-control !w-full">
+                <SelectTrigger id="edit-category" className="form-control w-full!">
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -185,7 +185,7 @@ export function EditProductModal({ isOpen, onClose, product }: EditProductModalP
                 value={subCategory}
                 onValueChange={setSubCategory}
                 disabled={!category}>
-                <SelectTrigger id="edit-subCategory" className="form-control !w-full">
+                <SelectTrigger id="edit-subCategory" className="form-control w-full!">
                   <SelectValue placeholder="Select Sub Category" />
                 </SelectTrigger>
                 <SelectContent>
