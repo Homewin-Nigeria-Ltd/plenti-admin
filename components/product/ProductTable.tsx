@@ -19,6 +19,7 @@ type ProductTableProps = {
   products: Product[];
   total: number;
   page: number;
+  pageCount: number;
   pageSize: number;
   onPageChange: (page: number) => void;
   formatCurrency: (n: number) => string;
@@ -28,6 +29,7 @@ export default function ProductTable({
   products,
   total,
   page,
+  pageCount,
   pageSize,
   onPageChange,
   formatCurrency,
@@ -151,6 +153,7 @@ export default function ProductTable({
           columns={columns}
           rows={tableRows}
           page={page}
+          pageCount={pageCount}
           pageSize={pageSize}
           total={total}
           onPageChange={onPageChange}
@@ -171,9 +174,6 @@ export default function ProductTable({
           setProductToDelete(null);
         }}
         product={productToDelete}
-        onConfirm={() => {
-          console.log("Delete product:", productToDelete?.id);
-        }}
       />
     </>
   );

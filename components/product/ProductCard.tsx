@@ -15,6 +15,7 @@ import { Ellipsis, ArrowRight } from "lucide-react";
 import { EditProductModal } from "./EditProductModal";
 import { DeleteProductModal } from "./DeleteProductModal";
 import { toast } from "sonner";
+import { useProductStore } from "@/store/useProductStore";
 
 type ProductCardProps = {
   product: Product;
@@ -22,9 +23,11 @@ type ProductCardProps = {
 };
 
 export default function ProductCard({ product, formatCurrency }: ProductCardProps) {
-  const [status, setStatus] = React.useState(product.status);
+  const { toggleProductStatus, togglingStatusById } = useProductStore();
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+  const isToggling = !!togglingStatusById[String(product.id)];
+  const isActive = product.status !== "Unavailable";
 
   const getStatusBadgeClass = (status: ProductStatus) => {
     switch (status) {
@@ -44,8 +47,8 @@ export default function ProductCard({ product, formatCurrency }: ProductCardProp
   return (
     <div className="bg-white rounded-xl border border-neutral-100 shadow-xs relative overflow-hidden">
       <div className="absolute top-4 left-4 z-10">
-        <span className={`badge ${getStatusBadgeClass(status)}`}>
-          {status}
+        <span className={`badge ${getStatusBadgeClass(product.status)}`}>
+          {product.status}
         </span>
       </div>
 
@@ -137,12 +140,16 @@ export default function ProductCard({ product, formatCurrency }: ProductCardProp
             <ArrowRight className="size-3 sm:size-4" />
           </button>
           <Switch 
-            checked={status === "Available"} 
-            onCheckedChange={(checked) => {
-              const newStatus = checked ? "Available" : "Unavailable";
-              setStatus(newStatus);
-              toast.success(`Product status updated to ${newStatus}`);
-            }} 
+            checked={isActive}
+            disabled={isToggling}
+            onCheckedChange={async () => {
+              const ok = await toggleProductStatus(product.id);
+              if (ok) {
+                toast.success("Product status updated");
+              } else {
+                toast.error("Failed to update product status");
+              }
+            }}
           />
         </div>
       </div>
@@ -157,9 +164,6 @@ export default function ProductCard({ product, formatCurrency }: ProductCardProp
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         product={product}
-        onConfirm={() => {
-          console.log("Delete product:", product.id);
-        }}
       />
     </div>
   );

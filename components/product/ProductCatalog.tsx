@@ -1,24 +1,35 @@
 "use client";
 
-import * as React from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockProducts } from "@/data/products";
-import { ProductCategory } from "@/data/products";
-import { Search, Plus, List, Grid } from "lucide-react";
+import { ALL_PRODUCTS_CATEGORY } from "@/data/products";
+import { useProductStore } from "@/store/useProductStore";
+import { Grid, List, Plus, Search } from "lucide-react";
+import * as React from "react";
+import { useDebounce } from "use-debounce";
+import { CreateProductModal } from "./CreateProductModal";
 import ProductGrid from "./ProductGrid";
 import ProductTable from "./ProductTable";
-import { CreateProductModal } from "./CreateProductModal";
 
 export default function ProductCatalog() {
+  const {
+    products,
+    loadingProducts,
+    fetchProducts,
+    categoryOptions,
+    currentPage,
+    lastPage,
+    totalItems,
+    perPage,
+  } = useProductStore();
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState<number | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [selectedCategory, setSelectedCategory] =
-    React.useState<ProductCategory>("All Product");
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
-  const [page, setPage] = React.useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
-  const pageSize = 10;
+  const pageSize = perPage || 20;
+  const [debouncedSearch] = useDebounce(searchQuery, 400);
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("en-NG", {
@@ -27,43 +38,19 @@ export default function ProductCatalog() {
       minimumFractionDigits: 0,
     }).format(n);
 
-  const categories: ProductCategory[] = [
-    "All Product",
-    "Food & Beverages",
-    "Personal Care & Hygiene",
-    "Household Care",
-    "Health & Wellness",
-  ];
-
-  const filteredProducts = React.useMemo(() => {
-    let filtered = mockProducts;
-
-    if (selectedCategory !== "All Product") {
-      filtered = filtered.filter((p) => p.category === selectedCategory);
-    }
-
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    return filtered;
-  }, [selectedCategory, searchQuery]);
-
+  // Fetch products when filters/search change (reset to page 1).
   React.useEffect(() => {
-    setPage(1);
-  }, [selectedCategory, searchQuery]);
+    fetchProducts({ page: 1, categoryId: selectedCategoryId, search: debouncedSearch });
+  }, [fetchProducts, selectedCategoryId, debouncedSearch]);
 
-  const paginatedProducts = React.useMemo(() => {
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredProducts.slice(startIndex, endIndex);
-  }, [filteredProducts, page, pageSize]);
-
-  const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const categories = React.useMemo(() => {
+    return [
+      { value: ALL_PRODUCTS_CATEGORY, label: ALL_PRODUCTS_CATEGORY },
+      ...categoryOptions
+        .filter((c) => c.id > 0)
+        .map((c) => ({ value: String(c.id), label: c.name })),
+    ];
+  }, [categoryOptions]);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -80,7 +67,8 @@ export default function ProductCatalog() {
         <div className="flex items-center gap-2 shrink-0">
           <Button
             className="btn btn-primary w-full sm:w-auto"
-            onClick={() => setIsCreateModalOpen(true)}>
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             <Plus className="size-4" />
             <span className="hidden sm:inline">Add New Product</span>
             <span className="sm:hidden">Add</span>
@@ -88,18 +76,89 @@ export default function ProductCatalog() {
         </div>
       </div>
 
+      {loadingProducts ? (
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-xl border border-neutral-100 shadow-xs relative overflow-hidden"
+              >
+                <Skeleton className="h-48 w-full" />
+                <div className="p-4 sm:p-5 space-y-3">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                  <div className="pt-2 border-t border-neutral-100 flex items-center justify-between gap-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-6 w-10 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-neutral-100 overflow-x-auto">
+            <div className="min-w-[720px]">
+              <div className="grid grid-cols-8 gap-4 px-4 py-3 border-b border-neutral-100">
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <Skeleton key={idx} className="h-4 w-20" />
+                ))}
+              </div>
+              {Array.from({ length: pageSize }).map((_, rowIdx) => (
+                <div
+                  key={rowIdx}
+                  className="grid grid-cols-8 gap-4 px-4 py-4 border-b border-neutral-100"
+                >
+                  {Array.from({ length: 8 }).map((_, cellIdx) => (
+                    <Skeleton key={cellIdx} className="h-4 w-full" />
+                  ))}
+                </div>
+              ))}
+              <div className="flex items-center justify-between px-4 py-3">
+                <Skeleton className="h-4 w-32" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-8 w-24 rounded-full" />
+                  <Skeleton className="h-8 w-24 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      ) : null}
+
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
           <Tabs
-            value={selectedCategory}
-            onValueChange={(value) => setSelectedCategory(value as ProductCategory)}>
+            value={
+              selectedCategoryId == null
+                ? ALL_PRODUCTS_CATEGORY
+                : String(selectedCategoryId)
+            }
+            onValueChange={(value) => {
+              if (value === ALL_PRODUCTS_CATEGORY) {
+                setSelectedCategoryId(null);
+              } else {
+                const parsed = Number(value);
+                setSelectedCategoryId(Number.isFinite(parsed) && parsed > 0 ? parsed : null);
+              }
+            }}
+          >
             <TabsList className="bg-transparent border-0 p-0 h-auto gap-2 min-w-max">
               {categories.map((category) => (
                 <TabsTrigger
-                  key={category}
-                  value={category}
-                  className="data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap">
-                  {category}
+                  key={category.value}
+                  value={category.value}
+                  className="data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap"
+                >
+                  {category.label}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -109,39 +168,50 @@ export default function ProductCatalog() {
           <Button
             variant="outline"
             size="icon"
-            className={viewMode === "list" ? "bg-primary text-primary-foreground" : ""}
-            onClick={() => setViewMode("list")}>
+            className={
+              viewMode === "list" ? "bg-primary text-primary-foreground" : ""
+            }
+            onClick={() => setViewMode("list")}
+          >
             <List className="size-4" />
           </Button>
           <Button
             variant="outline"
             size="icon"
-            className={viewMode === "grid" ? "bg-primary text-primary-foreground" : ""}
-            onClick={() => setViewMode("grid")}>
+            className={
+              viewMode === "grid" ? "bg-primary text-primary-foreground" : ""
+            }
+            onClick={() => setViewMode("grid")}
+          >
             <Grid className="size-4" />
           </Button>
         </div>
       </div>
 
-      {viewMode === "grid" ? (
+      {!loadingProducts && viewMode === "grid" ? (
         <ProductGrid
-          products={paginatedProducts}
-          total={filteredProducts.length}
-          page={page}
-          pageCount={pageCount}
-          onPageChange={setPage}
+          products={products}
+          total={totalItems}
+          page={currentPage}
+          pageCount={lastPage}
+          onPageChange={(nextPage) => {
+            fetchProducts({ page: nextPage, categoryId: selectedCategoryId, search: debouncedSearch });
+          }}
           formatCurrency={formatCurrency}
         />
-      ) : (
+      ) : !loadingProducts ? (
         <ProductTable
-          products={paginatedProducts}
-          total={filteredProducts.length}
-          page={page}
+          products={products}
+          total={totalItems}
+          page={currentPage}
+          pageCount={lastPage}
           pageSize={pageSize}
-          onPageChange={setPage}
+          onPageChange={(nextPage) => {
+            fetchProducts({ page: nextPage, categoryId: selectedCategoryId, search: debouncedSearch });
+          }}
           formatCurrency={formatCurrency}
         />
-      )}
+      ) : null}
 
       <CreateProductModal
         isOpen={isCreateModalOpen}
@@ -150,4 +220,3 @@ export default function ProductCatalog() {
     </div>
   );
 }
-

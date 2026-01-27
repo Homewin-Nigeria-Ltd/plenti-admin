@@ -6,59 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Filter } from "lucide-react";
 import Image from "next/image";
 import { mockPromoCodes } from "@/data/promoCodes";
-
-const StatusBadge = ({
-  status,
-}: {
-  status: "Approved" | "On Hold" | "Expired";
-}) => {
-  const statusStyles = {
-    Approved: "bg-green-100 text-green-700",
-    "On Hold": "bg-orange-100 text-orange-700",
-    Expired: "bg-red-100 text-red-700",
-  };
-
-  return (
-    <span
-      className={`px-3 py-1 rounded-full text-xs font-medium ${
-        statusStyles[status] || "bg-gray-100 text-gray-700"
-      }`}
-    >
-      {status}
-    </span>
-  );
-};
-
-const TypeBadge = ({ type }: { type: "Percentage" | "Fixed Amount" }) => {
-  const typeStyles = {
-    Percentage: "bg-green-100 text-green-700",
-    "Fixed Amount": "bg-orange-100 text-orange-700",
-  };
-
-  return (
-    <span
-      className={`px-3 py-1 rounded-full text-xs font-medium ${
-        typeStyles[type] || "bg-gray-100 text-gray-700"
-      }`}
-    >
-      {type}
-    </span>
-  );
-};
+import { useMarketingStore } from "@/store/useMarketingStore";
+import { PromoCodeStatus, PromoCodeType } from "@/types/MarketingTypes";
 
 export default function PromoCodeContent() {
+  const { loadingPromoCodes, promoCodes, fetchMarketingPromoCodes } =
+    useMarketingStore();
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  const filteredPromoCodes = React.useMemo(() => {
-    if (!searchQuery) return mockPromoCodes;
-    const query = searchQuery.toLowerCase();
-    return mockPromoCodes.filter(
-      (promo) =>
-        promo.code.toLowerCase().includes(query) ||
-        promo.type.toLowerCase().includes(query) ||
-        promo.status.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
+  console.log("Promo codes in promo code content component =>", promoCodes);
+
+  // FETCH PROMO CODE ON MOUNT
+  // React.useEffect(() => {
+  //   // FETCH PROMO CODE ONLY WHEN DATA IS EMPTY
+  //   if (promoCodes.length === 0) {
+  //     fetchMarketingPromoCodes();
+  //   }
+  // }, [fetchMarketingPromoCodes, promoCodes]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -78,24 +42,24 @@ export default function PromoCodeContent() {
     { key: "status", label: "Status" },
   ];
 
-  const rows = filteredPromoCodes.map((promo) => ({
+  const rows = promoCodes.map((promo) => ({
     ...promo,
-    createdDate: promo.createdDate,
+    createdDate: promo.startDate,
     code: <span className="font-medium">{promo.code}</span>,
     type: <TypeBadge type={promo.type} />,
     value: (
       <span className="text-[#101928]">
-        {promo.type === "Percentage"
+        {promo.type === "PERCENT"
           ? `${promo.value}%`
           : formatCurrency(promo.value)}
       </span>
     ),
     minOrder: (
       <span className="text-[#667085]">
-        {promo.minOrder ? formatCurrency(promo.minOrder) : "-"}
+        {promo.used ? formatCurrency(promo.used) : "-"}
       </span>
     ),
-    expiry: promo.expiry,
+    expiry: promo.endDate,
     status: <StatusBadge status={promo.status} />,
   }));
 
@@ -122,9 +86,46 @@ export default function PromoCodeContent() {
           </button>
         </div>
       </div>
-
-      <DataTable columns={columns} rows={rows} />
+      {!loadingPromoCodes && promoCodes.length > 0 ? (
+        <DataTable columns={columns} rows={rows} />
+      ) : (
+        <p className="text-center my-5">No Promo Code Available</p>
+      )}
     </div>
   );
 }
 
+const StatusBadge = ({ status }: { status: PromoCodeStatus }) => {
+  const statusStyles = {
+    ACTIVE: "bg-green-100 text-green-700",
+    // "On Hold": "bg-orange-100 text-orange-700",
+    SCHEDULED: "bg-red-100 text-red-700",
+  };
+
+  return (
+    <span
+      className={`px-3 py-1 rounded-full text-xs font-medium ${
+        statusStyles[status] || "bg-gray-100 text-gray-700"
+      }`}
+    >
+      {status}
+    </span>
+  );
+};
+
+const TypeBadge = ({ type }: { type: PromoCodeType }) => {
+  const typeStyles = {
+    PERCENT: "bg-green-100 text-green-700",
+    FIXED: "bg-orange-100 text-orange-700",
+  };
+
+  return (
+    <span
+      className={`px-3 py-1 rounded-full text-xs font-medium ${
+        typeStyles[type] || "bg-gray-100 text-gray-700"
+      }`}
+    >
+      {type}
+    </span>
+  );
+};

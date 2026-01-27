@@ -4,27 +4,31 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
-import type { User, UserStatus } from "@/data/users";
-import { mockCustomers, mockAdminUsers } from "@/data/users";
 import { AddUserModal } from "./AddUserModal";
+import DataTable from "@/components/common/DataTable";
+import { useUserStore } from "@/store/useUserStore";
+import { useDebounce } from "use-debounce";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UserManagement() {
   const router = useRouter();
   const [activeTab, setActiveTab] = React.useState<"customers" | "admin">("customers");
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [page, setPage] = React.useState(1);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = React.useState(false);
-  const pageSize = 10;
+  const [debouncedSearch] = useDebounce(searchQuery, 400);
+  const [hasRequested, setHasRequested] = React.useState(false);
+
+  const {
+    users,
+    loadingUsers,
+    currentPage,
+    lastPage,
+    perPage,
+    totalItems,
+    fetchUsers,
+  } = useUserStore();
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("en-NG", {
@@ -33,50 +37,33 @@ export default function UserManagement() {
       minimumFractionDigits: 0,
     }).format(n);
 
-  const getStatusBadgeClass = (status: UserStatus) => {
-    switch (status) {
-      case "Active":
-        return "badge-success";
-      case "Inactive":
-        return "badge-danger";
-      case "Suspended":
-        return "badge-warning";
-      default:
-        return "badge-neutral";
-    }
-  };
-
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
-
-  const currentUsers = activeTab === "customers" ? mockCustomers : mockAdminUsers;
-
-  const filteredUsers = React.useMemo(() => {
-    let filtered = currentUsers;
-
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (user) =>
-          `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    return filtered;
-  }, [currentUsers, searchQuery]);
+  const role = activeTab === "admin" ? "admin" : "customer";
 
   React.useEffect(() => {
-    setPage(1);
-  }, [activeTab, searchQuery]);
+    let cancelled = false;
+    (async () => {
+      await fetchUsers({ page: 1, search: debouncedSearch, role });
+      if (!cancelled) setHasRequested(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, fetchUsers, role]);
 
-  const paginatedUsers = React.useMemo(() => {
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredUsers.slice(startIndex, endIndex);
-  }, [filteredUsers, page, pageSize]);
+  const getStatusBadgeClass = (status: string) => {
+    const s = status?.toLowerCase?.() ?? "";
+    if (s === "active") return "badge-success";
+    if (s === "pending") return "badge-warning";
+    if (s === "inactive") return "badge-danger";
+    return "badge-neutral";
+  };
 
-  const pageCount = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
+  const getInitialsFromName = (name: string) => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "";
+    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+    return (first + last).toUpperCase() || "U";
+  };
 
   type TableRow = {
     dateCreated: React.ReactNode;
@@ -97,23 +84,23 @@ export default function UserManagement() {
   ];
 
   const tableRows = React.useMemo<TableRow[]>(() => {
-    return paginatedUsers.map((user) => ({
+    return users.map((user) => ({
       dateCreated: (
-        <span className="text-neutral-700 text-sm">{user.dateCreated}</span>
+        <span className="text-neutral-700 text-sm">{user.joined_date}</span>
       ),
       customerName: (
         <div className="flex items-center gap-3">
           <Avatar className="size-10">
-            {user.avatar ? (
-              <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
+            {user.avatar_url ? (
+              <AvatarImage src={user.avatar_url} alt={user.name} />
             ) : null}
             <AvatarFallback className="bg-primary text-white text-sm font-semibold">
-              {getInitials(user.firstName, user.lastName)}
+              {getInitialsFromName(user.name)}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="font-medium text-primary-700 text-xs sm:text-sm truncate">
-              {user.firstName} {user.lastName}
+              {user.name}
             </p>
             <p className="text-xs text-neutral-500 truncate">
               {user.email}
@@ -122,15 +109,17 @@ export default function UserManagement() {
         </div>
       ),
       orders: (
-        <span className="text-neutral-700 text-xs sm:text-sm">{user.orders}</span>
+        <span className="text-neutral-700 text-xs sm:text-sm">{user.total_orders}</span>
       ),
       amountSpent: (
         <span className="text-neutral-700 text-xs sm:text-sm font-medium whitespace-nowrap">
-          {formatCurrency(user.amountSpent)}
+          {formatCurrency(Number.parseFloat(user.amount_spent ?? "0") || 0)}
         </span>
       ),
       phoneNumber: (
-        <span className="text-neutral-700 text-xs sm:text-sm whitespace-nowrap">{user.phoneNumber}</span>
+        <span className="text-neutral-700 text-xs sm:text-sm whitespace-nowrap">
+          {user.phone ?? "-"}
+        </span>
       ),
       status: (
         <span className={`badge ${getStatusBadgeClass(user.status)}`}>
@@ -138,7 +127,7 @@ export default function UserManagement() {
         </span>
       ),
     }));
-  }, [paginatedUsers, formatCurrency]);
+  }, [users]);
 
   return (
     <div className="space-y-6">
@@ -190,83 +179,61 @@ export default function UserManagement() {
       </div>
 
       <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="bg-white rounded-xl">
-          <Table className="min-w-[720px]">
-            <TableHeader>
-              <TableRow>
-                {columns.map((c) => (
-                  <TableHead
-                    key={c.key}
-                    className="text-[#667085] bg-white text-[14px] font-normal">
-                    {c.label}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tableRows.map((row, idx) => (
-                <TableRow
-                  key={idx}
-                  onClick={() => router.push(`/user/${paginatedUsers[idx].id}`)}
-                  className="cursor-pointer hover:bg-neutral-50 transition-colors">
-                  {columns.map((c) => (
-                    <TableCell key={c.key}>
-                      {row[c.key as keyof TableRow]}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-2 sm:px-4 py-3">
-            <p className="text-xs sm:text-sm text-[#667085]">
-              Page {page} of {pageCount}
-            </p>
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                className={`rounded-full border border-[#EEF1F6] p-1 sm:p-1.5 ${
-                  page === 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-neutral-50"
-                }`}>
-                <ChevronLeft className="size-3 sm:size-4 text-[#667085]" />
-              </button>
-              {Array.from({ length: Math.min(pageCount, 6) }, (_, i) => {
-                let pageNum;
-                if (pageCount <= 6) {
-                  pageNum = i + 1;
-                } else if (page <= 3) {
-                  pageNum = i + 1;
-                } else if (page >= pageCount - 2) {
-                  pageNum = pageCount - 5 + i;
-                } else {
-                  pageNum = page - 2 + i;
+          <div className="bg-white rounded-xl">
+            {hasRequested && !loadingUsers && users.length > 0 ? (
+              <DataTable
+                columns={columns as unknown as Array<{ key: string; label: string }>}
+                rows={tableRows as unknown as Record<string, React.ReactNode>[]}
+                page={currentPage}
+                pageCount={lastPage}
+                pageSize={perPage}
+                total={totalItems}
+                onPageChange={(nextPage) =>
+                  fetchUsers({ page: nextPage, search: debouncedSearch, role })
                 }
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setPage(pageNum)}
-                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-medium transition-colors ${
-                      page === pageNum
-                        ? "bg-primary text-white"
-                        : "text-[#667085] hover:bg-neutral-50"
-                    }`}>
-                    {pageNum}
-                  </button>
-                );
-              })}
-              <button
-                disabled={page === pageCount}
-                onClick={() => setPage(page + 1)}
-                className={`rounded-full border border-[#EEF1F6] p-1 sm:p-1.5 ${
-                  page === pageCount ? "opacity-50 cursor-not-allowed" : "hover:bg-neutral-50"
-                }`}>
-                <ChevronRight className="size-3 sm:size-4 text-[#667085]" />
-              </button>
-            </div>
+                onRowClick={(_, idx) => {
+                  const id = users[idx]?.id;
+                  if (id) router.push(`/user/${id}`);
+                }}
+              />
+            ) : !hasRequested || loadingUsers ? (
+              <div className="min-w-[720px]">
+                <div className="grid grid-cols-6 gap-4 px-4 py-3 border-b border-neutral-100">
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <Skeleton key={idx} className="h-4 w-24" />
+                  ))}
+                </div>
+                {Array.from({ length: Math.max(6, perPage) }).map((_, rowIdx) => (
+                  <div
+                    key={rowIdx}
+                    className="grid grid-cols-6 gap-4 px-4 py-4 border-b border-neutral-100"
+                  >
+                    <Skeleton className="h-4 w-28" />
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-48" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                ))}
+                <div className="flex items-center justify-between px-4 py-3">
+                  <Skeleton className="h-4 w-32" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-24 rounded-full" />
+                    <Skeleton className="h-8 w-24 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-center my-5">No users available</p>
+            )}
           </div>
-        </div>
       </div>
 
       <AddUserModal

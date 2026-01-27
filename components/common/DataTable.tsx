@@ -23,6 +23,7 @@ type DataTableProps<T extends Record<string, React.ReactNode>> = {
   page?: number;
   pageSize?: number;
   total?: number;
+  pageCount?: number;
   onPageChange?: (page: number) => void;
   onRowClick?: (row: T, index: number) => void;
   className?: string;
@@ -34,13 +35,14 @@ export default function DataTable<T extends Record<string, React.ReactNode>>({
   page = 1,
   pageSize = rows.length,
   total = rows.length,
+  pageCount,
   onPageChange,
   onRowClick,
   className,
 }: DataTableProps<T>) {
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const resolvedPageCount = pageCount ?? Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
-  const canNext = page < pageCount;
+  const canNext = page < resolvedPageCount;
 
   return (
     <div className={cn("bg-white rounded-xl", className)}>
@@ -79,7 +81,7 @@ export default function DataTable<T extends Record<string, React.ReactNode>>({
 
       <div className="flex items-center justify-between px-4 py-3">
         <p className="text-sm text-[#667085]">
-          Page {page} of {pageCount}
+          Page {page} of {resolvedPageCount}
         </p>
         <div className="flex items-center gap-2">
           <button

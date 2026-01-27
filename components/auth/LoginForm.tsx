@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Raleway } from "next/font/google";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
@@ -36,6 +36,7 @@ const raleway = Raleway({
 const LoginForm = () => {
   const { login, loading } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const form = useForm<LoginFormSchema>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -44,23 +45,24 @@ const LoginForm = () => {
     },
   });
 
-  function onSubmit(values: LoginFormSchema) {
-    login(values)
-      .then((res) => {
-        if (res) {
-          toast.success("Login successful", {
-            description: "You are now logged in",
-          });
-          router.push("/dashboard");
-        }
-      })
-      .catch((err) => {
-        const errorMessage =
-          err instanceof Error ? err.message : "Please check your credentials";
-        toast.error("Login failed", {
-          description: errorMessage,
+  async function onSubmit(values: LoginFormSchema) {
+    try {
+      const res = await login(values);
+      if (res) {
+        toast.success("Login successful", {
+          description: "You are now logged in",
         });
+        // Redirect to the original page or dashboard
+        const redirect = searchParams.get("redirect");
+        router.push(redirect || "/dashboard");
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Please check your credentials";
+      toast.error("Login failed", {
+        description: errorMessage,
       });
+    }
   }
   return (
     <Form {...form}>
@@ -110,7 +112,14 @@ const LoginForm = () => {
         />
 
         <Button type="submit" className="w-full mt-10" disabled={loading}>
-          {loading ? <Loader2Icon className="size-4 animate-spin" /> : "Login"}
+          {loading ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2Icon className="size-4 animate-spin" />
+              Logging in...
+            </span>
+          ) : (
+            "Login"
+          )}
         </Button>
       </form>
     </Form>

@@ -12,24 +12,31 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import type { Product } from "@/data/products";
 import { toast } from "sonner";
+import { useProductStore } from "@/store/useProductStore";
 
 type DeleteProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
-  onConfirm: () => void;
 };
 
 export function DeleteProductModal({
   isOpen,
   onClose,
   product,
-  onConfirm,
 }: DeleteProductModalProps) {
-  const handleDelete = () => {
-    onConfirm();
-    toast.error("Product deleted successfully");
-    onClose();
+  const { deleteProduct, deletingById } = useProductStore();
+  const isDeleting = !!deletingById[String(product?.id ?? "")];
+
+  const handleDelete = async () => {
+    if (!product) return;
+    const ok = await deleteProduct(product.id);
+    if (ok) {
+      toast.success("Product deleted successfully");
+      onClose();
+    } else {
+      toast.error("Failed to delete product");
+    }
   };
 
   return (
@@ -57,12 +64,14 @@ export function DeleteProductModal({
               type="button"
               variant="outline"
               onClick={handleDelete}
+              disabled={!product || isDeleting}
               className="btn btn-outline flex-1 order-2 sm:order-1">
-              Delete Product
+              {isDeleting ? "Deleting..." : "Delete Product"}
             </Button>
             <Button
               type="button"
               onClick={onClose}
+              disabled={isDeleting}
               className="btn btn-primary flex-1 order-1 sm:order-2">
               Close
             </Button>

@@ -4,6 +4,7 @@ const api = axios.create({
   baseURL: "/api/proxy",
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
   },
 });
 
@@ -19,7 +20,6 @@ api.interceptors.response.use(
   async (err) => {
     // Handle 401 errors (unauthorized) - token might be expired
     if (err.response?.status === 401) {
-      // Optionally redirect to login or clear auth state
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }
