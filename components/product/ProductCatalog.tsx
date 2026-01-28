@@ -12,24 +12,33 @@ import { useDebounce } from "use-debounce";
 import { CreateProductModal } from "./CreateProductModal";
 import ProductGrid from "./ProductGrid";
 import ProductTable from "./ProductTable";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 export default function ProductCatalog() {
   const {
     products,
     loadingProducts,
     fetchProducts,
+    fetchCategories,
     categoryOptions,
     currentPage,
     lastPage,
     totalItems,
     perPage,
   } = useProductStore();
-  const [selectedCategoryId, setSelectedCategoryId] = React.useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState<
+    number | null
+  >(null);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const pageSize = perPage || 20;
   const [debouncedSearch] = useDebounce(searchQuery, 400);
+
+  React.useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("en-NG", {
@@ -40,7 +49,11 @@ export default function ProductCatalog() {
 
   // Fetch products when filters/search change (reset to page 1).
   React.useEffect(() => {
-    fetchProducts({ page: 1, categoryId: selectedCategoryId, search: debouncedSearch });
+    fetchProducts({
+      page: 1,
+      categoryId: selectedCategoryId,
+      search: debouncedSearch,
+    });
   }, [fetchProducts, selectedCategoryId, debouncedSearch]);
 
   const categories = React.useMemo(() => {
@@ -66,7 +79,7 @@ export default function ProductCatalog() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
-            className="btn btn-primary w-full sm:w-auto"
+            className="btn btn-primary w-full sm:w-auto rounded-[4px]"
             onClick={() => setIsCreateModalOpen(true)}
           >
             <Plus className="size-4" />
@@ -147,7 +160,9 @@ export default function ProductCatalog() {
                 setSelectedCategoryId(null);
               } else {
                 const parsed = Number(value);
-                setSelectedCategoryId(Number.isFinite(parsed) && parsed > 0 ? parsed : null);
+                setSelectedCategoryId(
+                  Number.isFinite(parsed) && parsed > 0 ? parsed : null
+                );
               }
             }}
           >
@@ -156,7 +171,7 @@ export default function ProductCatalog() {
                 <TabsTrigger
                   key={category.value}
                   value={category.value}
-                  className="data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap"
+                  className="data-[state=active]:bg-[#E8EEFF] data-[state=active]:text-[#0B1E66] data-[state=active]:shadow-sm rounded-[3px] px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-[#808080]"
                 >
                   {category.label}
                 </TabsTrigger>
@@ -168,22 +183,42 @@ export default function ProductCatalog() {
           <Button
             variant="outline"
             size="icon"
-            className={
-              viewMode === "list" ? "bg-primary text-primary-foreground" : ""
-            }
+            className={cn(
+              viewMode === "list" ? "bg-[#E8EEFF]" : "",
+              "size-[32px] border-0 rounded-0 hover:bg-[#E8EEFF] shadow-none"
+            )}
             onClick={() => setViewMode("list")}
           >
-            <List className="size-4" />
+            <Image
+              src={
+                viewMode === "list"
+                  ? "/icons/list-bottom-active.png"
+                  : "/icons/list-bottom.png"
+              }
+              alt="List view"
+              width={20}
+              height={20}
+            />
           </Button>
           <Button
             variant="outline"
             size="icon"
-            className={
-              viewMode === "grid" ? "bg-primary text-primary-foreground" : ""
-            }
+            className={cn(
+              viewMode === "grid" ? "bg-[#E8EEFF]" : "",
+              "size-[32px] border-0 rounded-0 hover:bg-[#E8EEFF] shadow-none"
+            )}
             onClick={() => setViewMode("grid")}
           >
-            <Grid className="size-4" />
+            <Image
+              src={
+                viewMode === "grid"
+                  ? "/icons/grid-nine-active.png"
+                  : "/icons/grid-nine.png"
+              }
+              alt="Grid view"
+              width={20}
+              height={20}
+            />
           </Button>
         </div>
       </div>
@@ -195,7 +230,11 @@ export default function ProductCatalog() {
           page={currentPage}
           pageCount={lastPage}
           onPageChange={(nextPage) => {
-            fetchProducts({ page: nextPage, categoryId: selectedCategoryId, search: debouncedSearch });
+            fetchProducts({
+              page: nextPage,
+              categoryId: selectedCategoryId,
+              search: debouncedSearch,
+            });
           }}
           formatCurrency={formatCurrency}
         />
@@ -207,7 +246,11 @@ export default function ProductCatalog() {
           pageCount={lastPage}
           pageSize={pageSize}
           onPageChange={(nextPage) => {
-            fetchProducts({ page: nextPage, categoryId: selectedCategoryId, search: debouncedSearch });
+            fetchProducts({
+              page: nextPage,
+              categoryId: selectedCategoryId,
+              search: debouncedSearch,
+            });
           }}
           formatCurrency={formatCurrency}
         />

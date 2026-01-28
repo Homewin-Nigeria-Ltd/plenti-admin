@@ -14,11 +14,13 @@ export type Product = {
   description: string;
   price: number;
   bulkPrice: number;
+  minBulkQuantity?: number | null;
+  bulkPriceRaw?: number | null;
   category: ProductCategory;
   categoryId?: number | null;
   subCategory: string;
   stockLevel: number;
   status: ProductStatus;
   imageUrl: string;
+  images?: string[];
 };
-

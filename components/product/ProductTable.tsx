@@ -14,6 +14,8 @@ import { Ellipsis } from "lucide-react";
 import DataTable from "@/components/common/DataTable";
 import { EditProductModal } from "./EditProductModal";
 import { DeleteProductModal } from "./DeleteProductModal";
+import { toast } from "sonner";
+import { useProductStore } from "@/store/useProductStore";
 
 type ProductTableProps = {
   products: Product[];
@@ -34,9 +36,14 @@ export default function ProductTable({
   onPageChange,
   formatCurrency,
 }: ProductTableProps) {
-  const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
+  const { toggleProductStatus, togglingStatusById } = useProductStore();
+  const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(
+    null
+  );
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
-  const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = React.useState<Product | null>(
+    null
+  );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
 
   const columns = [
@@ -90,7 +97,9 @@ export default function ProductTable({
         );
       })(),
       category: <span className="text-primary-700">{product.category}</span>,
-      subCategory: <span className="text-primary-700">{product.subCategory}</span>,
+      subCategory: (
+        <span className="text-primary-700">{product.subCategory}</span>
+      ),
       amount: (
         <span className="font-semibold text-primary-700">
           {formatCurrency(product.price)}
@@ -105,7 +114,8 @@ export default function ProductTable({
         <span
           className={`font-semibold ${
             product.stockLevel < 100 ? "text-red-600" : "text-green-600"
-          }`}>
+          }`}
+        >
           {new Intl.NumberFormat("en-US").format(product.stockLevel)}
         </span>
       ),
@@ -116,27 +126,60 @@ export default function ProductTable({
               <Ellipsis className="size-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="border-0">
             <DropdownMenuItem
+              className="text-[#0B1E66]"
               onClick={() => {
                 setSelectedProduct(product);
                 setIsEditModalOpen(true);
-              }}>
+              }}
+            >
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="text-danger-500"
+              disabled={!!togglingStatusById[String(product.id)]}
+              className={
+                product.status !== "Unavailable"
+                  ? "text-[#DD900D]"
+                  : "text-[#0F973D]"
+              }
+              onClick={async () => {
+                const isActive = product.status !== "Unavailable";
+                const ok = await toggleProductStatus(product.id);
+                if (ok) {
+                  toast.success(
+                    isActive ? "Product unpublished" : "Product published"
+                  );
+                } else {
+                  toast.error("Failed to update product status");
+                }
+              }}
+            >
+              {product.status !== "Unavailable" ? "Unpublish" : "Publish"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-red-500"
               onClick={() => {
                 setProductToDelete(product);
                 setIsDeleteModalOpen(true);
-              }}>
+              }}
+            >
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
     }));
-  }, [products, formatCurrency, setSelectedProduct, setIsEditModalOpen, setProductToDelete, setIsDeleteModalOpen]);
+  }, [
+    products,
+    formatCurrency,
+    toggleProductStatus,
+    togglingStatusById,
+    setSelectedProduct,
+    setIsEditModalOpen,
+    setProductToDelete,
+    setIsDeleteModalOpen,
+  ]);
 
   if (total === 0) {
     return (
@@ -178,4 +221,3 @@ export default function ProductTable({
     </>
   );
 }
-
