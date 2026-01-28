@@ -8,10 +8,11 @@ export async function POST(request: NextRequest) {
     const { email, password } = body;
 
     // Make the actual API call to your backend
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_URL}/api/admin/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify({ email, password }),
     });
@@ -28,7 +29,16 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    const token = data.data.token;
+    const token = data?.data?.access_token;
+    if (!token) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Login response missing access token.",
+        },
+        { status: 502 }
+      );
+    }
 
     // Set HTTP-only cookie
     const cookieStore = await cookies();

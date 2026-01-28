@@ -9,6 +9,7 @@ import { RefundDetailsModal } from "./RefundDetailsModal";
 import { RefundApprovalConfirmModal } from "./RefundApprovalConfirmModal";
 import { RejectRefundModal } from "./RejectRefundModal";
 import { toast } from "sonner";
+import { useFinanceStore } from "@/store/useFinanceStore";
 
 type RefundStatus = "Approved" | "Processing" | "Rejected";
 
@@ -140,6 +141,10 @@ type RefundFilter =
   | "awaiting-processing";
 
 export function RefundRequestTable() {
+  const { fetchRefunds, refunds, loadingRefunds, refundPagination } =
+    useFinanceStore();
+
+  // LOCAL STATES
   const [filter, setFilter] = React.useState<RefundFilter>("all");
   const [page, setPage] = React.useState(1);
   const [selectedRefund, setSelectedRefund] =
@@ -150,6 +155,16 @@ export function RefundRequestTable() {
   const isOpeningConfirmModal = React.useRef(false);
   const isOpeningRejectModal = React.useRef(false);
   const pageSize = 6;
+
+  console.log("Refunds data in refunds components =>", refunds);
+
+  // FETCH ALL REFUNDS ON MOUNT
+  React.useEffect(() => {
+    // FETCH ONLY WHEN THERE ARE NOT REFUNDS
+    if (refunds.length === 0) {
+      fetchRefunds(1);
+    }
+  }, [fetchRefunds, refunds]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -366,15 +381,19 @@ export function RefundRequestTable() {
       </div>
 
       {/* Table */}
-      <DataTable
-        columns={columns}
-        rows={rows}
-        page={page}
-        pageSize={pageSize}
-        total={filteredRefunds.length}
-        onPageChange={setPage}
-        onRowClick={handleRowClick}
-      />
+      {!loadingRefunds && refunds.length > 0 ? (
+        <DataTable
+          columns={columns}
+          rows={rows}
+          page={refundPagination.page || 0}
+          pageSize={refundPagination.pageSize || 0}
+          total={refundPagination.totalCount || 0}
+          onPageChange={setPage}
+          onRowClick={handleRowClick}
+        />
+      ) : (
+        <p className="text-center my-5">No Refunds Available</p>
+      )}
 
       {/* Refund Details Modal */}
       <RefundDetailsModal

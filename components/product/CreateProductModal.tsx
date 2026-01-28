@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -19,43 +20,67 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Upload, X } from "lucide-react";
-import type { ProductCategory } from "@/data/products";
 import { toast } from "sonner";
+import { useProductStore } from "@/store/useProductStore";
+import type { UploadImageResponse } from "@/types/ProductTypes";
+import { useFilePreview } from "@/lib/useFilePreview";
 
 type CreateProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
 
-const categories: ProductCategory[] = [
-  "Food & Beverages",
-  "Personal Care & Hygiene",
-  "Household Care",
-  "Health & Wellness",
-];
+function getApiMessage(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const message = (payload as Record<string, unknown>).message;
+  return typeof message === "string" ? message : null;
+}
 
-const subCategories: Record<Exclude<ProductCategory, "All Product">, string[]> = {
-  "Food & Beverages": ["Food", "Beverages", "Snacks"],
-  "Personal Care & Hygiene": ["Hygiene", "Oral Care", "Skincare"],
-  "Household Care": ["Cleaning", "Laundry", "Kitchen"],
-  "Health & Wellness": ["Medication", "Supplements", "Wellness"],
-};
+function getUploadedImageUrl(payload: unknown): string | null {
+  // Expected: { data: { url: string } }
+  if (!payload || typeof payload !== "object") return null;
+  const data = (payload as Record<string, unknown>).data;
+  if (!data || typeof data !== "object") return null;
+  const url = (data as Record<string, unknown>).url;
+  return typeof url === "string" ? url : null;
+}
 
-export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps) {
+export function CreateProductModal({
+  isOpen,
+  onClose,
+}: CreateProductModalProps) {
+  const {
+    categoriesTree,
+    loadingCategories,
+    fetchCategories,
+    createProduct,
+    creatingProduct,
+  } = useProductStore();
+
   const [productName, setProductName] = React.useState("");
   const [description, setDescription] = React.useState("");
-  const [category, setCategory] = React.useState<ProductCategory | "">("");
-  const [subCategory, setSubCategory] = React.useState("");
+  const [categoryId, setCategoryId] = React.useState<number | null>(null);
+  const [subCategoryId, setSubCategoryId] = React.useState<number | null>(null);
   const [amount, setAmount] = React.useState("");
   const [initialStock, setInitialStock] = React.useState("");
   const [minBulkQuantity, setMinBulkQuantity] = React.useState("");
   const [bulkPrice, setBulkPrice] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [uploadingImage, setUploadingImage] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const previewUrl = useFilePreview(selectedFile);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    fetchCategories();
+  }, [isOpen, fetchCategories]);
 
   const handleFileSelect = (file: File) => {
     if (file.type.startsWith("image/")) {
       setSelectedFile(file);
+    } else {
+      toast.error("Please select a valid image (PNG/JPG).");
     }
   };
 
@@ -75,30 +100,123 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log({
-      productName,
-      description,
-      category,
-      subCategory,
-      amount,
-      initialStock,
-      minBulkQuantity,
-      bulkPrice,
-      selectedFile,
-    });
-    toast.success("Product created successfully");
-    onClose();
+  const handleClearSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const availableSubCategories = category && category !== "All Product" 
-    ? subCategories[category as Exclude<ProductCategory, "All Product">] 
-    : [];
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const resolvedCategoryId = subCategoryId ?? categoryId;
+    if (!resolvedCategoryId) {
+      toast.error("Please select a category");
+      return;
+    }
+
+    if (!selectedFile) {
+      toast.error("Please upload a product image");
+      return;
+    }
+
+    const price = Number(amount);
+    const stock = Number(initialStock);
+    const minBulk = Number(minBulkQuantity);
+    const bulk = Number(bulkPrice);
+
+    if (!Number.isFinite(price) || price <= 0) {
+      toast.error("Please enter a valid price");
+      return;
+    }
+    if (!Number.isFinite(stock) || stock < 0) {
+      toast.error("Please enter a valid stock quantity");
+      return;
+    }
+    if (!Number.isFinite(minBulk) || minBulk <= 0) {
+      toast.error("Please enter a valid min bulk quantity");
+      return;
+    }
+    if (!Number.isFinite(bulk) || bulk <= 0) {
+      toast.error("Please enter a valid bulk price");
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      const fd = new FormData();
+      fd.set("image", selectedFile);
+      fd.set("folder", "product");
+
+      const uploadRes = await fetch("/api/upload/image", {
+        method: "POST",
+        body: fd,
+      });
+
+      const uploadJson = (await uploadRes.json().catch(() => null)) as
+        | UploadImageResponse
+        | unknown
+        | null;
+      if (!uploadRes.ok) {
+        toast.error(getApiMessage(uploadJson) ?? "Image upload failed");
+        return;
+      }
+
+      const imageUrl = getUploadedImageUrl(uploadJson);
+      if (!imageUrl) {
+        toast.error("Image upload failed: missing image URL");
+        return;
+      }
+
+      const ok = await createProduct({
+        name: productName,
+        description,
+        price,
+        stock,
+        category_id: resolvedCategoryId,
+        is_active: true,
+        image_urls: [imageUrl],
+        min_bulk_quantity: minBulk,
+        bulk_price: bulk,
+      });
+
+      if (!ok) {
+        toast.error("Failed to create product");
+        return;
+      }
+
+      toast.success("Product created successfully");
+      setProductName("");
+      setDescription("");
+      setCategoryId(null);
+      setSubCategoryId(null);
+      setAmount("");
+      setInitialStock("");
+      setMinBulkQuantity("");
+      setBulkPrice("");
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      onClose();
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const selectedCategory = React.useMemo(
+    () => categoriesTree.find((c) => c.id === categoryId) ?? null,
+    [categoriesTree, categoryId]
+  );
+
+  const availableSubCategories = React.useMemo(
+    () => selectedCategory?.subcategories ?? [],
+    [selectedCategory]
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] flex flex-col p-0 w-[95vw] !max-w-[557px] sm:!w-[557px] sm:!max-w-[557px]" showCloseButton={false}>
+      <DialogContent
+        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[557px]! sm:w-[557px]! sm:max-w-[557px]!"
+        showCloseButton={false}
+      >
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
           <DialogTitle className="text-xl sm:text-2xl font-semibold">
             Create New Product
@@ -110,12 +228,17 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+          >
             <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
         </DialogHeader>
 
-        <form id="create-product-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6">
+        <form
+          id="create-product-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
+        >
           <div className="space-y-2">
             <Label htmlFor="productName">Product Name</Label>
             <Input
@@ -135,7 +258,7 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
               placeholder="Product Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="form-control w-full !h-auto min-h-[100px] resize-none"
+              className="form-control w-full h-auto! min-h-[100px] resize-none"
               required
             />
           </div>
@@ -143,17 +266,22 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Select Category</Label>
-              <Select value={category} onValueChange={(value) => {
-                setCategory(value as ProductCategory);
-                setSubCategory("");
-              }}>
-                <SelectTrigger id="category" className="form-control !w-full">
+              <Select
+                value={categoryId == null ? "" : String(categoryId)}
+                onValueChange={(value) => {
+                  const parsed = Number(value);
+                  setCategoryId(Number.isFinite(parsed) ? parsed : null);
+                  setSubCategoryId(null);
+                }}
+                disabled={loadingCategories}
+              >
+                <SelectTrigger id="category" className="form-control w-full!">
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+                  {categoriesTree.map((cat) => (
+                    <SelectItem key={cat.id} value={String(cat.id)}>
+                      {cat.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -163,16 +291,27 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
             <div className="space-y-2">
               <Label htmlFor="subCategory">Select Sub Category</Label>
               <Select
-                value={subCategory}
-                onValueChange={setSubCategory}
-                disabled={!category}>
-                <SelectTrigger id="subCategory" className="form-control !w-full">
+                value={subCategoryId == null ? "" : String(subCategoryId)}
+                onValueChange={(value) => {
+                  const parsed = Number(value);
+                  setSubCategoryId(Number.isFinite(parsed) ? parsed : null);
+                }}
+                disabled={
+                  !categoryId ||
+                  loadingCategories ||
+                  availableSubCategories.length === 0
+                }
+              >
+                <SelectTrigger
+                  id="subCategory"
+                  className="form-control w-full!"
+                >
                   <SelectValue placeholder="Select Sub Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableSubCategories.map((subCat: string) => (
-                    <SelectItem key={subCat} value={subCat}>
-                      {subCat}
+                  {availableSubCategories.map((subCat) => (
+                    <SelectItem key={subCat.id} value={String(subCat.id)}>
+                      {subCat.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -249,18 +388,50 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
                 isDragging
                   ? "border-primary bg-primary/5"
                   : "border-neutral-200 bg-neutral-50"
-              }`}>
+              }`}
+            >
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg"
                 onChange={handleFileInput}
                 className="hidden"
                 id="file-upload"
+                ref={fileInputRef}
               />
               <label
                 htmlFor="file-upload"
-                className="cursor-pointer flex flex-col items-center gap-4">
-                <Upload className="size-12 text-primary" />
+                className="cursor-pointer flex flex-col items-center gap-4"
+              >
+                {previewUrl ? (
+                  <div className="w-full">
+                    <div className="relative mx-auto w-full max-w-[260px]">
+                      <div className="relative w-full h-[160px] rounded-md border border-neutral-200 overflow-hidden">
+                        <Image
+                          src={previewUrl}
+                          alt="Selected product"
+                          fill
+                          sizes="260px"
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleClearSelectedFile();
+                        }}
+                        className="absolute -top-3 -right-3 size-8 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm"
+                        aria-label="Remove selected image"
+                      >
+                        <X size={16} color="#0B1E66" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <Upload className="size-12 text-primary" />
+                )}
                 <div>
                   <p className="font-medium text-primary">Upload Files</p>
                   <p className="text-sm text-neutral-500 mt-1">
@@ -275,16 +446,23 @@ export function CreateProductModal({ isOpen, onClose }: CreateProductModalProps)
               </label>
             </div>
           </div>
-
         </form>
 
         <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
-          <Button type="submit" form="create-product-form" className="btn btn-primary w-full">
-            Create New Product
+          <Button
+            type="submit"
+            form="create-product-form"
+            className="btn btn-primary w-full"
+            disabled={creatingProduct || uploadingImage}
+          >
+            {uploadingImage
+              ? "Uploading image..."
+              : creatingProduct
+              ? "Creating product..."
+              : "Create New Product"}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-

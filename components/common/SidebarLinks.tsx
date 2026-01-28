@@ -21,10 +21,10 @@ export const links = [
     name: "Order Management",
     href: "/order",
   },
-  {
-    name: "Analytics & Reporting",
-    href: "/analytics",
-  },
+  // {
+  //   name: "Analytics & Reporting",
+  //   href: "/analytics",
+  // },
   {
     name: "Finance Management",
     href: "/finance",

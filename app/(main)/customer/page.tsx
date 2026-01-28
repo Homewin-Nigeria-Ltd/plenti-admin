@@ -2,11 +2,8 @@ export const metadata = {
   title: "Customer Support",
 };
 
+import CustomerSupportContent from "@/components/customer/CustomerSupportContent";
+
 export default function CustomerPage() {
-  return (
-    <div>
-      <h1>Customer Support</h1>
-      <p>Placeholder page for customer support.</p>
-    </div>
-  );
+  return <CustomerSupportContent />;
 }

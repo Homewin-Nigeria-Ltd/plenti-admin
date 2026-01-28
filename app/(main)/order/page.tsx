@@ -3,8 +3,8 @@ export const metadata = {
 };
 
 import OrderStatCard from "@/components/order/OrderStatCard";
-import { orderStats } from "@/data/orders";
 import OrderTableWrapper from "@/components/order/OrderTableWrapper";
+import { orderStats } from "@/data/orders";
 
 export default function OrderPage() {
   const stats = orderStats;
