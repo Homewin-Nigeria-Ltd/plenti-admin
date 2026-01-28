@@ -21,11 +21,11 @@ export function middleware(request: NextRequest) {
   const isLoginPage = request.nextUrl.pathname.startsWith("/login");
 
   // If accessing protected route without token, redirect to login
-  // if (isProtectedRoute && !token) {
-  //   const loginUrl = new URL("/login", request.url);
-  //   loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
-  //   return NextResponse.redirect(loginUrl);
-  // }
+  if (isProtectedRoute && !token) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
   // If accessing login page with token, redirect to dashboard
   if (isLoginPage && token) {

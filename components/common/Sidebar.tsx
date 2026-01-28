@@ -8,6 +8,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import * as React from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Sidebar = () => {
   const router = useRouter();
@@ -69,12 +80,37 @@ const Sidebar = () => {
             </p>
           </div>
         </div>
-        <LogOut
-          color="#D42620"
-          onClick={logout}
-          cursor={isLoggingOut ? "wait" : "pointer"}
-          className={isLoggingOut ? "opacity-50" : ""}
-        />
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button type="button" disabled={isLoggingOut} aria-label="Log out">
+              <LogOut
+                color="#D42620"
+                cursor={isLoggingOut ? "wait" : "pointer"}
+                className={isLoggingOut ? "opacity-50" : ""}
+              />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm logout</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to log out of Plenti Admin?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isLoggingOut} className="h-[50px]">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-[#D42620] hover:bg-[#D42620]/90 h-[50px]"
+                disabled={isLoggingOut}
+                onClick={logout}
+              >
+                {isLoggingOut ? "Logging out..." : "Log out"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </aside>
   );
