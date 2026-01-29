@@ -385,9 +385,9 @@ export function RefundRequestTable() {
         <DataTable
           columns={columns}
           rows={rows}
-          page={refundPagination.page || 0}
-          pageSize={refundPagination.pageSize || 0}
-          total={refundPagination.totalCount || 0}
+          page={refundPagination?.page || 0}
+          pageSize={refundPagination?.pageSize || 0}
+          total={refundPagination?.totalCount || 0}
           onPageChange={setPage}
           onRowClick={handleRowClick}
         />
