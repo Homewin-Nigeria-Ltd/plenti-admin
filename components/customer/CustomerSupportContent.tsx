@@ -9,47 +9,70 @@ import MostRecentTickets from "./MostRecentTickets";
 import { CreateTicketModal } from "./CreateTicketModal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useSupportStore } from "@/store/useSupportStore";
 
 export default function CustomerSupportContent() {
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] =
     React.useState(false);
-  const stats = [
-    {
-      title: "Total Open Ticket",
-      value: 45823,
-      changePercent: 40,
-      increased: true,
-      isHighlighted: false,
-    },
-    {
-      title: "Total New Ticket",
-      value: 458,
-      changePercent: 40,
-      increased: true,
-      isHighlighted: false,
-    },
-    {
-      title: "Total Resolved Ticket",
-      value: 4598,
-      changePercent: 40,
-      increased: true,
-      isHighlighted: false,
-    },
-    {
-      title: "Avg Response Time",
-      value: "2.5 hours",
-      changePercent: 40,
-      increased: false, // Red badge for increase in response time (bad)
-      isHighlighted: false,
-    },
-    {
-      title: "CSAT Score",
-      value: "5.0/5.0",
-      changePercent: 40,
-      increased: true,
-      isHighlighted: false,
-    },
-  ];
+
+  const {
+    statistics,
+    loadingStatistics,
+    statisticsError,
+    fetchSupportStatistics,
+  } = useSupportStore();
+
+  React.useEffect(() => {
+    fetchSupportStatistics();
+  }, [fetchSupportStatistics]);
+
+  const stats = React.useMemo(() => {
+    if (!statistics) return null;
+    const avgHours = statistics.avg_resolution_time_hours;
+    const formatHours =
+      avgHours < 0 || !Number.isFinite(avgHours)
+        ? "—"
+        : `${Math.max(0, avgHours).toFixed(1)} hrs`;
+    return [
+      {
+        title: "Total Open Tickets",
+        value: statistics.open_tickets,
+        changePercent: 0,
+        increased: true,
+        isHighlighted: false,
+      },
+      {
+        title: "In Progress",
+        value: statistics.in_progress_tickets,
+        changePercent: 0,
+        increased: true,
+        isHighlighted: false,
+      },
+      {
+        title: "Total Resolved",
+        value: statistics.resolved_tickets + statistics.closed_tickets,
+        changePercent: 0,
+        increased: true,
+        isHighlighted: false,
+      },
+      {
+        title: "Avg Resolution Time",
+        value: formatHours,
+        changePercent: 0,
+        increased: avgHours >= 0 && avgHours <= 24,
+        isHighlighted: false,
+      },
+      {
+        title: "CSAT Score",
+        value: Number.isFinite(statistics.avg_satisfaction_rating)
+          ? `${statistics.avg_satisfaction_rating.toFixed(1)}/5.0`
+          : "—",
+        changePercent: 0,
+        increased: true,
+        isHighlighted: false,
+      },
+    ];
+  }, [statistics]);
 
   return (
     <div className="space-y-6">
@@ -75,23 +98,47 @@ export default function CustomerSupportContent() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-        {stats.map((stat) => (
-          <TicketStatCard
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-            changePercent={stat.changePercent}
-            increased={stat.increased}
-            isHighlighted={stat.isHighlighted}
-          />
-        ))}
-      </div>
+      {loadingStatistics ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-xl border border-[#D9D9D9] p-5 h-[140px] animate-pulse"
+            >
+              <div className="h-4 bg-[#EEF1F6] rounded w-2/3 mb-3" />
+              <div className="h-8 bg-[#EEF1F6] rounded w-1/2 mb-4" />
+              <div className="h-6 bg-[#EEF1F6] rounded-full w-24" />
+            </div>
+          ))}
+        </div>
+      ) : statisticsError ? (
+        <p className="text-[#D42620] text-sm py-2">{statisticsError}</p>
+      ) : stats ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          {stats.map((stat) => (
+            <TicketStatCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+              changePercent={stat.changePercent}
+              increased={stat.increased}
+              isHighlighted={stat.isHighlighted}
+              showChange={false}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TicketResolutionResponseRate />
-        <TicketByCategory />
+        <TicketResolutionResponseRate
+          responseRatePercentage={statistics?.response_rate_percentage}
+          loading={loadingStatistics}
+        />
+        <TicketByCategory
+          byCategory={statistics?.by_category}
+          loading={loadingStatistics}
+        />
       </div>
 
       {/* Most Recent Tickets Table */}

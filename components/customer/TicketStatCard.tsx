@@ -5,18 +5,21 @@ import { cn } from "@/lib/utils";
 type TicketStatCardProps = {
   title: string;
   value: string | number;
-  changePercent: number;
+  changePercent?: number;
   increased?: boolean;
   isHighlighted?: boolean;
+  /** When false, the "X% vs last month" badge is hidden (e.g. when trend data is not available) */
+  showChange?: boolean;
   className?: string;
 };
 
 export default function TicketStatCard({
   title,
   value,
-  changePercent,
+  changePercent = 0,
   increased = true,
   isHighlighted = false,
+  showChange = true,
   className,
 }: TicketStatCardProps) {
   const formattedValue =
@@ -40,16 +43,18 @@ export default function TicketStatCard({
         <p className="text-[#0B1E66] text-[30px] font-semibold tracking-tight mb-2">
           {formattedValue}
         </p>
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium",
-            increased
-              ? "bg-[#E8EEFF] text-[#0B1E66]"
-              : "bg-[#FBEAE9] text-[#D42620]"
-          )}
-        >
-          {changePercent}% ↑ vs last month
-        </span>
+        {showChange && (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium",
+              increased
+                ? "bg-[#E8EEFF] text-[#0B1E66]"
+                : "bg-[#FBEAE9] text-[#D42620]"
+            )}
+          >
+            {changePercent}% ↑ vs last month
+          </span>
+        )}
       </div>
     </div>
   );

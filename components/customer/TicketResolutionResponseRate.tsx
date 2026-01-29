@@ -10,15 +10,39 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const data = [
-  { name: "Within TAT", value: 100123123, color: "#0B1E66" },
-  { name: "Exceeded TAT", value: 25000000, color: "#E8EEFF" },
-];
-
 const COLORS = ["#0B1E66", "#E8EEFF"];
 
-export default function TicketResolutionResponseRate() {
+type TicketResolutionResponseRateProps = {
+  responseRatePercentage?: number;
+  loading?: boolean;
+};
+
+export default function TicketResolutionResponseRate({
+  responseRatePercentage,
+  loading = false,
+}: TicketResolutionResponseRateProps) {
   const [period, setPeriod] = React.useState("monthly");
+
+  const data = React.useMemo(() => {
+    const rate =
+      responseRatePercentage != null && Number.isFinite(responseRatePercentage)
+        ? Math.max(0, Math.min(100, responseRatePercentage))
+        : 50;
+    return [
+      { name: "Within TAT", value: rate, color: COLORS[0] },
+      { name: "Exceeded TAT", value: 100 - rate, color: COLORS[1] },
+    ];
+  }, [responseRatePercentage]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl border border-[#EEF1F6] p-6">
+        <div className="h-6 bg-[#EEF1F6] rounded w-2/3 mb-4 animate-pulse" />
+        <div className="h-4 bg-[#EEF1F6] rounded w-full mb-6 animate-pulse" />
+        <div className="h-[300px] bg-[#EEF1F6] rounded animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border border-[#EEF1F6] p-6">
@@ -39,8 +63,14 @@ export default function TicketResolutionResponseRate() {
       </div>
 
       <p className="text-[#667085] text-sm mb-6">
-        This section provides an analysis or insights into ticket opened by new
-        and returning customers.
+        {responseRatePercentage != null &&
+        Number.isFinite(responseRatePercentage) ? (
+          <>
+            Response rate: <strong>{responseRatePercentage.toFixed(1)}%</strong>
+          </>
+        ) : (
+          "This section provides an analysis or insights into ticket resolution and response rate."
+        )}
       </p>
 
       <div className="flex items-center justify-center">
@@ -50,13 +80,11 @@ export default function TicketResolutionResponseRate() {
               data={data}
               cx="50%"
               cy="50%"
-              //   innerRadius={80}
               outerRadius={140}
               paddingAngle={2}
               dataKey="value"
               startAngle={90}
               endAngle={-270}
-              //   label={renderCustomLabel}
               labelLine={false}
             >
               {data.map((entry, index) => (
@@ -67,7 +95,7 @@ export default function TicketResolutionResponseRate() {
               ))}
             </Pie>
             <Tooltip
-              // formatter={(value: number) => formatValue(value)}
+              formatter={(value: number | undefined) => `${value?.toFixed(1)}%`}
               contentStyle={{
                 borderRadius: 8,
                 border: "1px solid #EEF1F6",

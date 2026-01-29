@@ -5,24 +5,30 @@ import DataTable from "@/components/common/DataTable";
 import { Input } from "@/components/ui/input";
 import { Filter } from "lucide-react";
 import Image from "next/image";
-import { mockPromoCodes } from "@/data/promoCodes";
 import { useMarketingStore } from "@/store/useMarketingStore";
-import { PromoCodeStatus, PromoCodeType } from "@/types/MarketingTypes";
+import type { PromoCodeStatus, PromoCodeType } from "@/types/MarketingTypes";
+
+const formatDate = (iso: string | null) => {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleDateString("en-NG", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+};
 
 export default function PromoCodeContent() {
   const { loadingPromoCodes, promoCodes, fetchMarketingPromoCodes } =
     useMarketingStore();
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  console.log("Promo codes in promo code content component =>", promoCodes);
-
-  // FETCH PROMO CODE ON MOUNT
-  // React.useEffect(() => {
-  //   // FETCH PROMO CODE ONLY WHEN DATA IS EMPTY
-  //   if (promoCodes.length === 0) {
-  //     fetchMarketingPromoCodes();
-  //   }
-  // }, [fetchMarketingPromoCodes, promoCodes]);
+  React.useEffect(() => {
+    fetchMarketingPromoCodes();
+  }, [fetchMarketingPromoCodes]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -38,29 +44,37 @@ export default function PromoCodeContent() {
     { key: "type", label: "Type" },
     { key: "value", label: "Value" },
     { key: "minOrder", label: "Min. Order" },
+    { key: "usage", label: "Usage" },
     { key: "expiry", label: "Expiry" },
     { key: "status", label: "Status" },
   ];
 
   const rows = promoCodes.map((promo) => ({
     ...promo,
-    createdDate: promo.startDate,
+    createdDate: formatDate(promo.created_at),
     code: <span className="font-medium">{promo.code}</span>,
     type: <TypeBadge type={promo.type} />,
     value: (
       <span className="text-[#101928]">
-        {promo.type === "PERCENT"
+        {promo.type === "percentage"
           ? `${promo.value}%`
           : formatCurrency(promo.value)}
       </span>
     ),
     minOrder: (
       <span className="text-[#667085]">
-        {promo.used ? formatCurrency(promo.used) : "-"}
+        {promo.min_order_amount > 0
+          ? formatCurrency(promo.min_order_amount)
+          : "—"}
       </span>
     ),
-    expiry: promo.endDate,
-    status: <StatusBadge status={promo.status} />,
+    usage: (
+      <span className="text-[#667085]">
+        {promo.used_count} / {promo.usage_limit}
+      </span>
+    ),
+    expiry: formatDate(promo.expiry_date),
+    status: <StatusBadge status={promo.is_active ? "Active" : "Inactive"} />,
   }));
 
   return (
@@ -86,26 +100,25 @@ export default function PromoCodeContent() {
           </button>
         </div>
       </div>
-      {!loadingPromoCodes && promoCodes.length > 0 ? (
+      {loadingPromoCodes ? (
+        <p className="text-center my-5 text-[#667085]">Loading promo codes…</p>
+      ) : promoCodes.length > 0 ? (
         <DataTable columns={columns} rows={rows} />
       ) : (
-        <p className="text-center my-5">No Promo Code Available</p>
+        <p className="text-center my-5 text-[#667085]">
+          No promo codes available
+        </p>
       )}
     </div>
   );
 }
 
 const StatusBadge = ({ status }: { status: PromoCodeStatus }) => {
-  const statusStyles = {
-    ACTIVE: "bg-green-100 text-green-700",
-    // "On Hold": "bg-orange-100 text-orange-700",
-    SCHEDULED: "bg-red-100 text-red-700",
-  };
-
+  const isActive = status === "Active";
   return (
     <span
       className={`px-3 py-1 rounded-full text-xs font-medium ${
-        statusStyles[status] || "bg-gray-100 text-gray-700"
+        isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
       }`}
     >
       {status}
@@ -114,18 +127,19 @@ const StatusBadge = ({ status }: { status: PromoCodeStatus }) => {
 };
 
 const TypeBadge = ({ type }: { type: PromoCodeType }) => {
-  const typeStyles = {
-    PERCENT: "bg-green-100 text-green-700",
-    FIXED: "bg-orange-100 text-orange-700",
+  const label = type === "percentage" ? "Percentage" : "Fixed";
+  const typeStyles: Record<PromoCodeType, string> = {
+    percentage: "bg-green-100 text-green-700",
+    fixed: "bg-orange-100 text-orange-700",
   };
 
   return (
     <span
       className={`px-3 py-1 rounded-full text-xs font-medium ${
-        typeStyles[type] || "bg-gray-100 text-gray-700"
+        typeStyles[type] ?? "bg-gray-100 text-gray-700"
       }`}
     >
-      {type}
+      {label}
     </span>
   );
 };
