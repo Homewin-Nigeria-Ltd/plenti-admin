@@ -1,46 +1,12 @@
-export type InventoryStatus = "High Stock" | "Medium Stock" | "Low Stock";
+import type {
+  RecentStock,
+  StockLevel,
+  Warehouse,
+} from "@/types/InventoryTypes";
 
-export type Warehouse = {
-  id: string;
-  name: string;
-  units: number;
-  fillPercentage: number;
-  manager: string;
-};
-
-export type InventoryItem = {
-  id: string;
-  productId: string;
-  productName: string;
-  productImage: string;
-  warehouse: string;
-  warehouseId: string;
-  quantity: number;
-  expiryDate: string | null;
-  status: InventoryStatus;
-  batch: string;
-  supplier: string;
-};
-
-export type RecentStock = {
-  id: string;
-  productName: string;
-  productImage: string;
-  purchasedBy: string;
-  quantity: number;
-  category: string;
-  price: number;
-};
-
-export type StockLevel = {
-  activeInStock: number;
-  highStock: number;
-  mediumStock: number;
-  lowStock: number;
-  highStockItems: number;
-  mediumStockItems: number;
-  lowStockItems: number;
-};
+export const INVENTORY_API = {
+  getInventory: "/api/admin/inventory",
+} as const;
 
 export const mockWarehouses: Warehouse[] = [
   {
@@ -73,6 +39,7 @@ export const mockWarehouses: Warehouse[] = [
   },
 ];
 
+/*
 export const mockInventoryItems: InventoryItem[] = [
   {
     id: "INV001",
@@ -140,6 +107,7 @@ export const mockInventoryItems: InventoryItem[] = [
     supplier: "Flour Mills Nigeria",
   },
 ];
+*/
 
 export const mockRecentStock: RecentStock[] = [
   {

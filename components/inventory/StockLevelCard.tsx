@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { StockLevel } from "@/data/inventory";
+import type { StockLevel } from "@/types/InventoryTypes";
 import StockLevelChart from "./StockLevelChart";
 
 type StockLevelCardProps = {

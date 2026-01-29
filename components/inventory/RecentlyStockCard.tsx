@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import type { RecentStock } from "@/data/inventory";
+import type { RecentStock } from "@/types/InventoryTypes";
 
 type RecentlyStockCardProps = {
   recentStocks: RecentStock[];

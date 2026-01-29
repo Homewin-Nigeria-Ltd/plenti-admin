@@ -25,18 +25,35 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { X, CalendarIcon } from "lucide-react";
-import type { InventoryItem, InventoryStatus } from "@/data/inventory";
+import type { InventoryItemApi } from "@/types/InventoryTypes";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type EditInventoryModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  item: InventoryItem | null;
+  item: InventoryItemApi | null;
   warehouses: string[];
 };
 
-const statuses: InventoryStatus[] = ["High Stock", "Medium Stock", "Low Stock"];
+const STOCK_STATUS_DISPLAY: Record<string, string> = {
+  low_stock: "Low Stock",
+  in_stock: "In Stock",
+  high_stock: "High Stock",
+  medium_stock: "Medium Stock",
+};
+
+const statuses = [
+  "High Stock",
+  "Medium Stock",
+  "Low Stock",
+  "In Stock",
+];
+
+function formatStockStatus(s: string) {
+  const mapped = STOCK_STATUS_DISPLAY[s];
+  return mapped != null ? mapped : (s || "In Stock");
+}
 
 export function EditInventoryModal({
   isOpen,
@@ -47,19 +64,19 @@ export function EditInventoryModal({
   const [warehouse, setWarehouse] = React.useState("");
   const [quantity, setQuantity] = React.useState("");
   const [expiryDate, setExpiryDate] = React.useState<Date | undefined>(undefined);
-  const [status, setStatus] = React.useState<InventoryStatus | "">("");
+  const [status, setStatus] = React.useState("");
   const [batch, setBatch] = React.useState("");
   const [supplier, setSupplier] = React.useState("");
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (item) {
-      setWarehouse(item.warehouseId);
-      setQuantity(item.quantity.toString());
-      setExpiryDate(item.expiryDate ? new Date(item.expiryDate) : undefined);
-      setStatus(item.status);
-      setBatch(item.batch);
-      setSupplier(item.supplier);
+      setWarehouse("");
+      setQuantity(String(item.stock ?? ""));
+      setExpiryDate(undefined);
+      setStatus(formatStockStatus(item.stock_status));
+      setBatch("");
+      setSupplier("");
     }
   }, [item]);
 
@@ -70,7 +87,7 @@ export function EditInventoryModal({
       warehouse,
       quantity,
       expiryDate: expiryDate ? expiryDate.toISOString().split("T")[0] : "",
-      status,
+      status: status || undefined,
       batch,
       supplier,
     });
@@ -109,7 +126,7 @@ export function EditInventoryModal({
             <Label htmlFor="edit-productName">Product Name</Label>
             <Input
               id="edit-productName"
-              value={item.productName}
+              value={item.name}
               className="form-control"
               readOnly
             />
@@ -186,7 +203,7 @@ export function EditInventoryModal({
 
             <div className="space-y-2">
               <Label htmlFor="edit-status">Status</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value as InventoryStatus)}>
+              <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger id="edit-status" className="form-control !w-full">
                   <SelectValue placeholder="Select Status" />
                 </SelectTrigger>
