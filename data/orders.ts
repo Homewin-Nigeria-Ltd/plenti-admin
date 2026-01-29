@@ -1,5 +1,11 @@
-import { Order } from "@/types/OrderTypes";
+export const ORDERS_API = {
+  getOrders: "/api/admin/orders",
+  getOrder: "/api/admin/orders",
+  deleteOrder: "/api/admin/orders",
+  getStatistics: "/api/admin/orders/statistics",
+} as const;
 
+/*
 export const mockOrders = [
   {
     date: "Apr 12, 2023 | 09:32AM",
@@ -15,7 +21,6 @@ export const mockOrders = [
     date: "Apr 12, 2023 | 09:32AM",
     id: "#0001",
     customerName: "Minabo Dokubo",
-
     customerEmail: "thekdfisher@email.com",
     value: 2300,
     qty: 1,
@@ -94,13 +99,9 @@ export const mockOrders = [
     status: "Pending",
   },
 ];
+*/
 
-export type OrderStat = {
-  title: string;
-  value: number;
-  changePercent: number;
-  increased: boolean;
-};
+import type { OrderStat } from "@/types/OrderTypes";
 
 export const orderStats: OrderStat[] = [
   { title: "Pending Orders", value: 45823, changePercent: 10, increased: true },

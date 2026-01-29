@@ -2,33 +2,58 @@
 
 import * as React from "react";
 import DataTable from "@/components/common/DataTable";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import Image from "next/image";
+import { Search } from "lucide-react";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { useOrderStore } from "@/store/useOrderStore";
-import { mockOrders } from "@/data/orders";
+import { useDebounce } from "use-debounce";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function formatOrderDate(iso: string) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-NG", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
 
 export default function OrderTableWrapper() {
-  const { setSingleOrder } = useOrderStore();
+  const {
+    orders,
+    loading,
+    currentPage,
+    lastPage,
+    perPage,
+    totalItems,
+    fetchOrders,
+    setSingleOrder,
+  } = useOrderStore();
 
   const [open, setOpen] = React.useState(false);
   const [selectedId, setSelectedId] = React.useState<number | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [debouncedSearch] = useDebounce(searchQuery, 400);
+  const [hasRequested, setHasRequested] = React.useState(false);
 
-  // Filter orders based on search query
-  const filteredOrders = React.useMemo(() => {
-    if (!searchQuery) return mockOrders;
-
-    const query = searchQuery.toLowerCase();
-    return mockOrders.filter(
-      (order) =>
-        order.id.toString().toLowerCase().includes(query) ||
-        // order.customerName?.toLowerCase().includes(query) ||
-        // order.customerEmail?.toLowerCase().includes(query) ||
-        order.status?.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
+  React.useEffect(() => {
+    let cancelled = false;
+    const searchTerm = typeof debouncedSearch === "string" ? debouncedSearch.trim() : "";
+    (async () => {
+      await fetchOrders({ page: 1, search: searchTerm });
+      if (!cancelled) setHasRequested(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, fetchOrders]);
 
   const columns = [
     { key: "date", label: "Order Date" },
@@ -47,61 +72,81 @@ export default function OrderTableWrapper() {
     }).format(n);
 
   const statusChip = (status: string) => {
+    const s = (status ?? "").toLowerCase();
     const colorMap: Record<string, string> = {
-      Successful: "bg-green-100 text-green-700",
-      Pending: "bg-gray-100 text-gray-700",
-      Processing: "bg-orange-100 text-orange-700",
-      Cancelled: "bg-red-100 text-red-700",
+      successful: "bg-green-100 text-green-700",
+      pending: "bg-gray-100 text-gray-700",
+      processing: "bg-orange-100 text-orange-700",
+      cancelled: "bg-red-100 text-red-700",
     };
     return (
       <span
         className={`px-3 py-1 rounded-full text-xs font-medium ${
-          colorMap[status] || "bg-gray-100 text-gray-700"
+          colorMap[s] || "bg-gray-100 text-gray-700"
         }`}
       >
-        {status}
+        {status || "—"}
       </span>
     );
   };
 
-  const rows = filteredOrders.map((order, index) => {
-    const initial = order.customerName?.charAt(0)?.toUpperCase() || "-";
-    return {
-      orderIndex: index,
-      orderId: order.id,
-      date: <span className="text-[#101928] text-sm">{order.date}</span>,
-      id: (
-        <span className="text-[#101928] font-medium text-sm">{order.id}</span>
-      ),
-      customer: (
-        <div className="flex items-center gap-3">
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-[#1F3A78] text-white text-sm font-medium">
-              {initial}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="text-[#101928] font-medium text-sm">
-              {order.customerName}
-            </p>
-            <p className="text-[#667085] text-xs">{order.customerEmail}</p>
-          </div>
-        </div>
-      ),
-      value: (
-        <span className="text-[#101928] font-medium text-sm">
-          {formatCurrency(order.value)}
-        </span>
-      ),
-      qty: <span className="text-[#101928] text-sm">{order.qty}</span>,
-      status: statusChip(order.status),
-    };
-  });
+  const getInitials = (name: string) => {
+    const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "";
+    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+    return (first + last).toUpperCase() || "?";
+  };
+
+  const tableRows = React.useMemo(
+    () =>
+      orders.map((order) => {
+        const qty = (order.items ?? []).reduce((acc, i) => acc + (i.quantity ?? 0), 0);
+        const name = order.user?.name ?? "—";
+        return {
+          date: (
+            <span className="text-[#101928] text-sm">
+              {formatOrderDate(order.created_at)}
+            </span>
+          ),
+          id: (
+            <span className="text-[#101928] font-medium text-sm">
+              {order.order_number}
+            </span>
+          ),
+          customer: (
+            <div className="flex items-center gap-3">
+              <Avatar className="size-8">
+                {order.user?.avatar_url ? (
+                  <AvatarImage src={order.user.avatar_url} alt={name} />
+                ) : null}
+                <AvatarFallback className="bg-[#1F3A78] text-white text-sm font-medium">
+                  {getInitials(name)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-[#101928] font-medium text-sm">{name}</p>
+                <p className="text-[#667085] text-xs">
+                  {order.user?.email ?? "—"}
+                </p>
+              </div>
+            </div>
+          ),
+          value: (
+            <span className="text-[#101928] font-medium text-sm">
+              {formatCurrency(Number(order.total) ?? 0)}
+            </span>
+          ),
+          qty: <span className="text-[#101928] text-sm">{qty}</span>,
+          status: statusChip(order.status),
+        };
+      }),
+    [orders]
+  );
 
   return (
     <div className="space-y-6">
       <div className="border border-[#F0F2F5] rounded-[8px] h-[48px] flex items-center gap-2 p-2 px-4 shadow-sm bg-white">
-        <Image src={"/icons/search.png"} alt="Search" width={20} height={20} />
+        <Search className="size-5 text-neutral-500 shrink-0" />
         <Input
           className="w-full placeholder:text-[#253B4B] border-0 outline-none focus-visible:ring-0 shadow-none h-auto"
           placeholder="Search"
@@ -109,27 +154,73 @@ export default function OrderTableWrapper() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
+
       <div className="bg-white rounded-xl border border-[#EEF1F6] shadow-xs">
-        <DataTable
-          columns={columns}
-          rows={rows}
-          onRowClick={async (row) => {
-            const orderIndex = row.orderIndex as number;
-            if (orderIndex !== undefined && filteredOrders[orderIndex]) {
-              // For now, use a simple numeric ID based on index
-              // In a real app, you'd use the actual order ID from the API
-              setSelectedId(orderIndex + 1);
-              setOpen(true);
+        {hasRequested && !loading && orders.length > 0 ? (
+          <DataTable
+            columns={columns}
+            rows={tableRows}
+            page={currentPage}
+            pageCount={lastPage}
+            pageSize={perPage}
+            total={totalItems}
+            onPageChange={(nextPage) =>
+              fetchOrders({ page: nextPage, search: debouncedSearch })
             }
-          }}
-        />
+            onRowClick={(_, idx) => {
+              const order = orders[idx];
+              if (order?.id != null) {
+                setSelectedId(order.id);
+                setOpen(true);
+              }
+            }}
+          />
+        ) : !hasRequested || loading ? (
+          <div className="min-w-[720px]">
+            <div className="grid grid-cols-6 gap-4 px-4 py-3 border-b border-neutral-100">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-4 w-24" />
+              ))}
+            </div>
+            {Array.from({ length: Math.max(6, perPage) }).map((_, rowIdx) => (
+              <div
+                key={rowIdx}
+                className="grid grid-cols-6 gap-4 px-4 py-4 border-b border-neutral-100"
+              >
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-32" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-8 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                </div>
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+            ))}
+            <div className="flex items-center justify-between px-4 py-3">
+              <Skeleton className="h-4 w-32" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-8 w-24 rounded-full" />
+                <Skeleton className="h-8 w-24 rounded-full" />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-center py-8 text-[#667085]">No orders found</p>
+        )}
       </div>
+
       <OrderDetailsModal
         selectedId={selectedId}
         isOpen={open}
         onClose={() => {
           setSingleOrder();
           setOpen(false);
+          setSelectedId(null);
         }}
       />
     </div>

@@ -1,16 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-// import { TrendingUp, TrendingDown } from "lucide-react";
-
-type OrderStatCardProps = {
-  title: string;
-  value: number;
-  changePercent: number;
-  increased?: boolean;
-  changeLabel?: string;
-  className?: string;
-};
+import type { OrderStatCardProps } from "@/types/OrderTypes";
 
 export default function OrderStatCard({
   title,

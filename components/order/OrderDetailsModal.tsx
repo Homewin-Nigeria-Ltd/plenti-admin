@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Ellipsis, X } from "lucide-react";
+import { Ellipsis, Loader2, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +21,15 @@ import * as React from "react";
 import { toast } from "sonner";
 import { DeleteOrderConfirm } from "./DeleteOrderConfirm";
 import { useOrderStore } from "@/store/useOrderStore";
+import { ORDERS_API } from "@/data/orders";
+import Image from "next/image";
+
+const formatCurrency = (n: number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 2,
+  }).format(n);
 
 export function OrderDetailsModal({
   isOpen,
@@ -31,32 +40,39 @@ export function OrderDetailsModal({
   onClose: () => void;
   selectedId: number | null;
 }) {
-  const { fetchSingleOrders, singleOrder } = useOrderStore();
+  const { fetchSingleOrders, singleOrder, loadingSingle, fetchOrders, lastQuery } =
+    useOrderStore();
   const [assignOpen, setAssignOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
-  console.log("Selected id", selectedId);
-  console.log("Single order details =>", singleOrder);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   React.useEffect(() => {
-    // close modal if no id
-    if (!selectedId) {
-      return;
-    }
-
+    if (!selectedId) return;
     fetchSingleOrders(selectedId);
   }, [fetchSingleOrders, selectedId]);
 
   function markAsInTransit() {
-    // onClose();
     toast.info("Order has been updated to in transit");
   }
+
+  const items = singleOrder?.items ?? [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="min-w-[750px]" showCloseButton={false}>
+        {loadingSingle ? (
+          <>
+            <DialogTitle className="sr-only">Loading order details</DialogTitle>
+            <div className="flex flex-col items-center justify-center min-h-[280px] gap-3 px-6 py-12">
+              <Loader2 className="size-10 animate-spin text-[#0B1E66]" />
+              <p className="text-sm text-[#667085]">Loading order details…</p>
+            </div>
+          </>
+        ) : (
+          <>
         <DialogHeader className="relative">
           <DialogTitle className="font-medium text-[24px]">
-            Order Details - ORD- {singleOrder?.id || ""}
+            Order Details – {singleOrder?.order_number ?? selectedId ?? "—"}
           </DialogTitle>
           <DialogDescription className="text-[#808080] text-[14px] font-normal">
             Complete order information and actions
@@ -114,134 +130,119 @@ export function OrderDetailsModal({
           </div>
         </DialogHeader>
 
-        <div className="px-6 pb-6 space-y-6">
-          {/* ORDERS ITEMS  */}
-          {singleOrder && singleOrder?.items.length > 0 && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="size-16 h-full rounded-md bg-[#E8EEFF80] border-[0.5px] border-[#D0D5DD]"></div>
-                  <div>
+        <div className="px-6 pb-6">
+          <div className="space-y-6">
+          {items.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {items.map((item) => (
+                <div key={item.id} className="flex items-center gap-4">
+                  <div className="size-16 shrink-0 rounded-md bg-[#E8EEFF80] border-[0.5px] border-[#D0D5DD] overflow-hidden">
+                    {item.product?.image_url ? (
+                      <Image
+                        src={item.product.image_url}
+                        alt={item.product_name}
+                        width={64}
+                        height={64}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <div className="size-full bg-[#E8EEFF80]" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
                     <p className="font-medium text-[16px] text-[#1A1A1A]">
-                      Mr. Chef Salt
+                      {item.product_name ?? "—"}
                     </p>
-                    <p className="text-xs font-normal text-[#9B9B9B]">
-                      High-quality premium long grain rice
+                    <p className="text-xs text-[#9B9B9B] truncate">
+                      {item.product?.description ?? "—"}
                     </p>
-                    <div className="flex items-center mt-5 gap-6 text-sm">
+                    <div className="flex items-center mt-2 gap-6 text-sm">
                       <span>
-                        Price: <span className="font-medium">₦50,210</span>
+                        Price:{" "}
+                        <span className="font-medium">
+                          {item.price != null
+                            ? formatCurrency(Number(item.price) || 0)
+                            : "—"}
+                        </span>
                       </span>
                       <span className="text-[#9B9B9B]">
-                        QTY: <span className="text-black">10</span>
+                        QTY:{" "}
+                        <span className="text-black">
+                          {item.quantity ?? "—"}
+                        </span>
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="size-16 h-full rounded-md bg-[#E8EEFF80] border-[0.5px] border-[#D0D5DD]"></div>
-                  <div>
-                    <p className="font-medium text-[16px] text-[#1A1A1A]">
-                      Dano Milk
-                    </p>
-                    <p className="text-xs font-normal text-[#9B9B9B]">
-                      High-quality premium long grain rice
-                    </p>
-                    <div className="flex items-center mt-5 gap-6 text-sm">
-                      <span>
-                        Price: <span className="font-medium">₦50,210</span>
-                      </span>
-                      <span className="text-[#9B9B9B]">
-                        QTY: <span className="text-black">10</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="size-16 h-full rounded-md bg-[#E8EEFF80] border-[0.5px] border-[#D0D5DD]"></div>
-                  <div>
-                    <p className="font-medium text-[16px] text-[#1A1A1A]">
-                      Sunflower Groundnut Oil
-                    </p>
-                    <p className="text-xs font-normal text-[#9B9B9B]">
-                      High-quality premium long grain rice
-                    </p>
-                    <div className="flex items-center mt-5 gap-6 text-sm">
-                      <span>
-                        Price: <span className="font-semibold">₦50,210</span>
-                      </span>
-                      <span className="text-[#9B9B9B]">
-                        QTY: <span className="text-black">10</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="size-16 h-full rounded-md bg-[#E8EEFF80] border-[0.5px] border-[#D0D5DD]"></div>
-                  <div>
-                    <p className="font-medium text-[16px] text-[#1A1A1A]">
-                      Mr. Chef Salt
-                    </p>
-                    <p className="text-xs font-normal text-[#9B9B9B]">
-                      High-quality premium long grain rice
-                    </p>
-                    <div className="flex items-center mt-5 gap-6 text-sm">
-                      <span>
-                        Price: <span className="font-semibold">₦50,210</span>
-                      </span>
-                      <span className="text-[#9B9B9B]">
-                        QTY: <span className="text-black">10</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-[#EEF1F6] bg-[#F9FAFB] p-6">
+              <p className="text-[#1F3A78] font-semibold">Order Items</p>
+              <p className="text-[#667085] text-sm mt-1">—</p>
+            </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* PAYMENT DETAILS  */}
             <div className="rounded-xl border border-[#EEF1F6] bg-[#F9FAFB] p-6 space-y-4">
               <p className="text-[#1F3A78] font-semibold">Payment Details</p>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Payment Method</p>
                 <p className="text-[#667085] text-sm">
-                  Pay with Cards, Bank Transfer or USSD
+                  {singleOrder?.payment_method ?? "—"}
                 </p>
               </div>
               <div className="space-y-1 mt-5">
                 <p className="text-[#101928] font-medium">Payment Status</p>
-                <span className="inline-flex items-center gap-2 rounded-full bg-green-100 text-green-700 px-3 py-1 text-sm">
-                  <span className="size-2 rounded-full bg-green-600"></span>
-                  Successful
+                <span
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm ${
+                    (singleOrder?.payment_status ?? "").toLowerCase() === "paid"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-amber-100 text-amber-700"
+                  }`}>
+                  <span
+                    className={`size-2 rounded-full ${
+                      (singleOrder?.payment_status ?? "").toLowerCase() === "paid"
+                        ? "bg-green-600"
+                        : "bg-amber-600"
+                    }`}
+                  />
+                  {singleOrder?.payment_status ?? "—"}
                 </span>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] text-[16px] font-medium">
                   Transaction Reference
                 </p>
-                <p className="text-[#98A2B3] text-sm">197HIT237-MOTES</p>
+                <p className="text-[#98A2B3] text-sm">
+                  {singleOrder?.payment_reference ?? "—"}
+                </p>
               </div>
             </div>
 
-            {/* SHIPPING DETAILS  */}
             <div className="rounded-xl border border-[#EEF1F6] bg-[#F9FAFB] p-6 space-y-4">
               <p className="text-[#1F3A78] font-semibold">Shipping Details</p>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Address</p>
                 <p className="text-[#667085] text-sm">
-                  {singleOrder?.deliveryAddress || ""}
+                  {singleOrder?.shipping_address ?? "—"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Details</p>
                 <p className="text-[#98A2B3] text-sm">
-                  Door Delivery. Delivery between 27 Aug and 28 Aug.
+                  {singleOrder?.delivery_tracking ?? "—"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Fee</p>
-                <p className="text-[#98A2B3] text-sm">₦ 200</p>
+                <p className="text-[#98A2B3] text-sm">—</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[#101928] font-medium">Phone</p>
+                <p className="text-[#98A2B3] text-sm">
+                  {singleOrder?.phone_number ?? "—"}
+                </p>
               </div>
             </div>
           </div>
@@ -249,11 +250,9 @@ export function OrderDetailsModal({
           <div className="border-t border-dashed border-[#EAECF0] pt-6 flex items-center justify-between">
             <p className="text-[#667085]">Amount Total</p>
             <p className="text-[#101928] font-semibold">
-              {new Intl.NumberFormat("en-NG", {
-                style: "currency",
-                currency: "NGN",
-                minimumFractionDigits: 2,
-              }).format(Number(singleOrder?.totalAmount) || 0)}
+              {singleOrder?.total != null
+                ? formatCurrency(Number(singleOrder.total))
+                : "—"}
             </p>
           </div>
 
@@ -263,19 +262,53 @@ export function OrderDetailsModal({
           >
             View Order Timeline
           </Button>
+          </div>
         </div>
+          </>
+        )}
         <AssignRiderModal
           isOpen={assignOpen}
           onClose={() => setAssignOpen(false)}
         />
         <DeleteOrderConfirm
           open={confirmOpen}
-          onOpenChange={setConfirmOpen}
-          onConfirm={() => {
-            setConfirmOpen(false);
-            setAssignOpen(false);
-            onClose();
-            toast.error("Order has been cancelled");
+          onOpenChange={(open) => {
+            if (!isDeleting) setConfirmOpen(open);
+          }}
+          isDeleting={isDeleting}
+          onConfirm={async () => {
+            if (!selectedId) return;
+            setIsDeleting(true);
+            try {
+              const res = await fetch(
+                `/api/proxy${ORDERS_API.deleteOrder}/${selectedId}`,
+                { method: "DELETE", credentials: "include" }
+              );
+              const data = (await res.json().catch(() => ({}))) as {
+                status?: string;
+                message?: string;
+              };
+              const ok = res.ok && (data?.status !== "error" && data?.status !== "failed");
+              if (!ok) {
+                throw new Error(
+                  data?.message ?? "Failed to delete order"
+                );
+              }
+            
+              setConfirmOpen(false);
+              setAssignOpen(false);
+              onClose();
+            
+              toast.success("Order has been cancelled");
+              await fetchOrders({ page: lastQuery.page, search: lastQuery.search });
+            } catch (e) {
+              toast.error(
+                e instanceof Error ? e.message : "Failed to delete order"
+              );
+            } finally {
+              setIsDeleting(false);
+
+            }
           }}
         />
       </DialogContent>

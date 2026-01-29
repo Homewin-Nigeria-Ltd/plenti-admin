@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-// import { ChevronRight } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,6 +19,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import * as React from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { useOrderStore } from "@/store/useOrderStore";
 
 export function AssignRiderModal({
   isOpen,
@@ -28,7 +28,9 @@ export function AssignRiderModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const singleOrder = useOrderStore((s) => s.singleOrder);
   const [value, setValue] = React.useState<string | undefined>(undefined);
+
   const riders = [
     { name: "Ayibaemi Obubra", initial: "A" },
     { name: "Aisha Garba", initial: "A" },
@@ -41,7 +43,9 @@ export function AssignRiderModal({
 
   function assignRider() {
     onClose();
-    toast.success("Rider has been assigned to order ORD-2841");
+    toast.success(
+      `Rider has been assigned to order ${singleOrder?.order_number ?? ""}`
+    );
   }
 
   return (
@@ -49,7 +53,7 @@ export function AssignRiderModal({
       <DialogContent className="min-w-[750px]" showCloseButton={false}>
         <DialogHeader className="relative">
           <DialogTitle className="font-medium text-[24px]">
-            Assign Rider to Order - ORD-2841
+            Assign Rider to Order – {singleOrder?.order_number ?? "—"}
           </DialogTitle>
           <DialogDescription className="text-[#808080] text-[14px] font-normal">
             Select a delivery agent for the order
@@ -95,21 +99,35 @@ export function AssignRiderModal({
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Payment Method</p>
                 <p className="text-[#667085] text-sm">
-                  Pay with Cards, Bank Transfer or USSD
+                  {singleOrder?.payment_method ?? "—"}
                 </p>
               </div>
               <div className="space-y-1 mt-5">
                 <p className="text-[#101928] font-medium">Payment Status</p>
-                <span className="inline-flex items-center gap-2 rounded-full bg-green-100 text-green-700 px-3 py-1 text-sm">
-                  <span className="size-2 rounded-full bg-green-600"></span>
-                  Successful
+                <span
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm ${
+                    (singleOrder?.payment_status ?? "").toLowerCase() === "paid"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-amber-100 text-amber-700"
+                  }`}>
+                  <span
+                    className={`size-2 rounded-full ${
+                      (singleOrder?.payment_status ?? "").toLowerCase() ===
+                      "paid"
+                        ? "bg-green-600"
+                        : "bg-amber-600"
+                    }`}
+                  />
+                  {singleOrder?.payment_status ?? "—"}
                 </span>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] text-[16px] font-medium">
                   Transaction Reference
                 </p>
-                <p className="text-[#98A2B3] text-sm">197HIT237-MOTES</p>
+                <p className="text-[#98A2B3] text-sm">
+                  {singleOrder?.payment_reference ?? "—"}
+                </p>
               </div>
             </div>
 
@@ -118,18 +136,24 @@ export function AssignRiderModal({
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Address</p>
                 <p className="text-[#667085] text-sm">
-                  188 Awolowo Way Ikoyi Lagos
+                  {singleOrder?.shipping_address ?? "—"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Details</p>
                 <p className="text-[#98A2B3] text-sm">
-                  Door Delivery. Delivery between 27 Aug and 28 Aug.
+                  {singleOrder?.delivery_tracking ?? "—"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Fee</p>
-                <p className="text-[#98A2B3] text-sm">₦ 200</p>
+                <p className="text-[#98A2B3] text-sm">—</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[#101928] font-medium">Phone</p>
+                <p className="text-[#98A2B3] text-sm">
+                  {singleOrder?.phone_number ?? "—"}
+                </p>
               </div>
             </div>
           </div>

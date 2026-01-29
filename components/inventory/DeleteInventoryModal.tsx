@@ -10,13 +10,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import type { InventoryItem } from "@/data/inventory";
+import type { InventoryItemApi } from "@/types/InventoryTypes";
 import { toast } from "sonner";
 
 type DeleteInventoryModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  item: InventoryItem | null;
+  item: InventoryItemApi | null;
   onConfirm: () => void;
 };
 
@@ -42,7 +42,9 @@ export function DeleteInventoryModal({
             Delete Inventory Item
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-neutral-500">
-            Are you sure you want to delete this inventory item?
+            {item
+              ? `Are you sure you want to delete "${item.name}"?`
+              : "Are you sure you want to delete this inventory item?"}
           </DialogDescription>
           <button
             type="button"

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Warehouse } from "@/data/inventory";
+import type { Warehouse } from "@/types/InventoryTypes";
 import { cn } from "@/lib/utils";
 
 type WarehouseCardProps = {
