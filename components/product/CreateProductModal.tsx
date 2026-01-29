@@ -22,28 +22,13 @@ import {
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useProductStore } from "@/store/useProductStore";
-import type { UploadImageResponse } from "@/types/ProductTypes";
 import { useFilePreview } from "@/lib/useFilePreview";
+import { uploadImage } from "@/lib/upload";
 
 type CreateProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
-
-function getApiMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") return null;
-  const message = (payload as Record<string, unknown>).message;
-  return typeof message === "string" ? message : null;
-}
-
-function getUploadedImageUrl(payload: unknown): string | null {
-  // Expected: { data: { url: string } }
-  if (!payload || typeof payload !== "object") return null;
-  const data = (payload as Record<string, unknown>).data;
-  if (!data || typeof data !== "object") return null;
-  const url = (data as Record<string, unknown>).url;
-  return typeof url === "string" ? url : null;
-}
 
 export function CreateProductModal({
   isOpen,
@@ -141,64 +126,44 @@ export function CreateProductModal({
       return;
     }
 
-    try {
-      setUploadingImage(true);
-      const fd = new FormData();
-      fd.set("image", selectedFile);
-      fd.set("folder", "product");
+    setUploadingImage(true);
+    const uploadResult = await uploadImage(selectedFile, "product");
+    setUploadingImage(false);
 
-      const uploadRes = await fetch("/api/upload/image", {
-        method: "POST",
-        body: fd,
-      });
-
-      const uploadJson = (await uploadRes.json().catch(() => null)) as
-        | UploadImageResponse
-        | unknown
-        | null;
-      if (!uploadRes.ok) {
-        toast.error(getApiMessage(uploadJson) ?? "Image upload failed");
-        return;
-      }
-
-      const imageUrl = getUploadedImageUrl(uploadJson);
-      if (!imageUrl) {
-        toast.error("Image upload failed: missing image URL");
-        return;
-      }
-
-      const ok = await createProduct({
-        name: productName,
-        description,
-        price,
-        stock,
-        category_id: resolvedCategoryId,
-        is_active: true,
-        image_urls: [imageUrl],
-        min_bulk_quantity: minBulk,
-        bulk_price: bulk,
-      });
-
-      if (!ok) {
-        toast.error("Failed to create product");
-        return;
-      }
-
-      toast.success("Product created successfully");
-      setProductName("");
-      setDescription("");
-      setCategoryId(null);
-      setSubCategoryId(null);
-      setAmount("");
-      setInitialStock("");
-      setMinBulkQuantity("");
-      setBulkPrice("");
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      onClose();
-    } finally {
-      setUploadingImage(false);
+    if (!uploadResult.ok) {
+      toast.error(uploadResult.error);
+      return;
     }
+
+    const ok = await createProduct({
+      name: productName,
+      description,
+      price,
+      stock,
+      category_id: resolvedCategoryId,
+      is_active: true,
+      image_urls: [uploadResult.url],
+      min_bulk_quantity: minBulk,
+      bulk_price: bulk,
+    });
+
+    if (!ok) {
+      toast.error("Failed to create product");
+      return;
+    }
+
+    toast.success("Product created successfully");
+    setProductName("");
+    setDescription("");
+    setCategoryId(null);
+    setSubCategoryId(null);
+    setAmount("");
+    setInitialStock("");
+    setMinBulkQuantity("");
+    setBulkPrice("");
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    onClose();
   };
 
   const selectedCategory = React.useMemo(

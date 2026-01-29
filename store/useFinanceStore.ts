@@ -1,51 +1,63 @@
 import api from "@/lib/api";
-import { FinanceState } from "@/types/FinanceTypes";
-import { AxiosError } from "axios";
+import type {
+  FinanceState,
+  Refund,
+  RefundPagination,
+} from "@/types/FinanceTypes";
 import { create } from "zustand";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function getApiErrorMessage(err: unknown): string | null {
+  if (!isRecord(err)) return null;
+  const response = (err as { response?: unknown }).response;
+  if (!isRecord(response)) return null;
+  const data = (response as { data?: unknown }).data;
+  if (!isRecord(data)) return null;
+  const message = data.message;
+  return typeof message === "string" ? message : null;
+}
+
 export const useFinanceStore = create<FinanceState>((set) => ({
-  finance: [],
   refunds: [],
-  refundPagination: {
-    page: 0,
-    pageSize: 0,
-    totalCount: 0,
-  },
+  refundPagination: null,
   loadingRefunds: false,
+  refundsError: null,
 
-  //   ENDPOINT TO GET THE LIST OF REFUNDS
-  fetchRefunds: async (page: number): Promise<boolean> => {
-    set({ loadingRefunds: true });
-
-    const params = new URLSearchParams();
-
-    params.append("page", page.toString());
-    params.append("size", "10");
-
+  fetchRefunds: async (page = 1, pageSize = 10) => {
+    set({ loadingRefunds: true, refundsError: null });
     try {
       const { data } = await api.get<{
-        data: {
-          refunds: [];
-          page: number;
-          pageSize: number;
-          totalCount: number;
+        status?: string;
+        data?: {
+          refunds?: Refund[];
+          page?: number;
+          pageSize?: number;
+          totalCount?: number;
         };
-      }>("/api/admin/finance/refunds?" + params.toString());
-      console.log("Refunds data =>", data.data);
-      set({
-        // refunds: data.data.refunds,
-        refundPagination: {
-          page: data.data.page,
-          pageSize: data.data.pageSize,
-          totalCount: data.data.totalCount,
-        },
+      }>("/api/admin/finance/refunds", {
+        params: { page, size: pageSize },
       });
 
+      const payload = data?.data;
+      const refunds = Array.isArray(payload?.refunds) ? payload.refunds : [];
+      const refundPagination: RefundPagination | null =
+        payload != null
+          ? {
+              page: payload.page ?? page,
+              pageSize: payload.pageSize ?? pageSize,
+              totalCount: payload.totalCount ?? 0,
+            }
+          : null;
+
+      set({ refunds, refundPagination });
       return true;
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        console.log("Axios Error =>", error);
-      }
+    } catch (error: unknown) {
+      const message = getApiErrorMessage(error) ?? "Failed to fetch refunds";
+      console.error("Error fetching refunds =>", error);
+      set({ refundsError: message, refunds: [], refundPagination: null });
       return false;
     } finally {
       set({ loadingRefunds: false });

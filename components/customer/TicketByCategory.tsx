@@ -18,38 +18,71 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const summaryData = [
-  { category: "Order Issue", value: 2890134 },
-  { category: "Refund Request", value: 860580 },
-  { category: "Delivery Issue", value: 820240 },
-  { category: "Others", value: 620420 },
+const DEFAULT_CHART_DATA = [
+  { category: "Order", value: 0 },
+  { category: "Payment", value: 0 },
+  { category: "Delivery", value: 0 },
+  { category: "General", value: 0 },
 ];
 
-const chartData = [
-  { category: "Order Issue", value: 190000 },
-  { category: "Business Banking", value: 180000 },
-  { category: "Delivery Issue", value: 90000 },
-  { category: "Others", value: 70000 },
-];
+function formatCategoryLabel(key: string): string {
+  return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
+}
 
-export default function TicketByCategory() {
+type TicketByCategoryProps = {
+  byCategory?: Record<string, number>;
+  loading?: boolean;
+};
+
+export default function TicketByCategory({
+  byCategory,
+  loading = false,
+}: TicketByCategoryProps) {
   const [period, setPeriod] = React.useState("monthly");
 
+  const chartData = React.useMemo(() => {
+    if (!byCategory || Object.keys(byCategory).length === 0) {
+      return DEFAULT_CHART_DATA;
+    }
+    return Object.entries(byCategory)
+      .map(([key, value]) => ({
+        category: formatCategoryLabel(key),
+        value,
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [byCategory]);
+
+  const maxValue = React.useMemo(() => {
+    const max = Math.max(...chartData.map((d) => d.value), 1);
+    return Math.ceil(max / 10) * 10 || 10;
+  }, [chartData]);
+
   const formatValue = (value: number) => {
-    if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M`;
-    }
-    if (value >= 1000) {
-      return `${(value / 1000).toFixed(0)}K`;
-    }
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
     return value.toString();
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl border border-[#EEF1F6] p-6">
+        <div className="h-6 bg-[#EEF1F6] rounded w-2/3 mb-4 animate-pulse" />
+        <div className="h-4 bg-[#EEF1F6] rounded w-full mb-6 animate-pulse" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-16 bg-[#EEF1F6] rounded animate-pulse" />
+          ))}
+        </div>
+        <div className="h-[300px] bg-[#EEF1F6] rounded animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border border-[#EEF1F6] p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[#0B1E66] text-lg font-semibold">
-          Ticket by Category
+          Tickets by Category
         </h3>
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-[120px] h-9 border-[#D0D5DD]">
@@ -64,13 +97,12 @@ export default function TicketByCategory() {
       </div>
 
       <p className="text-[#667085] text-sm mb-6">
-        This section provides an analysis or insights into ticket opened by new
-        and returning customers.
+        Distribution of support tickets by category.
       </p>
 
       {/* Summary Numbers */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {summaryData.map((item) => (
+        {chartData.slice(0, 4).map((item) => (
           <div key={item.category}>
             <p className="text-[#667085] text-xs mb-1">{item.category}</p>
             <p className="text-[#0B1E66] text-2xl font-semibold">
@@ -95,12 +127,11 @@ export default function TicketByCategory() {
             />
             <XAxis
               type="number"
-              domain={[0, 200000]}
+              domain={[0, maxValue]}
               tick={{ fill: "#667085", fontSize: 12 }}
               tickLine={false}
               axisLine={{ stroke: "#EEF1F6" }}
               tickFormatter={formatValue}
-              ticks={[0, 20000, 40000, 60000, 80000, 100000, 200000]}
             />
             <YAxis
               type="category"
@@ -108,10 +139,12 @@ export default function TicketByCategory() {
               tick={{ fill: "#667085", fontSize: 12 }}
               tickLine={false}
               axisLine={{ stroke: "#EEF1F6" }}
-              width={120}
+              width={100}
             />
             <Tooltip
-              formatter={(value: number | undefined) => formatValue(value ?? 0)}
+              formatter={(value: number | undefined) =>
+                new Intl.NumberFormat("en-US").format(value ?? 0)
+              }
               contentStyle={{
                 borderRadius: 8,
                 border: "1px solid #EEF1F6",
@@ -122,7 +155,7 @@ export default function TicketByCategory() {
               dataKey="value"
               fill="#0B1E66"
               radius={[0, 8, 8, 0]}
-              barSize={40}
+              barSize={32}
             />
           </BarChart>
         </ResponsiveContainer>

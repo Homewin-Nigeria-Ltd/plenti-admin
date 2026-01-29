@@ -52,7 +52,7 @@ export function BannerDetailsModal({
               </DialogDescription>
             </div>
             <div className="text-right text-sm text-[#667085] whitespace-nowrap shrink-0">
-              Date Created: {banner.startDate}
+              Position: {banner.position}
             </div>
           </div>
 
@@ -94,16 +94,18 @@ export function BannerDetailsModal({
 
         <div className="px-6 pb-6 space-y-6">
           {/* Link */}
-          <div>
-            <a
-              href={banner.targetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#1F3A78] hover:underline text-sm font-medium break-all"
-            >
-              {banner.targetUrl}
-            </a>
-          </div>
+          {banner.link_url && (
+            <div>
+              <a
+                href={banner.link_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#1F3A78] hover:underline text-sm font-medium break-all"
+              >
+                {banner.link_url}
+              </a>
+            </div>
+          )}
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-2 gap-6">
@@ -114,25 +116,23 @@ export function BannerDetailsModal({
                   Screen Location
                 </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {/* {banner.screenLocation} */}
+                  {banner.screen_location ?? "—"}
                 </p>
               </div>
 
               <div>
                 <p className="text-[#667085] text-sm font-medium mb-1">Type</p>
                 <p className="text-[#101928] text-base font-medium">
-                  {/* {banner.type === "Full-Page" ? "Full-page" : banner.type} */}
+                  {banner.banner_type}
                 </p>
               </div>
 
               <div>
                 <p className="text-[#667085] text-sm font-medium mb-1">
-                  Number of Clicks
+                  Total Clicks
                 </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {/* {banner.numberOfClicks
-                    ? formatNumber(banner.numberOfClicks)
-                    : "0"} */}
+                  {new Intl.NumberFormat("en-US").format(banner.total_clicks)}
                 </p>
               </div>
             </div>
@@ -141,19 +141,28 @@ export function BannerDetailsModal({
             <div className="space-y-4">
               <div>
                 <p className="text-[#667085] text-sm font-medium mb-1">
-                  Click Per Day
+                  Clicks Per Day
                 </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {/* {banner.clicksPerDay
-                    ? formatNumber(banner.clicksPerDay)
-                    : "0"} */}
+                  {new Intl.NumberFormat("en-US").format(banner.clicks_per_day)}
                 </p>
               </div>
 
               <div>
-                <p className="text-[#667085] text-sm font-medium mb-1">Sort</p>
+                <p className="text-[#667085] text-sm font-medium mb-1">
+                  Position
+                </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {/* {banner.sort} */}
+                  {banner.position}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[#667085] text-sm font-medium mb-1">
+                  Status
+                </p>
+                <p className="text-[#101928] text-base font-medium">
+                  {banner.is_active ? "Active" : "Inactive"}
                 </p>
               </div>
             </div>

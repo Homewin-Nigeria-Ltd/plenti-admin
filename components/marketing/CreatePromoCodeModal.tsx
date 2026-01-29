@@ -18,28 +18,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { X, Copy, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import type { PromoCodeType } from "@/data/promoCodes";
+import { useMarketingStore } from "@/store/useMarketingStore";
+import type { PromoCodeType } from "@/types/MarketingTypes";
 
 type CreatePromoCodeModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
 
-const discountTypes: PromoCodeType[] = ["Percentage", "Fixed Amount"];
+const DISCOUNT_OPTIONS: { value: PromoCodeType; label: string }[] = [
+  { value: "percentage", label: "Percentage" },
+  { value: "fixed", label: "Fixed Amount" },
+];
 
 export function CreatePromoCodeModal({
   isOpen,
   onClose,
 }: CreatePromoCodeModalProps) {
+  const { createPromoCode, creatingPromoCode } = useMarketingStore();
   const [discountCode, setDiscountCode] = React.useState("");
   const [discountType, setDiscountType] = React.useState<PromoCodeType | "">(
     ""
   );
   const [usageLimit, setUsageLimit] = React.useState("");
   const [value, setValue] = React.useState("");
+  const [minOrderAmount, setMinOrderAmount] = React.useState("");
   const [expiryDate, setExpiryDate] = React.useState("");
+  const [isActive, setIsActive] = React.useState(true);
 
   const handleCopyCode = () => {
     if (discountCode) {
@@ -48,42 +56,72 @@ export function CreatePromoCodeModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!discountCode || !discountType || !usageLimit || !value || !expiryDate) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-
-    // Here you would typically make an API call to create the promo code
-    console.log({
-      discountCode,
-      discountType,
-      usageLimit,
-      value,
-      expiryDate,
-    });
-
-    toast.success("Discount code created successfully");
-
-    // Reset form
+  const resetForm = () => {
     setDiscountCode("");
     setDiscountType("");
     setUsageLimit("");
     setValue("");
+    setMinOrderAmount("");
     setExpiryDate("");
+    setIsActive(true);
+  };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const code = discountCode.trim().toUpperCase();
+    if (!code) {
+      toast.error("Please enter a discount code");
+      return;
+    }
+    if (!discountType) {
+      toast.error("Please select a discount type");
+      return;
+    }
+    const usageLimitNum = Number(usageLimit);
+    const valueNum = Number(value);
+    const minOrderNum = Number(minOrderAmount);
+    if (!Number.isInteger(usageLimitNum) || usageLimitNum < 1) {
+      toast.error("Please enter a valid usage limit (1 or more)");
+      return;
+    }
+    if (!Number.isFinite(valueNum) || valueNum < 0) {
+      toast.error("Please enter a valid value");
+      return;
+    }
+    if (!Number.isFinite(minOrderNum) || minOrderNum < 0) {
+      toast.error("Please enter a valid min order amount");
+      return;
+    }
+    if (!expiryDate) {
+      toast.error("Please select an expiry date");
+      return;
+    }
+
+    const expiryDateTime = `${expiryDate}T23:59:59`;
+
+    const ok = await createPromoCode({
+      code,
+      type: discountType,
+      value: valueNum,
+      min_order_amount: minOrderNum,
+      usage_limit: usageLimitNum,
+      expiry_date: expiryDateTime,
+      is_active: isActive,
+    });
+
+    if (!ok) {
+      toast.error("Failed to create promo code");
+      return;
+    }
+
+    toast.success("Promo code created successfully");
+    resetForm();
     onClose();
   };
 
   const handleClose = () => {
-    // Reset form when closing
-    setDiscountCode("");
-    setDiscountType("");
-    setUsageLimit("");
-    setValue("");
-    setExpiryDate("");
+    resetForm();
     onClose();
   };
 
@@ -114,7 +152,10 @@ export function CreatePromoCodeModal({
           className="space-y-6"
         >
           <div className="space-y-2">
-            <Label htmlFor="discountCode" className="text-[#101928] font-medium">
+            <Label
+              htmlFor="discountCode"
+              className="text-[#101928] font-medium"
+            >
               Discount Code
             </Label>
             <div className="relative">
@@ -140,12 +181,15 @@ export function CreatePromoCodeModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="discountType" className="text-[#101928] font-medium">
+            <Label
+              htmlFor="discountType"
+              className="text-[#101928] font-medium"
+            >
               Discount Type
             </Label>
             <Select
               value={discountType}
-              onValueChange={(value) => setDiscountType(value as PromoCodeType)}
+              onValueChange={(v) => setDiscountType(v as PromoCodeType)}
             >
               <SelectTrigger
                 id="discountType"
@@ -154,13 +198,32 @@ export function CreatePromoCodeModal({
                 <SelectValue placeholder="Select discount type" />
               </SelectTrigger>
               <SelectContent>
-                {discountTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
+                {DISCOUNT_OPTIONS.map(({ value: v, label }) => (
+                  <SelectItem key={v} value={v}>
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="minOrderAmount"
+              className="text-[#101928] font-medium"
+            >
+              Min. order amount
+            </Label>
+            <Input
+              id="minOrderAmount"
+              type="number"
+              placeholder="e.g. 5000"
+              value={minOrderAmount}
+              onChange={(e) => setMinOrderAmount(e.target.value)}
+              className="focus-visible:ring-0 h-[48px]"
+              min="0"
+              step="1"
+            />
           </div>
 
           <div className="space-y-2">
@@ -192,13 +255,13 @@ export function CreatePromoCodeModal({
               className="focus-visible:ring-0 h-[48px]"
               required
               min="0"
-              step={discountType === "Percentage" ? "1" : "0.01"}
+              step={discountType === "percentage" ? "1" : "0.01"}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="expiryDate" className="text-[#101928] font-medium">
-              Expiry Data
+              Expiry date
             </Label>
             <div className="relative">
               <Input
@@ -218,13 +281,25 @@ export function CreatePromoCodeModal({
             </div>
           </div>
 
+          <div className="flex items-center justify-between rounded-lg border border-input p-4">
+            <Label htmlFor="is_active" className="text-[#101928] font-medium">
+              Active
+            </Label>
+            <Switch
+              id="is_active"
+              checked={isActive}
+              onCheckedChange={setIsActive}
+            />
+          </div>
+
           <div className="pt-4">
             <Button
               type="submit"
               form="create-promo-code-form"
               className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white w-full h-[52px] text-base font-medium"
+              disabled={creatingPromoCode}
             >
-              Create Discount
+              {creatingPromoCode ? "Creating…" : "Create Discount"}
             </Button>
           </div>
         </form>
@@ -232,4 +307,3 @@ export function CreatePromoCodeModal({
     </Dialog>
   );
 }
-
