@@ -20,102 +20,86 @@ import {
 } from "@/components/ui/select";
 import { X, Upload, Eye, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
+import {
+  type TicketCategory,
+  type TicketPriority,
+  type CreateTicketFormData,
+  initialCreateTicketFormData,
+  TICKET_CATEGORIES,
+  TICKET_PRIORITIES,
+} from "@/components/customer/createTicketForm";
+import { CustomerSearchSelect } from "@/components/customer/CustomerSearchSelect";
+import {
+  formatFileSize,
+  openFileInNewTab,
+  downloadFile,
+  filterValidImageFiles,
+} from "@/lib/fileUtils";
 
 type CreateTicketModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
 
-type TicketCategory =
-  | "Complaint"
-  | "Request"
-  | "Enquiry"
-  | "Suggestion"
-  | "Refund Request";
-type TicketPriority = "Low" | "Medium" | "High" | "Urgent";
-
 export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
-  const [customerName, setCustomerName] = React.useState("");
-  const [category, setCategory] = React.useState<TicketCategory | "">("");
-  const [priority, setPriority] = React.useState<TicketPriority | "">("");
-  const [orderId, setOrderId] = React.useState("");
-  const [refundId, setRefundId] = React.useState("");
-  const [subject, setSubject] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [files, setFiles] = React.useState<File[]>([]);
+  const [formData, setFormData] = React.useState<CreateTicketFormData>(
+    initialCreateTicketFormData
+  );
   const [isDragging, setIsDragging] = React.useState(false);
 
-  const categories: TicketCategory[] = [
-    "Complaint",
-    "Request",
-    "Enquiry",
-    "Suggestion",
-    "Refund Request",
-  ];
-  const priorities: TicketPriority[] = ["Low", "Medium", "High", "Urgent"];
+  const setFormField = <K extends keyof CreateTicketFormData>(
+    field: K,
+    value: CreateTicketFormData[K]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const { customerName, category, priority, subject, description, assignTo } =
+      formData;
     if (!customerName || !category || !priority || !subject || !description) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    // Here you would typically make an API call to create the ticket
+    if (!assignTo) {
+      toast.error("Please asssign ticket to an admin");
+      return;
+    }
+
     console.log({
       customerName,
       category,
       priority,
-      orderId,
-      refundId,
+      orderId: formData.orderId,
+      refundId: formData.refundId,
       subject,
+      assignTo,
       description,
-      files,
+      files: formData.files,
     });
 
     toast.success("Ticket created successfully");
 
-    // Reset form
-    setCustomerName("");
-    setCategory("");
-    setPriority("");
-    setOrderId("");
-    setRefundId("");
-    setSubject("");
-    setDescription("");
-    setFiles([]);
-
+    setFormData(initialCreateTicketFormData);
     onClose();
   };
 
   const handleClose = () => {
-    // Reset form when closing
-    setCustomerName("");
-    setCategory("");
-    setPriority("");
-    setOrderId("");
-    setRefundId("");
-    setSubject("");
-    setDescription("");
-    setFiles([]);
+    setFormData(initialCreateTicketFormData);
     onClose();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      const validFiles = selectedFiles.filter((file) => {
-        const isValidType = file.type.startsWith("image/");
-        const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
-        return isValidType && isValidSize;
-      });
-
+      const validFiles = filterValidImageFiles(selectedFiles);
       if (validFiles.length !== selectedFiles.length) {
         toast.error("Please upload only PNG or JPG images under 5MB");
       }
-
-      setFiles((prev) => [...prev, ...validFiles]);
+      setFormField("files", [...formData.files, ...validFiles]);
     }
   };
 
@@ -132,47 +116,14 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-
     if (e.dataTransfer.files) {
       const droppedFiles = Array.from(e.dataTransfer.files);
-      const validFiles = droppedFiles.filter((file) => {
-        const isValidType = file.type.startsWith("image/");
-        const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
-        return isValidType && isValidSize;
-      });
-
+      const validFiles = filterValidImageFiles(droppedFiles);
       if (validFiles.length !== droppedFiles.length) {
         toast.error("Please upload only PNG or JPG images under 5MB");
       }
-
-      setFiles((prev) => [...prev, ...validFiles]);
+      setFormField("files", [...formData.files, ...validFiles]);
     }
-  };
-
-  // const removeFile = (index: number) => {
-  //   setFiles((prev) => prev.filter((_, i) => i !== index));
-  // };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + "B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + "kB";
-    return (bytes / (1024 * 1024)).toFixed(2) + "MB";
-  };
-
-  const handleViewFile = (file: File) => {
-    const url = URL.createObjectURL(file);
-    window.open(url, "_blank");
-  };
-
-  const handleDownloadFile = (file: File) => {
-    const url = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -202,24 +153,19 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
           className="space-y-6"
         >
           <div className="max-h-[70vh] overflow-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="customerName"
-                  className="text-[#101928] font-medium"
-                >
-                  Customer&apos;s Name
-                </Label>
-                <Input
-                  id="customerName"
-                  placeholder="Input customer's name here"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="focus-visible:ring-0 h-[48px]"
-                  required
-                />
-              </div>
+            <CustomerSearchSelect
+              id="customerName"
+              value={{
+                customerId: formData.customerId,
+                customerName: formData.customerName,
+              }}
+              onSelect={(customerId, customerName) => {
+                setFormField("customerId", customerId);
+                setFormField("customerName", customerName);
+              }}
+            />
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 ">
               <div className="space-y-2">
                 <Label
                   htmlFor="category"
@@ -228,9 +174,9 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                   Category
                 </Label>
                 <Select
-                  value={category}
+                  value={formData.category}
                   onValueChange={(value) =>
-                    setCategory(value as TicketCategory)
+                    setFormField("category", value as TicketCategory)
                   }
                 >
                   <SelectTrigger
@@ -240,7 +186,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
+                    {TICKET_CATEGORIES.map((cat) => (
                       <SelectItem key={cat} value={cat}>
                         {cat}
                       </SelectItem>
@@ -257,9 +203,9 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                   Priority
                 </Label>
                 <Select
-                  value={priority}
+                  value={formData.priority}
                   onValueChange={(value) =>
-                    setPriority(value as TicketPriority)
+                    setFormField("priority", value as TicketPriority)
                   }
                 >
                   <SelectTrigger
@@ -269,7 +215,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
-                    {priorities.map((pri) => (
+                    {TICKET_PRIORITIES.map((pri) => (
                       <SelectItem key={pri} value={pri}>
                         {pri}
                       </SelectItem>
@@ -286,8 +232,8 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                 <Input
                   id="orderId"
                   placeholder="Input order ID"
-                  value={orderId}
-                  onChange={(e) => setOrderId(e.target.value)}
+                  value={formData.orderId}
+                  onChange={(e) => setFormField("orderId", e.target.value)}
                   className="focus-visible:ring-0 h-[48px]"
                 />
               </div>
@@ -303,8 +249,23 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                 <Input
                   id="refundId"
                   placeholder="Input refund ID"
-                  value={refundId}
-                  onChange={(e) => setRefundId(e.target.value)}
+                  value={formData.refundId}
+                  onChange={(e) => setFormField("refundId", e.target.value)}
+                  className="focus-visible:ring-0 h-[48px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="assignTo"
+                  className="text-[#101928] font-medium"
+                >
+                  Assign To
+                </Label>
+                <Input
+                  id="assignTo"
+                  placeholder="Input assign to"
+                  value={formData.assignTo}
+                  onChange={(e) => setFormField("assignTo", e.target.value)}
                   className="focus-visible:ring-0 h-[48px]"
                 />
               </div>
@@ -317,8 +278,8 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
               <Input
                 id="subject"
                 placeholder="Add Brief Subject Line"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                value={formData.subject}
+                onChange={(e) => setFormField("subject", e.target.value)}
                 className="focus-visible:ring-0 h-[48px]"
                 required
               />
@@ -334,8 +295,8 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
               <textarea
                 id="description"
                 placeholder="Detailed description of the issue"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={formData.description}
+                onChange={(e) => setFormField("description", e.target.value)}
                 className="w-full min-h-[120px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-0 focus-visible:border-ring focus-visible:ring-ring/50 resize-none"
                 required
               />
@@ -383,9 +344,9 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
               </div>
 
               {/* Display uploaded files */}
-              {files.length > 0 && (
+              {formData.files.length > 0 && (
                 <div className="mt-4 space-y-3">
-                  {files.map((file, index) => (
+                  {formData.files.map((file, index) => (
                     <div
                       key={index}
                       className="flex items-center gap-3 p-3 bg-white border border-[#EEF1F6] rounded-lg"
@@ -404,7 +365,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
-                          onClick={() => handleViewFile(file)}
+                          onClick={() => openFileInNewTab(file)}
                           className="p-1.5 hover:bg-gray-100 rounded transition-colors"
                           aria-label="View file"
                         >
@@ -412,7 +373,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDownloadFile(file)}
+                          onClick={() => downloadFile(file)}
                           className="p-1.5 hover:bg-gray-100 rounded transition-colors"
                           aria-label="Download file"
                         >
