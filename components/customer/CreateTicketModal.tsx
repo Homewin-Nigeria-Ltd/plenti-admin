@@ -28,7 +28,7 @@ import {
   TICKET_CATEGORIES,
   TICKET_PRIORITIES,
 } from "@/components/customer/createTicketForm";
-import { CustomerSearchSelect } from "@/components/customer/CustomerSearchSelect";
+import { UserSearchSelect } from "@/components/customer/UserSearchSelect";
 import {
   formatFileSize,
   openFileInNewTab,
@@ -64,8 +64,8 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
       return;
     }
 
-    if (!assignTo) {
-      toast.error("Please asssign ticket to an admin");
+    if (!formData.assignToId || !assignTo) {
+      toast.error("Please assign ticket to an admin");
       return;
     }
 
@@ -153,15 +153,17 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
           className="space-y-6"
         >
           <div className="max-h-[70vh] overflow-auto">
-            <CustomerSearchSelect
+            <UserSearchSelect
               id="customerName"
+              role="customer"
+              label="Customer's Name"
               value={{
-                customerId: formData.customerId,
-                customerName: formData.customerName,
+                userId: formData.customerId,
+                userName: formData.customerName,
               }}
-              onSelect={(customerId, customerName) => {
-                setFormField("customerId", customerId);
-                setFormField("customerName", customerName);
+              onSelect={(userId, userName) => {
+                setFormField("customerId", userId);
+                setFormField("customerName", userName);
               }}
             />
 
@@ -254,24 +256,23 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                   className="focus-visible:ring-0 h-[48px]"
                 />
               </div>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="assignTo"
-                  className="text-[#101928] font-medium"
-                >
-                  Assign To
-                </Label>
-                <Input
-                  id="assignTo"
-                  placeholder="Input assign to"
-                  value={formData.assignTo}
-                  onChange={(e) => setFormField("assignTo", e.target.value)}
-                  className="focus-visible:ring-0 h-[48px]"
-                />
-              </div>
             </div>
 
-            <div className="space-y-2 mb-4">
+            <UserSearchSelect
+              id="assignTo"
+              role="admin"
+              label="Assign To"
+              value={{
+                userId: formData.assignToId,
+                userName: formData.assignTo,
+              }}
+              onSelect={(userId, userName) => {
+                setFormField("assignToId", userId);
+                setFormField("assignTo", userName);
+              }}
+            />
+
+            <div className="space-y-2 my-4">
               <Label htmlFor="subject" className="text-[#101928] font-medium">
                 Subject
               </Label>
