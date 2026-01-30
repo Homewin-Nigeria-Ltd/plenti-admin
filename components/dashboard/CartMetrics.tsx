@@ -9,11 +9,30 @@ type CartMetricsProps = {
   abandonedRevenue?: string;
 };
 
+const formatRevenue = (value: string | number | undefined) => {
+  if (value == null) return "—";
+  if (typeof value === "number") {
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2,
+    }).format(value);
+  }
+  const n = parseFloat(value);
+  if (Number.isNaN(n)) return value;
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 2,
+  }).format(n);
+};
+
 export default function CartMetrics({
   percentage = 38,
   abandonedCart = 720,
   abandonedRevenue = "₦500,900",
 }: CartMetricsProps) {
+  const displayRevenue = formatRevenue(abandonedRevenue);
   const radius = 60;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
@@ -82,7 +101,7 @@ export default function CartMetrics({
         </div>
         <div className="flex flex-row-reverse justify-between">
           <p className="text-[#98A2B3] font-medium text-[17px]">
-            {abandonedRevenue}
+            {displayRevenue}
           </p>
           <p className="text-[#98A2B3] text-[17px]">Abandoned Revenue</p>
         </div>

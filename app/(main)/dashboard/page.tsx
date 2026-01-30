@@ -8,49 +8,65 @@ import TopProducts from "@/components/dashboard/TopProducts";
 import BestSellingCategory from "@/components/dashboard/BestSellingCategory";
 import CartMetrics from "@/components/dashboard/CartMetrics";
 import OrderTableWrapper from "@/components/order/OrderTableWrapper";
+import { useDashboardStore } from "@/store/useDashboardStore";
+import {
+  mapOverviewToStatCards,
+  mapOverviewToMetricCards,
+  getDisplayDate,
+} from "@/lib/mappers/dashboard";
+import RecentOrdersTable from "@/components/dashboard/RecentOrdersTable";
 
 const DashboardPage = () => {
-  // Mock trend data for each metric (simulating the wavy line graphs)
-  const revenueTrend = [20, 5, 30];
-  const ordersTrend = [100, 79, 20];
-  const usersTrend = [10, 50, 110];
-  const conversionTrend = [25, 70, 75];
+  const { overview, loadingOverview, overviewError, fetchDashboardOverview } =
+    useDashboardStore();
 
-  const stats = [
-    {
-      title: "Total Revenue",
-      value: "₦2,980,000",
-      changePercent: 22,
-      increased: true,
-      trendData: revenueTrend,
-    },
-    {
-      title: "Total Orders",
-      value: "920",
-      changePercent: 25,
-      increased: false,
-      trendData: ordersTrend,
-    },
-    {
-      title: "Active Users",
-      value: "15.5K",
-      changePercent: 49,
-      increased: true,
-      trendData: usersTrend,
-    },
-    {
-      title: "Conversion Rate",
-      value: "28%",
-      changePercent: 1.9,
-      increased: true,
-      trendData: conversionTrend,
-    },
-  ];
+  React.useEffect(() => {
+    fetchDashboardOverview();
+  }, [fetchDashboardOverview]);
+
+  const stats = React.useMemo(
+    () => mapOverviewToStatCards(overview),
+    [overview]
+  );
+  const metricCards = React.useMemo(
+    () => mapOverviewToMetricCards(overview),
+    [overview]
+  );
+  const displayDate = React.useMemo(() => getDisplayDate(), []);
+
+  if (loadingOverview && !overview) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-[140px] bg-[#EEF1F6] rounded-xl animate-pulse"
+            />
+          ))}
+        </div>
+        <div className="h-[300px] bg-[#EEF1F6] rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-[120px] bg-[#EEF1F6] rounded-lg animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (overviewError && !overview) {
+    return <p className="text-[#D42620] text-sm py-4">{overviewError}</p>;
+  }
 
   return (
     <div className="space-y-6">
+      <p className="text-sm text-muted-foreground">{displayDate}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {stats.map((stat) => (
+        {stats?.map((stat) => (
           <DashboardStatCard
             key={stat.title}
             title={stat.title}
@@ -65,28 +81,26 @@ const DashboardPage = () => {
       <RevenueOverview />
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total Deliveries"
-          value="45,678"
-          changePercent={10}
-        />
-        <MetricCard
-          title="Today's Revenue"
-          value="₦234,500"
-          changePercent={10}
-        />
-        <MetricCard title="Number of Products" value="678" changePercent={10} />
-        <MetricCard
-          title="Top Weekly Category"
-          value="Instant Foods"
-          changePercent={10}
-        />
+        {metricCards?.map((m) => (
+          <MetricCard
+            key={m.title}
+            title={m.title}
+            value={m.value}
+            changePercent={0}
+          />
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <TopProducts />
-        <BestSellingCategory />
-        <CartMetrics />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <TopProducts products={overview?.top_products} />
+        <BestSellingCategory
+          topCategory={overview?.stats?.top_weekly_category}
+        />
+        <CartMetrics
+          percentage={overview?.cart_analysis.abandoned_rate_percentage}
+          abandonedCart={overview?.cart_analysis.abandoned_cart_count}
+          abandonedRevenue={overview?.cart_analysis.abandoned_revenue}
+        />
       </div>
 
       <OrderTableWrapper />

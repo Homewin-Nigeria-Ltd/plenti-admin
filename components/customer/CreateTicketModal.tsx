@@ -202,7 +202,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
           className="space-y-6"
         >
           <div className="max-h-[70vh] overflow-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div className="space-y-2">
                 <Label
                   htmlFor="customerName"
@@ -310,7 +310,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               <Label htmlFor="subject" className="text-[#101928] font-medium">
                 Subject
               </Label>
@@ -324,7 +324,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               <Label
                 htmlFor="description"
                 className="text-[#101928] font-medium"
