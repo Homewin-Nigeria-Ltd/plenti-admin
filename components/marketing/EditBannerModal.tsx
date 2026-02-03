@@ -25,10 +25,12 @@ import { toast } from "sonner";
 import { useMarketingStore } from "@/store/useMarketingStore";
 import { useFilePreview } from "@/lib/useFilePreview";
 import { uploadImage } from "@/lib/upload";
+import type { Banner } from "@/types/MarketingTypes";
 
-type CreateBannerModalProps = {
+type EditBannerModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  banner: Banner | null;
 };
 
 const BANNER_TYPES = ["Main", "In Page", "Full-Page"] as const;
@@ -37,30 +39,54 @@ const LINK_TYPES = [
   { value: "category", label: "Category" },
 ] as const;
 
-const initialFormData = {
-  title: "",
-  subheading: "",
-  description: "",
-  image_url: "",
-  link_type: "url" as "url" | "category",
-  link_url: "",
-  link_id: "" as string,
-  screen_location: "",
-  banner_type: "In Page",
-  is_active: true,
-};
-
-export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
-  const { createBanner, creatingBanner } = useMarketingStore();
-  const [formData, setFormData] = React.useState(initialFormData);
+export function EditBannerModal({
+  isOpen,
+  onClose,
+  banner,
+}: EditBannerModalProps) {
+  const { updateBanner, updatingBanner } = useMarketingStore();
+  const [formData, setFormData] = React.useState({
+    title: "",
+    subheading: "",
+    description: "",
+    link_type: "url" as "url" | "category",
+    link_url: "",
+    link_id: "" as string,
+    screen_location: "",
+    banner_type: "In Page",
+    is_active: true,
+  });
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const previewUrl = useFilePreview(selectedFile);
 
+  React.useEffect(() => {
+    if (banner) {
+      const linkType =
+        banner.link_type === "url" || banner.link_type === "category"
+          ? banner.link_type
+          : banner.link_url
+          ? "url"
+          : "category";
+      setFormData({
+        title: banner.title ?? "",
+        subheading: banner.subheading ?? "",
+        description: banner.description ?? "",
+        link_type: linkType,
+        link_url: banner.link_url ?? "",
+        link_id: banner.link_id != null ? String(banner.link_id) : "",
+        screen_location: banner.screen_location ?? "",
+        banner_type: banner.banner_type ?? "In Page",
+        is_active: banner.is_active ?? true,
+      });
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [banner]);
+
   const handleClose = () => {
-    setFormData(initialFormData);
     setSelectedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     onClose();
@@ -93,26 +119,25 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!banner) return;
 
     const title = formData.title.trim();
     if (!title) {
       toast.error("Title is required");
       return;
     }
-    if (!selectedFile) {
-      toast.error("Please upload a banner image");
-      return;
-    }
 
-    setUploadingImage(true);
-    const uploadResult = await uploadImage(selectedFile, "banner");
-    setUploadingImage(false);
-
-    if (!uploadResult.ok) {
-      toast.error(uploadResult.error);
-      return;
+    let imageUrl = banner.image_url;
+    if (selectedFile) {
+      setUploadingImage(true);
+      const uploadResult = await uploadImage(selectedFile, "banner");
+      setUploadingImage(false);
+      if (!uploadResult.ok) {
+        toast.error(uploadResult.error);
+        return;
+      }
+      imageUrl = uploadResult.url;
     }
-    const imageUrl = uploadResult.url;
 
     const payload = {
       title,
@@ -131,15 +156,19 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
       is_active: formData.is_active,
     };
 
-    const ok = await createBanner(payload);
+    const ok = await updateBanner(banner.id, payload);
     if (!ok) {
-      toast.error("Failed to create banner");
+      toast.error("Failed to update banner");
       return;
     }
 
-    toast.success("Banner created successfully");
+    toast.success("Banner updated successfully");
     handleClose();
   };
+
+  if (!banner) return null;
+
+  const currentImageUrl = previewUrl ?? banner.image_url;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -149,10 +178,10 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
       >
         <DialogHeader className="relative pb-4">
           <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
-            Create New Banner
+            Edit Banner
           </DialogTitle>
           <DialogDescription className="text-[#667085] text-base font-normal">
-            Add a promotional banner with link and placement options
+            Update this promotional banner
           </DialogDescription>
 
           <button
@@ -166,16 +195,16 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
         </DialogHeader>
 
         <form
-          id="create-banner-form"
+          id="edit-banner-form"
           onSubmit={handleSubmit}
           className="space-y-5"
         >
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-[#101928] font-medium">
+            <Label htmlFor="edit-title" className="text-[#101928] font-medium">
               Title <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="title"
+              id="edit-title"
               placeholder="e.g. Staging Launch"
               value={formData.title}
               onChange={(e) =>
@@ -187,11 +216,14 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subheading" className="text-[#101928] font-medium">
+            <Label
+              htmlFor="edit-subheading"
+              className="text-[#101928] font-medium"
+            >
               Subheading
             </Label>
             <Input
-              id="subheading"
+              id="edit-subheading"
               placeholder="e.g. Welcome to the new dashboard"
               value={formData.subheading}
               onChange={(e) =>
@@ -202,11 +234,14 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-[#101928] font-medium">
+            <Label
+              htmlFor="edit-description"
+              className="text-[#101928] font-medium"
+            >
               Description
             </Label>
             <textarea
-              id="description"
+              id="edit-description"
               placeholder="Optional description"
               value={formData.description}
               onChange={(e) =>
@@ -220,9 +255,7 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[#101928] font-medium">
-              Banner image <span className="text-red-500">*</span>
-            </Label>
+            <Label className="text-[#101928] font-medium">Banner image</Label>
             <div
               onDrop={handleDrop}
               onDragOver={(e) => {
@@ -241,38 +274,40 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
                 accept="image/png,image/jpeg,image/jpg,image/webp"
                 onChange={handleFileInput}
                 className="hidden"
-                id="banner-file-upload"
+                id="edit-banner-file-upload"
                 ref={fileInputRef}
               />
               <label
-                htmlFor="banner-file-upload"
+                htmlFor="edit-banner-file-upload"
                 className="cursor-pointer flex flex-col items-center gap-3"
               >
-                {previewUrl ? (
+                {currentImageUrl ? (
                   <div className="w-full">
                     <div className="relative mx-auto w-full max-w-[320px]">
                       <div className="relative w-full aspect-2/1 rounded-md border border-neutral-200 overflow-hidden bg-neutral-100">
                         <Image
-                          src={previewUrl}
+                          src={currentImageUrl}
                           alt="Banner preview"
                           fill
                           sizes="320px"
                           className="object-cover"
-                          unoptimized
+                          unoptimized={!!previewUrl}
                         />
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleClearSelectedFile();
-                        }}
-                        className="absolute -top-2 -right-2 size-8 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm hover:bg-neutral-50"
-                        aria-label="Remove image"
-                      >
-                        <X size={16} color="#0B1E66" />
-                      </button>
+                      {selectedFile && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleClearSelectedFile();
+                          }}
+                          className="absolute -top-2 -right-2 size-8 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm hover:bg-neutral-50"
+                          aria-label="Remove new image"
+                        >
+                          <X size={16} color="#0B1E66" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -282,10 +317,10 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
                   <p className="font-medium text-[#101928]">
                     {selectedFile
                       ? selectedFile.name
-                      : "Click or drag image to upload"}
+                      : "Click or drag image to change (optional)"}
                   </p>
                   <p className="text-sm text-[#667085] mt-0.5">
-                    PNG, JPG or WebP
+                    PNG, JPG or WebP. Leave empty to keep current image.
                   </p>
                 </div>
               </label>
@@ -294,7 +329,10 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="link_type" className="text-[#101928] font-medium">
+              <Label
+                htmlFor="edit-link_type"
+                className="text-[#101928] font-medium"
+              >
                 Link type
               </Label>
               <Select
@@ -309,7 +347,7 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
                 }
               >
                 <SelectTrigger
-                  id="link_type"
+                  id="edit-link_type"
                   className="w-full focus-visible:ring-0 h-[48px]"
                 >
                   <SelectValue placeholder="Link type" />
@@ -327,13 +365,13 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
             {formData.link_type === "url" ? (
               <div className="space-y-2">
                 <Label
-                  htmlFor="link_url"
+                  htmlFor="edit-link_url"
                   className="text-[#101928] font-medium"
                 >
                   Link URL
                 </Label>
                 <Input
-                  id="link_url"
+                  id="edit-link_url"
                   type="url"
                   placeholder="https://sujimoto.com"
                   value={formData.link_url}
@@ -348,11 +386,14 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="link_id" className="text-[#101928] font-medium">
+                <Label
+                  htmlFor="edit-link_id"
+                  className="text-[#101928] font-medium"
+                >
                   Category ID
                 </Label>
                 <Input
-                  id="link_id"
+                  id="edit-link_id"
                   type="number"
                   placeholder="e.g. 1"
                   value={formData.link_id}
@@ -370,13 +411,13 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
 
           <div className="space-y-2">
             <Label
-              htmlFor="screen_location"
+              htmlFor="edit-screen_location"
               className="text-[#101928] font-medium"
             >
               Screen location
             </Label>
             <Input
-              id="screen_location"
+              id="edit-screen_location"
               placeholder="e.g. Homepage"
               value={formData.screen_location}
               onChange={(e) =>
@@ -390,7 +431,10 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="banner_type" className="text-[#101928] font-medium">
+            <Label
+              htmlFor="edit-banner_type"
+              className="text-[#101928] font-medium"
+            >
               Banner type
             </Label>
             <Select
@@ -400,7 +444,7 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
               }
             >
               <SelectTrigger
-                id="banner_type"
+                id="edit-banner_type"
                 className="w-full focus-visible:ring-0 h-[48px]"
               >
                 <SelectValue placeholder="Select banner type" />
@@ -416,11 +460,14 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
           </div>
 
           <div className="flex items-center justify-between rounded-lg border border-input p-4">
-            <Label htmlFor="is_active" className="text-[#101928] font-medium">
+            <Label
+              htmlFor="edit-is_active"
+              className="text-[#101928] font-medium"
+            >
               Active
             </Label>
             <Switch
-              id="is_active"
+              id="edit-is_active"
               checked={formData.is_active}
               onCheckedChange={(checked) =>
                 setFormData((prev) => ({ ...prev, is_active: checked }))
@@ -431,15 +478,15 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
           <div className="pt-4">
             <Button
               type="submit"
-              form="create-banner-form"
+              form="edit-banner-form"
               className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white w-full h-[52px] text-base font-medium"
-              disabled={creatingBanner || uploadingImage}
+              disabled={updatingBanner || uploadingImage}
             >
               {uploadingImage
                 ? "Uploading image…"
-                : creatingBanner
-                ? "Creating…"
-                : "Create Banner"}
+                : updatingBanner
+                ? "Updating…"
+                : "Update Banner"}
             </Button>
           </div>
         </form>

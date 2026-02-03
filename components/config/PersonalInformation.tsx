@@ -5,33 +5,76 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Check, X, Upload } from "lucide-react";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+import { Check, X, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { uploadImage } from "@/lib/upload";
+import { useAccountStore } from "@/store/useAccountStore";
+
+function nameToFirstLast(name: string): { first: string; last: string } {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0) return { first: "", last: "" };
+  if (parts.length === 1) return { first: parts[0], last: "" };
+  return { first: parts[0], last: parts.slice(1).join(" ") };
+}
 
 export default function PersonalInformation() {
-  const [firstName, setFirstName] = React.useState("Oluwanifemi");
-  const [lastName, setLastName] = React.useState("Osunsanya");
-  const [email] = React.useState("oluwanifemi@motobite.com");
-  const [role] = React.useState("Super Admin");
-  const [language, setLanguage] = React.useState("English (US)");
-  const [profileImage, setProfileImage] = React.useState<string | null>(null);
+  const {
+    account,
+    loadingAccount,
+    accountError,
+    updateProfile,
+    updatingProfile,
+  } = useAccountStore();
+  const { first: initialFirst, last: initialLast } = React.useMemo(
+    () =>
+      account?.name ? nameToFirstLast(account.name) : { first: "", last: "" },
+    [account]
+  );
+  const [firstName, setFirstName] = React.useState(initialFirst);
+  const [lastName, setLastName] = React.useState(initialLast);
+  // const [language, setLanguage] = React.useState("English (US)");
+  const [profileImageUrl, setProfileImageUrl] = React.useState<string | null>(
+    null
+  );
+  const [uploadingImage, setUploadingImage] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  React.useEffect(() => {
+    if (account?.name) {
+      const { first, last } = nameToFirstLast(account.name);
+      setFirstName(first);
+      setLastName(last);
+    }
+  }, [account?.name]);
+
+  const email = account?.email ?? "";
+  const role = account?.role ?? "";
+  const avatarUrl = profileImageUrl ?? account?.avatar_url ?? null;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file || !file.type.startsWith("image/")) {
+      if (file) toast.error("Please select a valid image (PNG, JPG).");
+      return;
+    }
+    setUploadingImage(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    const result = await uploadImage(file, "profile");
+    setUploadingImage(false);
+    if (result.ok) {
+      setProfileImageUrl(result.url);
+      toast.success(
+        "Profile photo uploaded. Save changes to update your account."
+      );
+    } else {
+      toast.error(result.error);
     }
   };
 
@@ -40,70 +83,126 @@ export default function PersonalInformation() {
   };
 
   const handleRemoveImage = () => {
-    setProfileImage(null);
+    setProfileImageUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const handleSaveChanges = () => {
-    toast.success("Personal information updated successfully");
+  const handleSaveChanges = async () => {
+    const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
+    if (!name) {
+      toast.error("Please enter your name");
+      return;
+    }
+    const avatar_url = profileImageUrl ?? account?.avatar_url ?? null;
+    const ok = await updateProfile({ name, avatar_url });
+    if (ok) {
+      setProfileImageUrl(null);
+      toast.success("Personal information updated successfully");
+    } else {
+      toast.error("Failed to update profile");
+    }
   };
+
+  if (loadingAccount && !account) {
+    return (
+      <div className="flex items-center justify-center py-12 text-primary-600">
+        Loading account information…
+      </div>
+    );
+  }
+
+  if (accountError && !account) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        {accountError}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-12 lg:gap-16">
           <div className="min-w-0">
-            <h2 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
+            <h2 className="font-semibold text-[#878787] text-base sm:text-lg mb-2">
               Profile photo
             </h2>
-            <p className="text-xs sm:text-sm text-neutral-500 mb-4">
+            <p className="text-xs sm:text-sm text-[#9B9B9B] mb-4">
               This image will be displayed on your profile.
             </p>
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileChange}
-              accept="image/png,image/jpeg,image/jpg"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
               className="hidden"
             />
-            {profileImage ? (
+            {avatarUrl ? (
               <div className="flex flex-col gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="btn-outline w-full sm:w-auto justify-center"
                   onClick={handleChangePhotoClick}
-                  type="button">
-                  <Upload className="size-4 mr-2" />
-                  Replace
+                  type="button"
+                  disabled={uploadingImage}
+                >
+                  {uploadingImage ? (
+                    <>
+                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      Uploading…
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="size-4 mr-2" />
+                      Replace
+                    </>
+                  )}
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="btn border-red-500 text-red-500 hover:bg-red-50 w-full sm:w-auto justify-center"
                   onClick={handleRemoveImage}
-                  type="button">
+                  type="button"
+                  disabled={uploadingImage}
+                >
                   <X className="size-4 mr-2" />
                   Remove
                 </Button>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="btn-outline w-full sm:w-auto justify-center"
                   onClick={handleChangePhotoClick}
-                  type="button">
-                  Change Photo
+                  type="button"
+                  disabled={uploadingImage}
+                >
+                  {uploadingImage ? (
+                    <>
+                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      Uploading…
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="size-4 mr-2" />
+                      Upload Photo
+                    </>
+                  )}
                 </Button>
               </div>
             )}
           </div>
           <div className="relative shrink-0 mx-auto sm:mx-0 w-fit">
-            <Avatar key={profileImage ? "has-image" : "no-image"} className="size-[120px] relative">
-              {profileImage && <AvatarImage src={profileImage} alt="Profile" />}
+            <Avatar
+              key={avatarUrl ? "has-image" : "no-image"}
+              className="size-[120px] relative"
+            >
+              {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile" />}
               <AvatarFallback className="bg-[#E8EEFF] text-primary text-2xl font-semibold">
-                OO
+                {account?.name ? account.name.slice(0, 2).toUpperCase() : "—"}
               </AvatarFallback>
             </Avatar>
             <div className="absolute bottom-[-3px] right-0 w-[35px] h-[35px] bg-primary rounded-full flex items-center justify-center border-2 border-white z-10">
@@ -128,7 +227,10 @@ export default function PersonalInformation() {
             <div className="space-y-6 sm:space-y-8 mb-4 sm:mb-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-sm font-medium text-primary-700">
+                  <Label
+                    htmlFor="firstName"
+                    className="text-sm font-medium text-primary-700"
+                  >
                     First name
                   </Label>
                   <Input
@@ -141,7 +243,10 @@ export default function PersonalInformation() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-sm font-medium text-primary-700">
+                  <Label
+                    htmlFor="lastName"
+                    className="text-sm font-medium text-primary-700"
+                  >
                     Last name
                   </Label>
                   <Input
@@ -155,7 +260,10 @@ export default function PersonalInformation() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-primary-700">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-primary-700"
+                >
                   Email address
                 </Label>
                 <Input
@@ -166,12 +274,18 @@ export default function PersonalInformation() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="language" className="text-sm font-medium text-primary-700">
+              {/* <div className="space-y-2">
+                <Label
+                  htmlFor="language"
+                  className="text-sm font-medium text-primary-700"
+                >
                   Language
                 </Label>
                 <Select value={language} onValueChange={setLanguage}>
-                  <SelectTrigger id="language" className="form-control !w-full data-[size]:!h-[56px]">
+                  <SelectTrigger
+                    id="language"
+                    className="form-control w-full! data-size:h-[56px]!"
+                  >
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent className="border-0">
@@ -182,10 +296,13 @@ export default function PersonalInformation() {
                     <SelectItem value="German">German</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
 
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-sm font-medium text-primary-700">
+                <Label
+                  htmlFor="role"
+                  className="text-sm font-medium text-primary-700"
+                >
                   Role
                 </Label>
                 <Input
@@ -198,11 +315,26 @@ export default function PersonalInformation() {
             </div>
 
             <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-4">
-              <Button variant="outline" className="btn btn-group-item btn-outline">
-              Cancel
-              </Button>
-              <Button className="btn btn-group-item btn-primary" onClick={handleSaveChanges}>
-                Save Changes
+              {/* <Button
+                variant="outline"
+                className="btn btn-group-item btn-outline"
+                disabled={updatingProfile}
+              >
+                Cancel
+              </Button> */}
+              <Button
+                className="btn btn-group-item btn-primary"
+                onClick={handleSaveChanges}
+                disabled={updatingProfile}
+              >
+                {updatingProfile ? (
+                  <>
+                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
               </Button>
             </div>
           </div>
@@ -211,4 +343,3 @@ export default function PersonalInformation() {
     </div>
   );
 }
-

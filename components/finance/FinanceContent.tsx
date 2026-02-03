@@ -7,11 +7,19 @@ import { RevenueOverviewChart } from "@/components/finance/RevenueOverviewChart"
 import { PaymentMethodDistribution } from "@/components/finance/PaymentMethodDistribution";
 import { NewRefundRequestButton } from "@/components/finance/NewRefundRequestButton";
 import { RefundRequestTable } from "@/components/finance/RefundRequestTable";
+import { useFinanceStore } from "@/store/useFinanceStore";
 
 type TabKey = "overview" | "transaction" | "refund";
 
 export function FinanceContent() {
   const [activeTab, setActiveTab] = React.useState<TabKey>("overview");
+  const { fetchFinanceOverview } = useFinanceStore();
+
+  React.useEffect(() => {
+    if (activeTab === "overview") {
+      fetchFinanceOverview();
+    }
+  }, [activeTab, fetchFinanceOverview]);
 
   return (
     <div className="space-y-6">
@@ -32,10 +40,11 @@ export function FinanceContent() {
 
       {activeTab === "transaction" && (
         <div className="bg-white rounded-[12px] border border-[#EEF1F6] p-6">
-          <p className="text-[#667085] text-sm">Transaction content coming soon</p>
+          <p className="text-[#667085] text-sm">
+            Transaction content coming soon
+          </p>
         </div>
       )}
     </div>
   );
 }
-

@@ -8,8 +8,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
-import type { DashboardTopProduct } from "@/types/DashboardTypes";
+import type {
+  DashboardTopProduct,
+  TopProductsFilter,
+} from "@/types/DashboardTypes";
 
 const formatIncome = (value: string) => {
   const n = parseFloat(value);
@@ -24,15 +28,22 @@ const formatIncome = (value: string) => {
 
 type TopProductsProps = {
   products?: DashboardTopProduct[] | null;
+  loading?: boolean;
+  filter?: TopProductsFilter;
+  onFilterChange?: (filter: TopProductsFilter) => void;
 };
 
-export default function TopProducts({ products }: TopProductsProps) {
-  const [period, setPeriod] = React.useState("monthly");
+export default function TopProducts({
+  products,
+  loading = false,
+  filter = "day",
+  onFilterChange,
+}: TopProductsProps) {
   const list = products && products.length > 0 ? products : [];
 
   return (
     <div className="bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-4 gap-5">
         <div>
           <h3 className="text-[#071D32] text-[20px] font-bold mb-1">
             Top Products
@@ -41,21 +52,51 @@ export default function TopProducts({ products }: TopProductsProps) {
             Based on number order frequency (units sold)
           </p>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-[120px] h-9 border-[#EEF1F6]">
+        <Select
+          value={filter}
+          onValueChange={(value) =>
+            onFilterChange?.(value as TopProductsFilter)
+          }
+        >
+          <SelectTrigger className="w-30 h-9 border-[#EEF1F6]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="daily">Daily</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="yearly">Yearly</SelectItem>
+            <SelectItem value="week">Week</SelectItem>
+            <SelectItem value="month">Month</SelectItem>
+            <SelectItem value="year">Year</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-4">
-        {list.length === 0 ? (
+        {loading ? (
+          Array.from({ length: 5 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-4 py-3 rounded-lg"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <Skeleton className="shrink-0 w-8 h-8 rounded-full" />
+                <Skeleton className="shrink-0 w-12 h-12 rounded-lg" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <div className="flex items-center gap-6 shrink-0">
+                <div className="space-y-2 text-right">
+                  <Skeleton className="h-3 w-16 ml-auto" />
+                  <Skeleton className="h-4 w-12 ml-auto" />
+                </div>
+                <div className="space-y-2 text-right">
+                  <Skeleton className="h-3 w-16 ml-auto" />
+                  <Skeleton className="h-4 w-14 ml-auto" />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : list.length === 0 ? (
           <p className="text-[#667085] text-sm py-4">No top products data</p>
         ) : (
           list.map((product, index) => (
@@ -82,10 +123,12 @@ export default function TopProducts({ products }: TopProductsProps) {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[#101928] font-medium text-sm truncate">
+                  <p className="text-[#101928] font-medium text-sm truncate max-w-[200px]">
                     {product.name}
                   </p>
-                  <p className="text-[#667085] text-xs">{product.category_name}</p>
+                  <p className="text-[#667085] text-xs">
+                    {product.category_name}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-6 shrink-0">

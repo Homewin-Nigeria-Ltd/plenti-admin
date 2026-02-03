@@ -10,6 +10,9 @@ export type Warehouse = {
   units: number;
   fillPercentage: number;
   manager: string;
+  /** From API statistics; when set, card can show product count and stock value */
+  product_count?: number;
+  stock_value?: string;
 };
 
 export type InventoryItem = {
@@ -88,4 +91,70 @@ export type InventoryState = {
     search?: string;
   }) => Promise<boolean>;
   clearError: () => void;
-}
+};
+
+/** GET {{base_url}}/api/admin/inventory/statistics */
+export type InventoryStockLevelBreakdown = {
+  in_stock: { count: number; percentage: number };
+  low_stock: { count: number; percentage: number };
+  out_of_stock: { count: number; percentage: number };
+};
+
+export type InventoryStatisticsRecentStock = {
+  id: number;
+  name: string;
+  sku: string | null;
+  stock: number;
+  price: number;
+  category: string;
+  stock_status: string;
+  inventory_value: number;
+  last_updated: string;
+};
+
+export type InventoryStatisticsLowStockAlert = {
+  id: number;
+  name: string;
+  sku: string | null;
+  stock: number;
+  price: number;
+  category: string;
+  stock_status: string;
+  reorder_priority: string;
+};
+
+export type InventoryStatisticsWarehouse = {
+  warehouse_name: string;
+  total_stock: string;
+  product_count: number;
+  stock_value: string;
+};
+
+export type InventoryStatisticsTopStock = {
+  id: number;
+  name: string;
+  sku: string | null;
+  stock: number;
+  price: number;
+  category: string;
+  stock_value: string;
+};
+
+export type InventoryStatistics = {
+  total_products: number;
+  active_products: number;
+  inactive_products: number;
+  in_stock_products: number;
+  low_stock_products: number;
+  out_of_stock_products: number;
+  total_stock_quantity: string;
+  total_inventory_value: string;
+  average_stock_per_product: string;
+  categories_count: number;
+  units_sold_last_30_days: string;
+  stock_level_breakdown: InventoryStockLevelBreakdown;
+  recent_stocks: InventoryStatisticsRecentStock[];
+  low_stock_alerts: InventoryStatisticsLowStockAlert[];
+  warehouse_breakdown: InventoryStatisticsWarehouse[];
+  top_stock_by_value: InventoryStatisticsTopStock[];
+};

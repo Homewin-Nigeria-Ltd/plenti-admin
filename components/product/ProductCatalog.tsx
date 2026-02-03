@@ -5,15 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ALL_PRODUCTS_CATEGORY } from "@/data/products";
+import { cn } from "@/lib/utils";
 import { useProductStore } from "@/store/useProductStore";
-import { Grid, List, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import Image from "next/image";
 import * as React from "react";
 import { useDebounce } from "use-debounce";
 import { CreateProductModal } from "./CreateProductModal";
 import ProductGrid from "./ProductGrid";
 import ProductTable from "./ProductTable";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
 
 export default function ProductCatalog() {
   const {
@@ -68,7 +68,7 @@ export default function ProductCatalog() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        <div className="border border-neutral-100 rounded-[8px] h-[50px] flex items-center gap-1 p-2 px-4 shadow-sm flex-1 max-w-full sm:max-w-md">
+        <div className="border border-neutral-100 rounded-xl h-12.5 flex items-center gap-1 p-2 px-4 shadow-sm flex-1 max-w-full sm:max-w-md">
           <Search className="size-5 text-neutral-500 shrink-0" />
           <Input
             className="w-full placeholder:text-primary-700 border-0 outline-none focus-visible:ring-0 shadow-none"
@@ -79,7 +79,7 @@ export default function ProductCatalog() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
-            className="btn btn-primary w-full sm:w-auto rounded-[4px]"
+            className="btn btn-primary w-full sm:w-auto rounded-lg"
             onClick={() => setIsCreateModalOpen(true)}
           >
             <Plus className="size-4" />
@@ -119,7 +119,7 @@ export default function ProductCatalog() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-neutral-100 overflow-x-auto">
-            <div className="min-w-[720px]">
+            <div className="min-w-180">
               <div className="grid grid-cols-8 gap-4 px-4 py-3 border-b border-neutral-100">
                 {Array.from({ length: 8 }).map((_, idx) => (
                   <Skeleton key={idx} className="h-4 w-20" />
@@ -149,7 +149,7 @@ export default function ProductCatalog() {
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <Tabs
+          {/* <Tabs
             value={
               selectedCategoryId == null
                 ? ALL_PRODUCTS_CATEGORY
@@ -166,7 +166,7 @@ export default function ProductCatalog() {
               }
             }}
           >
-            <TabsList className="bg-transparent border-0 p-0 h-auto gap-2 min-w-max">
+            <TabsList className="bg-transparent border-0 p-3 h-auto gap-2 max-w-[60vw] overflow-x-auto">
               {categories.map((category) => (
                 <TabsTrigger
                   key={category.value}
@@ -177,7 +177,7 @@ export default function ProductCatalog() {
                 </TabsTrigger>
               ))}
             </TabsList>
-          </Tabs>
+          </Tabs> */}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
@@ -185,7 +185,7 @@ export default function ProductCatalog() {
             size="icon"
             className={cn(
               viewMode === "list" ? "bg-[#E8EEFF]" : "",
-              "size-[32px] border-0 rounded-0 hover:bg-[#E8EEFF] shadow-none"
+              "size-8 border-0 rounded-0 hover:bg-[#E8EEFF] shadow-none"
             )}
             onClick={() => setViewMode("list")}
           >
@@ -205,7 +205,7 @@ export default function ProductCatalog() {
             size="icon"
             className={cn(
               viewMode === "grid" ? "bg-[#E8EEFF]" : "",
-              "size-[32px] border-0 rounded-0 hover:bg-[#E8EEFF] shadow-none"
+              "size-8 border-0 rounded-0 hover:bg-[#E8EEFF] shadow-none"
             )}
             onClick={() => setViewMode("grid")}
           >

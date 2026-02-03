@@ -3,10 +3,15 @@
 import * as React from "react";
 import DataTable from "@/components/common/DataTable";
 import { Input } from "@/components/ui/input";
-import { Filter } from "lucide-react";
 import Image from "next/image";
 import { useMarketingStore } from "@/store/useMarketingStore";
-import type { PromoCodeStatus, PromoCodeType } from "@/types/MarketingTypes";
+import type {
+  PromoCode,
+  PromoCodeStatus,
+  PromoCodeType,
+} from "@/types/MarketingTypes";
+import { EditPromoCodeModal } from "./EditPromoCodeModal";
+import { PromoCodeDetailsModal } from "./PromoCodeDetailsModal";
 
 const formatDate = (iso: string | null) => {
   if (!iso) return "—";
@@ -25,10 +30,19 @@ export default function PromoCodeContent() {
   const { loadingPromoCodes, promoCodes, fetchMarketingPromoCodes } =
     useMarketingStore();
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [selectedPromo, setSelectedPromo] = React.useState<PromoCode | null>(
+    null
+  );
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
 
+  // Debounced server-side search
   React.useEffect(() => {
-    fetchMarketingPromoCodes();
-  }, [fetchMarketingPromoCodes]);
+    const t = setTimeout(() => {
+      fetchMarketingPromoCodes(searchQuery.trim() || undefined);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery, fetchMarketingPromoCodes]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -77,6 +91,31 @@ export default function PromoCodeContent() {
     status: <StatusBadge status={promo.is_active ? "Active" : "Inactive"} />,
   }));
 
+  const handleRowClick = (
+    row: Record<string, React.ReactNode> & { id: number }
+  ) => {
+    const promo = promoCodes.find((p) => p.id === row.id);
+    if (promo) {
+      setSelectedPromo(promo);
+      setIsDetailsModalOpen(true);
+    }
+  };
+
+  const handleEditClick = () => {
+    setIsDetailsModalOpen(false);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setIsDetailsModalOpen(false);
+    setSelectedPromo(null);
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditModalOpen(false);
+    setSelectedPromo(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -94,21 +133,34 @@ export default function PromoCodeContent() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           <button className="border border-[#EEF1F6] rounded-lg p-2 hover:bg-gray-50 transition-colors">
             <Filter size={20} className="text-[#667085]" />
           </button>
-        </div>
+        </div> */}
       </div>
-      {loadingPromoCodes ? (
+      {loadingPromoCodes && promoCodes.length === 0 ? (
         <p className="text-center my-5 text-[#667085]">Loading promo codes…</p>
       ) : promoCodes.length > 0 ? (
-        <DataTable columns={columns} rows={rows} />
+        <DataTable columns={columns} rows={rows} onRowClick={handleRowClick} />
       ) : (
         <p className="text-center my-5 text-[#667085]">
           No promo codes available
         </p>
       )}
+
+      <PromoCodeDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={handleCloseDetails}
+        promoCode={selectedPromo}
+        onEditClick={handleEditClick}
+      />
+
+      <EditPromoCodeModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEdit}
+        promoCode={selectedPromo}
+      />
     </div>
   );
 }

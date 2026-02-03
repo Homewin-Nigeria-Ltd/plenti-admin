@@ -14,15 +14,39 @@ import {
   mapOverviewToMetricCards,
   getDisplayDate,
 } from "@/lib/mappers/dashboard";
-import RecentOrdersTable from "@/components/dashboard/RecentOrdersTable";
+import type { TopProductsFilter } from "@/types/DashboardTypes";
+// import RecentOrdersTable from "@/components/dashboard/RecentOrdersTable";
 
 const DashboardPage = () => {
-  const { overview, loadingOverview, overviewError, fetchDashboardOverview } =
-    useDashboardStore();
+  const {
+    overview,
+    loadingOverview,
+    overviewError,
+    fetchDashboardOverview,
+    topProducts,
+    loadingTopProducts,
+    fetchTopProducts,
+    bestSellingCategories,
+    loadingBestSellingCategories,
+    fetchBestSellingCategories,
+  } = useDashboardStore();
+
+  const [topProductsFilter, setTopProductsFilter] =
+    React.useState<TopProductsFilter>("month");
+  const [bestSellingFilter, setBestSellingFilter] =
+    React.useState<TopProductsFilter>("month");
 
   React.useEffect(() => {
     fetchDashboardOverview();
   }, [fetchDashboardOverview]);
+
+  React.useEffect(() => {
+    fetchTopProducts(topProductsFilter);
+  }, [fetchTopProducts, topProductsFilter]);
+
+  React.useEffect(() => {
+    fetchBestSellingCategories(bestSellingFilter);
+  }, [fetchBestSellingCategories, bestSellingFilter]);
 
   const stats = React.useMemo(
     () => mapOverviewToStatCards(overview),
@@ -41,16 +65,16 @@ const DashboardPage = () => {
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-[140px] bg-[#EEF1F6] rounded-xl animate-pulse"
+              className="h-35 bg-[#EEF1F6] rounded-xl animate-pulse"
             />
           ))}
         </div>
-        <div className="h-[300px] bg-[#EEF1F6] rounded-xl animate-pulse" />
+        <div className="h-75 bg-[#EEF1F6] rounded-xl animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-[120px] bg-[#EEF1F6] rounded-lg animate-pulse"
+              className="h-30 bg-[#EEF1F6] rounded-lg animate-pulse"
             />
           ))}
         </div>
@@ -91,10 +115,18 @@ const DashboardPage = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <TopProducts products={overview?.top_products} />
+      <div className="flex flex-wrap gap-4">
+        <TopProducts
+          products={topProducts}
+          loading={loadingTopProducts}
+          filter={topProductsFilter}
+          onFilterChange={setTopProductsFilter}
+        />
         <BestSellingCategory
-          topCategory={overview?.stats?.top_weekly_category}
+          categories={bestSellingCategories}
+          loading={loadingBestSellingCategories}
+          filter={bestSellingFilter}
+          onFilterChange={setBestSellingFilter}
         />
         <CartMetrics
           percentage={overview?.cart_analysis.abandoned_rate_percentage}

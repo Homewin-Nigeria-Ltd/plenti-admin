@@ -98,11 +98,11 @@ const Sidebar = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isLoggingOut} className="h-[50px]">
+              <AlertDialogCancel disabled={isLoggingOut} className="h-12.5">
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
-                className="bg-[#D42620] hover:bg-[#D42620]/90 h-[50px]"
+                className="bg-[#D42620] hover:bg-[#D42620]/90 h-12.5"
                 disabled={isLoggingOut}
                 onClick={logout}
               >

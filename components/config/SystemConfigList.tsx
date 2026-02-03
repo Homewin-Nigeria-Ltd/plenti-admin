@@ -1,14 +1,14 @@
 "use client";
 
-import * as React from "react";
+import { ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { User, Shield, Bell, Link2, ChevronRight } from "lucide-react";
 
 type ConfigItem = {
   id: string;
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: string;
   href?: string;
 };
 
@@ -18,27 +18,34 @@ const configItems: ConfigItem[] = [
     title: "Account Settings",
     description:
       "Profile settings for individual admins, including name, email, profile picture,",
-    icon: User,
+    icon: "/icons/user.png",
   },
   {
     id: "permission",
     title: "Control and Permission",
     description: "User accounts with different permission levels",
-    icon: Shield,
+    icon: "/icons/shield.png",
   },
   {
     id: "notifications",
     title: "Notifications",
     description:
       "Ability to customize notification preferences based on user roles",
-    icon: Bell,
+    icon: "/icons/bell.png",
   },
   {
     id: "integration",
     title: "Integration Setting",
     description:
       "API settings for developers to integrate custom functionalities",
-    icon: Link2,
+    icon: "/icons/link.png",
+  },
+  {
+    id: "data-backup",
+    title: "Data & Backup",
+    description:
+      "Export your data for compliance, analysis, or migration purposes",
+    icon: "/icons/cloud.png",
   },
 ];
 
@@ -62,29 +69,31 @@ export default function SystemConfigList() {
   return (
     <div className="space-y-3 sm:space-y-4">
       {configItems.map((item) => {
-        const Icon = item.icon;
         return (
           <div
             key={item.id}
             onClick={() => handleItemClick(item)}
-            className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-neutral-100 hover:bg-neutral-50 cursor-pointer transition-colors"
+            className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg cursor-pointer transition-colors"
           >
-            <div className="shrink-0">
-              <Icon
-                className="size-5 sm:size-6 text-primary"
-                // strokeWidth={1.25}
+            <div className="shrink-0 bg-[#E8EEFF] rounded-full p-3">
+              <Image
+                src={item.icon}
+                alt={item.title}
+                width={20}
+                height={20}
+                className="size-full"
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-primary-700 text-sm sm:text-base mb-1">
+              <h3 className="font-semibold text-[#253B4B] text-sm sm:text-base mb-1">
                 {item.title}
               </h3>
-              <p className="text-xs sm:text-sm text-neutral-500">
+              <p className="text-xs sm:text-sm text-[#9B9B9B]">
                 {item.description}
               </p>
             </div>
             <div className="shrink-0">
-              <ChevronRight className="size-4 sm:size-5 text-primary-700" />
+              <ChevronRight className="size-4 sm:size-5 text-[#0B1E66]" />
             </div>
           </div>
         );

@@ -50,7 +50,7 @@ export default function CartMetrics({
       </div>
 
       <div className="flex flex-col items-center justify-center mb-6">
-        <div className="relative w-[140px] h-[140px]">
+        <div className="relative w-35 h-35">
           <svg
             className="transform -rotate-90"
             width="140"
@@ -93,13 +93,13 @@ export default function CartMetrics({
       </div>
 
       <div className="space-y-3">
-        <div className="flex flex-row-reverse justify-between">
+        <div className="flex gap-10 flex-row-reverse justify-between">
           <p className="text-[#0B1E66] font-medium text-[17px]">
             {abandonedCart.toLocaleString()}
           </p>
           <p className="text-[#0B1E66] text-[17px]">Abandoned Cart</p>
         </div>
-        <div className="flex flex-row-reverse justify-between">
+        <div className="flex gap-10 flex-row-reverse justify-between">
           <p className="text-[#98A2B3] font-medium text-[17px]">
             {displayRevenue}
           </p>

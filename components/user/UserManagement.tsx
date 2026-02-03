@@ -1,20 +1,22 @@
 "use client";
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Plus, ChevronDown } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AddUserModal } from "./AddUserModal";
 import DataTable from "@/components/common/DataTable";
-import { useUserStore } from "@/store/useUserStore";
-import { useDebounce } from "use-debounce";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserStore } from "@/store/useUserStore";
+import { Plus, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { useDebounce } from "use-debounce";
+import { AddUserModal } from "./AddUserModal";
 
 export default function UserManagement() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = React.useState<"customers" | "admin">("customers");
+  const [activeTab, setActiveTab] = React.useState<"customers" | "admin">(
+    "customers"
+  );
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isAddUserModalOpen, setIsAddUserModalOpen] = React.useState(false);
   const [debouncedSearch] = useDebounce(searchQuery, 400);
@@ -102,14 +104,14 @@ export default function UserManagement() {
             <p className="font-medium text-primary-700 text-xs sm:text-sm truncate">
               {user.name}
             </p>
-            <p className="text-xs text-neutral-500 truncate">
-              {user.email}
-            </p>
+            <p className="text-xs text-neutral-500 truncate">{user.email}</p>
           </div>
         </div>
       ),
       orders: (
-        <span className="text-neutral-700 text-xs sm:text-sm">{user.total_orders}</span>
+        <span className="text-neutral-700 text-xs sm:text-sm">
+          {user.total_orders}
+        </span>
       ),
       amountSpent: (
         <span className="text-neutral-700 text-xs sm:text-sm font-medium whitespace-nowrap">
@@ -139,7 +141,8 @@ export default function UserManagement() {
               activeTab === "customers"
                 ? "bg-[#E8EEFF] text-primary"
                 : "bg-transparent text-neutral-500 hover:bg-neutral-50"
-            }`}>
+            }`}
+          >
             Customers
           </button>
           <button
@@ -148,14 +151,16 @@ export default function UserManagement() {
               activeTab === "admin"
                 ? "bg-[#E8EEFF] text-primary"
                 : "bg-transparent text-neutral-500 hover:bg-neutral-50"
-            }`}>
+            }`}
+          >
             Admin Users
           </button>
         </div>
         {activeTab === "admin" && (
           <Button
             onClick={() => setIsAddUserModalOpen(true)}
-            className="btn btn-primary w-full sm:w-auto">
+            className="btn btn-primary w-full sm:w-auto"
+          >
             <Plus className="size-4 mr-2" />
             Add Admin User
           </Button>
@@ -172,68 +177,70 @@ export default function UserManagement() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button variant="outline" className="border-neutral-100 h-[50px] w-full sm:w-auto">
+        {/* <Button variant="outline" className="border-neutral-100 h-[50px] w-full sm:w-auto">
           <ChevronDown className="size-4 mr-2" />
           Filter
-        </Button>
+        </Button> */}
       </div>
 
       <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <div className="bg-white rounded-xl">
-            {hasRequested && !loadingUsers && users.length > 0 ? (
-              <DataTable
-                columns={columns as unknown as Array<{ key: string; label: string }>}
-                rows={tableRows as unknown as Record<string, React.ReactNode>[]}
-                page={currentPage}
-                pageCount={lastPage}
-                pageSize={perPage}
-                total={totalItems}
-                onPageChange={(nextPage) =>
-                  fetchUsers({ page: nextPage, search: debouncedSearch, role })
-                }
-                onRowClick={(_, idx) => {
-                  const id = users[idx]?.id;
-                  if (id) router.push(`/user/${id}`);
-                }}
-              />
-            ) : !hasRequested || loadingUsers ? (
-              <div className="min-w-[720px]">
-                <div className="grid grid-cols-6 gap-4 px-4 py-3 border-b border-neutral-100">
-                  {Array.from({ length: 6 }).map((_, idx) => (
-                    <Skeleton key={idx} className="h-4 w-24" />
-                  ))}
-                </div>
-                {Array.from({ length: Math.max(6, perPage) }).map((_, rowIdx) => (
-                  <div
-                    key={rowIdx}
-                    className="grid grid-cols-6 gap-4 px-4 py-4 border-b border-neutral-100"
-                  >
-                    <Skeleton className="h-4 w-28" />
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-40" />
-                        <Skeleton className="h-3 w-48" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </div>
+        <div className="bg-white rounded-xl">
+          {hasRequested && !loadingUsers && users.length > 0 ? (
+            <DataTable
+              columns={
+                columns as unknown as Array<{ key: string; label: string }>
+              }
+              rows={tableRows as unknown as Record<string, React.ReactNode>[]}
+              page={currentPage}
+              pageCount={lastPage}
+              pageSize={perPage}
+              total={totalItems}
+              onPageChange={(nextPage) =>
+                fetchUsers({ page: nextPage, search: debouncedSearch, role })
+              }
+              onRowClick={(_, idx) => {
+                const id = users[idx]?.id;
+                if (id) router.push(`/user/${id}`);
+              }}
+            />
+          ) : !hasRequested || loadingUsers ? (
+            <div className="min-w-[720px]">
+              <div className="grid grid-cols-6 gap-4 px-4 py-3 border-b border-neutral-100">
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <Skeleton key={idx} className="h-4 w-24" />
                 ))}
-                <div className="flex items-center justify-between px-4 py-3">
-                  <Skeleton className="h-4 w-32" />
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-8 w-24 rounded-full" />
-                    <Skeleton className="h-8 w-24 rounded-full" />
+              </div>
+              {Array.from({ length: Math.max(6, perPage) }).map((_, rowIdx) => (
+                <div
+                  key={rowIdx}
+                  className="grid grid-cols-6 gap-4 px-4 py-4 border-b border-neutral-100"
+                >
+                  <Skeleton className="h-4 w-28" />
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
                   </div>
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </div>
+              ))}
+              <div className="flex items-center justify-between px-4 py-3">
+                <Skeleton className="h-4 w-32" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-8 w-24 rounded-full" />
+                  <Skeleton className="h-8 w-24 rounded-full" />
                 </div>
               </div>
-            ) : (
-              <p className="text-center my-5">No users available</p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <p className="text-center my-5">No users available</p>
+          )}
+        </div>
       </div>
 
       <AddUserModal

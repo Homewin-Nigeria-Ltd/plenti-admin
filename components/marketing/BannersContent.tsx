@@ -4,12 +4,11 @@ import DataTable from "@/components/common/DataTable";
 import { Input } from "@/components/ui/input";
 import { useMarketingStore } from "@/store/useMarketingStore";
 import { Banner } from "@/types/MarketingTypes";
-import { Filter } from "lucide-react";
 import Image from "next/image";
 import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { BannersTableSkeleton } from "./BannersTableSkeleton";
 import { BannerDetailsModal } from "./BannerDetailsModal";
+import { EditBannerModal } from "./EditBannerModal";
 
 export default function BannersContent() {
   const { fetchMarketingBanners, banners, loadingBanners } =
@@ -21,10 +20,15 @@ export default function BannersContent() {
     null
   );
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
 
+  // Debounced server-side search
   React.useEffect(() => {
-    fetchMarketingBanners();
-  }, [fetchMarketingBanners]);
+    const t = setTimeout(() => {
+      fetchMarketingBanners(1, searchQuery.trim() || undefined);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery, fetchMarketingBanners]);
 
   const columns = [
     { key: "createdDate", label: "Created Date" },
@@ -40,7 +44,11 @@ export default function BannersContent() {
 
   const rows = banners.map((banner) => ({
     ...banner,
-    createdDate: "—",
+    createdDate: new Date(banner.created_at ?? "").toLocaleDateString("en-NG", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
     image: (
       <div className="flex items-center">
         <Avatar>
@@ -74,6 +82,21 @@ export default function BannersContent() {
     }
   };
 
+  const handleEditClick = () => {
+    setIsModalOpen(false);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setIsModalOpen(false);
+    setSelectedBanner(null);
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditModalOpen(false);
+    setSelectedBanner(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -91,15 +114,15 @@ export default function BannersContent() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           <button className="border border-[#EEF1F6] rounded-lg p-2 hover:bg-gray-50 transition-colors">
             <Filter size={20} className="text-[#667085]" />
           </button>
-        </div>
+        </div> */}
       </div>
 
-      {loadingBanners ? (
-        <BannersTableSkeleton />
+      {loadingBanners && banners.length === 0 ? (
+        <p className="text-center my-5 text-[#667085]">Loading banners…</p>
       ) : banners.length > 0 ? (
         <DataTable columns={columns} rows={rows} onRowClick={handleRowClick} />
       ) : (
@@ -108,10 +131,14 @@ export default function BannersContent() {
 
       <BannerDetailsModal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedBanner(null);
-        }}
+        onClose={handleCloseDetails}
+        banner={selectedBanner}
+        onEditClick={handleEditClick}
+      />
+
+      <EditBannerModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEdit}
         banner={selectedBanner}
       />
     </div>
