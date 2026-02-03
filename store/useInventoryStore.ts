@@ -1,10 +1,31 @@
 import api from "@/lib/api";
 import { PAGE_SIZE } from "@/lib/constant";
 import { INVENTORY_API } from "@/data/inventory";
-import type { InventoryState, InventoryListResponse } from "@/types/InventoryTypes";
+import type {
+  InventoryListResponse,
+  InventoryState,
+  InventoryStatistics,
+} from "@/types/InventoryTypes";
 import { create } from "zustand";
 
-export const useInventoryStore = create<InventoryState>((set) => ({
+function getApiErrorMessage(err: unknown): string | null {
+  if (typeof err !== "object" || err === null) return null;
+  const response = (err as { response?: unknown }).response;
+  if (typeof response !== "object" || response === null) return null;
+  const data = (response as { data?: unknown }).data;
+  if (typeof data !== "object" || data === null) return null;
+  const message = (data as { message?: unknown }).message;
+  return typeof message === "string" ? message : null;
+}
+
+export type InventoryStoreState = InventoryState & {
+  statistics: InventoryStatistics | null;
+  loadingStatistics: boolean;
+  statisticsError: string | null;
+  fetchInventoryStatistics: () => Promise<boolean>;
+};
+
+export const useInventoryStore = create<InventoryStoreState>((set) => ({
   items: [],
   loading: false,
   error: null,
@@ -13,6 +34,9 @@ export const useInventoryStore = create<InventoryState>((set) => ({
   perPage: PAGE_SIZE,
   totalItems: 0,
   lastQuery: { page: 1, search: "" },
+  statistics: null,
+  loadingStatistics: false,
+  statisticsError: null,
 
   fetchInventory: async (params) => {
     const page = params?.page ?? 1;
@@ -55,4 +79,34 @@ export const useInventoryStore = create<InventoryState>((set) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  fetchInventoryStatistics: async () => {
+    set({ loadingStatistics: true, statisticsError: null });
+    try {
+      const { data } = await api.get<{
+        status?: string;
+        message?: string;
+        data?: InventoryStatistics;
+      }>(INVENTORY_API.getStatistics);
+
+      if (data?.status !== "success") {
+        const message =
+          typeof data?.message === "string"
+            ? data.message
+            : "Failed to load inventory statistics";
+        set({ statisticsError: message });
+        return false;
+      }
+      set({ statistics: data?.data ?? null });
+      return true;
+    } catch (err) {
+      const message =
+        getApiErrorMessage(err) ?? "Failed to load inventory statistics";
+      console.error("Error fetching inventory statistics =>", err);
+      set({ statisticsError: message });
+      return false;
+    } finally {
+      set({ loadingStatistics: false });
+    }
+  },
 }));

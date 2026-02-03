@@ -6,6 +6,7 @@ import type {
 
 export const INVENTORY_API = {
   getInventory: "/api/admin/inventory",
+  getStatistics: "/api/admin/inventory/statistics",
 } as const;
 
 export const mockWarehouses: Warehouse[] = [

@@ -272,7 +272,7 @@ export function CreateRoleModal({
                                 htmlFor={`perm-${permission.id}`}
                                 className="font-medium text-primary-700 text-sm cursor-pointer"
                               >
-                                {permission.name.replaceAll(".", " ")}
+                                {permission.name}
                               </Label>
                               {(permission.description ?? permission.slug) && (
                                 <p className="text-xs text-neutral-500 mt-1">
