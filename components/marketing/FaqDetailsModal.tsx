@@ -26,52 +26,53 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Banner } from "@/types/MarketingTypes";
 import { useMarketingStore } from "@/store/useMarketingStore";
+import type { Faq } from "@/types/MarketingTypes";
 
-interface BannerDetailsModalProps {
+interface FaqDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  banner: Banner | null;
+  faq: Faq | null;
   onEditClick?: () => void;
 }
 
-export function BannerDetailsModal({
+function formatDateCreated(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  const dateStr = d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeStr = d.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${dateStr} | ${timeStr}`;
+}
+
+export function FaqDetailsModal({
   isOpen,
   onClose,
-  banner,
+  faq,
   onEditClick,
-}: BannerDetailsModalProps) {
+}: FaqDetailsModalProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
-  const { deleteBanner, deletingBanner } = useMarketingStore();
+  const { deleteFaq, deletingFaq } = useMarketingStore();
 
   const handleDeleteConfirm = React.useCallback(async () => {
-    if (!banner) return;
-    const success = await deleteBanner(banner.id);
+    if (!faq) return;
+    const success = await deleteFaq(faq.id);
     if (success) {
       setDeleteConfirmOpen(false);
       onClose();
     }
-  }, [banner, deleteBanner, onClose]);
+  }, [faq, deleteFaq, onClose]);
 
-  if (!banner) return null;
+  if (!faq) return null;
 
-  const formattedDateCreated = banner.created_at
-    ? (() => {
-        const d = new Date(banner.created_at!);
-        const dateStr = d.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-        const timeStr = d.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
-        return `${dateStr} | ${timeStr}`;
-      })()
-    : "—";
+  const formattedDateCreated = formatDateCreated(faq.created_at);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -83,11 +84,11 @@ export function BannerDetailsModal({
           <div className="flex items-start justify-between gap-4 pr-12">
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-2xl font-bold text-[#101928] mb-1">
-                {banner.title}
+                {faq.question}
               </DialogTitle>
-              {banner.subheading && (
+              {faq.category && (
                 <DialogDescription className="text-[#101928] text-base font-normal">
-                  {banner.subheading}
+                  {faq.category}
                 </DialogDescription>
               )}
             </div>
@@ -112,11 +113,7 @@ export function BannerDetailsModal({
                     onEditClick?.();
                   }}
                 >
-                  Edit Banner
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-[#667085] text-[14px]">
-                  Duplicate
+                  Edit FAQ
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -126,7 +123,7 @@ export function BannerDetailsModal({
                     setDeleteConfirmOpen(true);
                   }}
                 >
-                  Delete Banner
+                  Delete FAQ
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -145,69 +142,19 @@ export function BannerDetailsModal({
           Date Created: {formattedDateCreated}
         </div>
 
-        <div className=" pb-6 space-y-6">
-          {/* Link */}
-          {banner.link_url && (
-            <div>
-              <a
-                href={banner.link_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#2390FA] underline hover:opacity-80 text-sm font-medium break-all"
-              >
-                {banner.link_url}
-              </a>
-            </div>
-          )}
+        <div className="pb-6 space-y-6">
+          <div>
+            <p className="text-[#667085] text-sm font-medium mb-1">Answer</p>
+            <p className="text-[#101928] text-base font-medium whitespace-pre-wrap">
+              {faq.answer}
+            </p>
+          </div>
 
-          {/* Two Column Layout - Left: Screen Location, Number of Clicks, Sort | Right: Type, Click Per Day */}
-          <div className="grid grid-cols-2 gap-6">
-            {/* Left Column */}
-            <div className="space-y-4">
-              <div>
-                <p className="text-[#667085] text-sm font-medium mb-1">
-                  Screen Location
-                </p>
-                <p className="text-[#101928] text-base font-medium">
-                  {banner.screen_location ?? "—"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[#667085] text-sm font-medium mb-1">
-                  Number of Clicks
-                </p>
-                <p className="text-[#101928] text-base font-medium">
-                  {new Intl.NumberFormat("en-US").format(banner.total_clicks)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[#667085] text-sm font-medium mb-1">Sort</p>
-                <p className="text-[#101928] text-base font-medium">
-                  {banner.position}
-                </p>
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-4">
-              <div>
-                <p className="text-[#667085] text-sm font-medium mb-1">Type</p>
-                <p className="text-[#101928] text-base font-medium">
-                  {banner.banner_type}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[#667085] text-sm font-medium mb-1">
-                  Click Per Day
-                </p>
-                <p className="text-[#101928] text-base font-medium">
-                  {new Intl.NumberFormat("en-US").format(banner.clicks_per_day)}
-                </p>
-              </div>
-            </div>
+          <div>
+            <p className="text-[#667085] text-sm font-medium mb-1">Status</p>
+            <p className="text-[#101928] text-base font-medium">
+              {faq.is_active ? "Active" : "Inactive"}
+            </p>
           </div>
         </div>
       </DialogContent>
@@ -216,15 +163,15 @@ export function BannerDetailsModal({
         <AlertDialogContent className="rounded-[12px] border-0 p-6 sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-[#0B1E66] text-[18px]">
-              Are you sure you want to delete this banner?
+              Are you sure you want to delete this FAQ?
             </AlertDialogTitle>
             <AlertDialogDescription className="sr-only">
-              Confirm banner deletion
+              Confirm FAQ deletion
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row gap-3 sm:justify-center">
             <AlertDialogCancel
-              disabled={deletingBanner}
+              disabled={deletingFaq}
               className="rounded-[8px] h-12 border border-[#0B1E66] bg-transparent text-[#0B1E66] hover:bg-gray-50"
             >
               Cancel
@@ -232,17 +179,17 @@ export function BannerDetailsModal({
             <Button
               type="button"
               variant="destructive"
-              disabled={deletingBanner}
+              disabled={deletingFaq}
               className="rounded-[8px] h-12"
               onClick={handleDeleteConfirm}
             >
-              {deletingBanner ? (
+              {deletingFaq ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="size-4 animate-spin" />
                   Deleting…
                 </span>
               ) : (
-                "Delete Banner"
+                "Delete FAQ"
               )}
             </Button>
           </AlertDialogFooter>

@@ -9,30 +9,29 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, ArrowDown } from "lucide-react";
+import { useDashboardStore } from "@/store/useDashboardStore";
 
 type Range = "day" | "week" | "month" | "year";
 
-const monthData = [
-  { label: "Jan", value: 2 },
-  { label: "Feb", value: 2 },
-  { label: "Mar", value: 10 },
-  { label: "Apr", value: 7 },
-  { label: "May", value: 0.5 },
-  { label: "Jun", value: 12 },
-  { label: "Jul", value: 7.5 },
-  { label: "Aug", value: 12 },
-  { label: "Sep", value: 7.5 },
-  { label: "Oct", value: 1 },
-  { label: "Nov", value: 0.5 },
-  { label: "Dec", value: 7 },
-];
+function useChartData(
+  range: Range,
+  apiData?: { month: string; revenue: number }[]
+) {
+  const [data, setData] = React.useState<{ label: string; value: number }[]>(
+    []
+  );
 
-function useChartData(range: Range) {
-  const [data, setData] = React.useState(monthData);
   React.useEffect(() => {
-    if (range === "month") setData(monthData);
-    else if (range === "week")
+    // For month view, use API data if available
+    if (range === "month" && apiData && apiData.length > 0) {
+      setData(
+        apiData.map((item) => ({
+          label: item.month,
+          value: item.revenue / 1000000, // Convert to millions
+        }))
+      );
+    } else if (range === "week") {
       setData([
         { label: "Mon", value: 2 },
         { label: "Tue", value: 2.5 },
@@ -42,7 +41,7 @@ function useChartData(range: Range) {
         { label: "Sat", value: 3.1 },
         { label: "Sun", value: 3.0 },
       ]);
-    else if (range === "day")
+    } else if (range === "day") {
       setData([
         { label: "8a", value: 0.5 },
         { label: "10a", value: 0.9 },
@@ -52,7 +51,7 @@ function useChartData(range: Range) {
         { label: "6p", value: 1.6 },
         { label: "8p", value: 1.8 },
       ]);
-    else
+    } else {
       setData([
         { label: "2020", value: 50 },
         { label: "2021", value: 65 },
@@ -60,7 +59,9 @@ function useChartData(range: Range) {
         { label: "2023", value: 72 },
         { label: "2024", value: 90 },
       ]);
-  }, [range]);
+    }
+  }, [range, apiData]);
+
   return data;
 }
 
@@ -71,8 +72,32 @@ const formatYAxisValue = (value: number) => {
 };
 
 export default function RevenueOverview() {
+  const { overview } = useDashboardStore();
   const [range, setRange] = React.useState<Range>("month");
-  const data = useChartData(range);
+  const data = useChartData(range, overview?.revenue_overview);
+
+  // Calculate total revenue and trend from API data
+  const totalRevenue = React.useMemo(() => {
+    if (overview?.stats?.total_revenue) {
+      return typeof overview.stats.total_revenue.value === "number"
+        ? overview.stats.total_revenue.value
+        : 0;
+    }
+    return 3000;
+  }, [overview]);
+
+  const revenueTrend = React.useMemo(() => {
+    if (overview?.stats?.total_revenue?.trend) {
+      const trend = overview.stats.total_revenue.trend;
+      const cleanTrend = trend.replace("%", "").trim();
+      const percent = parseFloat(cleanTrend);
+      return {
+        value: isNaN(percent) ? 0 : Math.abs(percent),
+        increased: percent >= 0,
+      };
+    }
+    return { value: 20, increased: true };
+  }, [overview]);
 
   return (
     <div className="bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
@@ -83,11 +108,21 @@ export default function RevenueOverview() {
           </p>
           <div className="flex items-end gap-3">
             <p className="text-[#0B1E66] text-[36px] font-semibold leading-none">
-              3,000
+              {new Intl.NumberFormat("en-US").format(totalRevenue)}
             </p>
             <div className="flex items-center gap-1 mb-1">
-              <ArrowUp className="w-4 h-4 text-[#10B981]" />
-              <span className="text-[#10B981] text-sm font-medium">20%</span>
+              {revenueTrend.increased ? (
+                <ArrowUp className="w-4 h-4 text-[#10B981]" />
+              ) : (
+                <ArrowDown className="w-4 h-4 text-[#EF4444]" />
+              )}
+              <span
+                className={`text-sm font-medium ${
+                  revenueTrend.increased ? "text-[#10B981]" : "text-[#EF4444]"
+                }`}
+              >
+                {revenueTrend.value}%
+              </span>
               <span className="text-[#667085] text-sm">last week</span>
             </div>
           </div>
@@ -113,7 +148,7 @@ export default function RevenueOverview() {
         </div>
       </div>
 
-      <div className="h-[300px]">
+      <div className="h-75">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}

@@ -26,8 +26,8 @@ const ROW_COUNT = 6;
 
 export function BannersTableSkeleton() {
   return (
-    <div className="bg-white rounded-xl overflow-hidden">
-      <Table className="min-w-[720px]">
+    <div className="bg-white rounded-xl overflow-x-auto">
+      <Table className="">
         <TableHeader>
           <TableRow>
             {BANNER_COLUMNS.map((label) => (

@@ -23,7 +23,7 @@ export default function InventoryManagement() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="flex flex-wrap gap-4">
         <StockLevelCard stockLevel={mockStockLevel} />
         <RecentlyStockCard recentStocks={mockRecentStock} />
       </div>

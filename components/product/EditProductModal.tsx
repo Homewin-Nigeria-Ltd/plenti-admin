@@ -342,7 +342,7 @@ export function EditProductModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[557px]! sm:w-[557px]! sm:max-w-[557px]!"
+        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-139.25! sm:w-139.25! sm:max-w-139.25!"
         showCloseButton={false}
       >
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100 relative">
@@ -356,7 +356,7 @@ export function EditProductModal({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="absolute top-6 right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+            className="absolute top-6 right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full"
           >
             <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
@@ -386,7 +386,7 @@ export function EditProductModal({
               placeholder="Product Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="form-control w-full h-auto! min-h-[100px] resize-none"
+              className="form-control w-full h-auto! min-h-25 resize-none"
               required
             />
           </div>
@@ -535,8 +535,8 @@ export function EditProductModal({
               >
                 {previewUrl ? (
                   <div className="w-full">
-                    <div className="relative mx-auto w-full max-w-[260px]">
-                      <div className="relative w-full h-[160px] rounded-md border border-neutral-200 overflow-hidden">
+                    <div className="relative mx-auto w-full max-w-65">
+                      <div className="relative w-full h-40 rounded-md border border-neutral-200 overflow-hidden">
                         <Image
                           src={previewUrl}
                           alt="Selected product"
@@ -562,8 +562,8 @@ export function EditProductModal({
                   </div>
                 ) : currentImageUrls.length > 0 ? (
                   <div className="w-full">
-                    <div className="relative mx-auto w-full max-w-[260px]">
-                      <div className="relative w-full h-[160px] rounded-md border border-neutral-200 overflow-hidden">
+                    <div className="relative mx-auto w-full max-w-65">
+                      <div className="relative w-full h-40 rounded-md border border-neutral-200 overflow-hidden">
                         <Image
                           src={currentImageUrls[0]}
                           alt={product.name}

@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { X, Ellipsis, Loader2 } from "lucide-react";
+import { X, Ellipsis } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,52 +26,76 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Banner } from "@/types/MarketingTypes";
-import { useMarketingStore } from "@/store/useMarketingStore";
+import type { PromoCode, PromoCodeType } from "@/types/MarketingTypes";
+import { formatCurrency } from "@/lib/format";
 
-interface BannerDetailsModalProps {
+interface PromoCodeDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  banner: Banner | null;
+  promoCode: PromoCode | null;
   onEditClick?: () => void;
 }
 
-export function BannerDetailsModal({
+function formatDateCreated(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  const dateStr = d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeStr = d.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${dateStr} | ${timeStr}`;
+}
+
+function formatExpiry(iso: string | null | undefined) {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function typeLabel(type: PromoCodeType) {
+  return type === "percentage" ? "Percentage" : "Fixed";
+}
+
+export function PromoCodeDetailsModal({
   isOpen,
   onClose,
-  banner,
+  promoCode,
   onEditClick,
-}: BannerDetailsModalProps) {
+}: PromoCodeDetailsModalProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
-  const { deleteBanner, deletingBanner } = useMarketingStore();
 
-  const handleDeleteConfirm = React.useCallback(async () => {
-    if (!banner) return;
-    const success = await deleteBanner(banner.id);
-    if (success) {
-      setDeleteConfirmOpen(false);
-      onClose();
-    }
-  }, [banner, deleteBanner, onClose]);
+  const handleDeleteConfirm = React.useCallback(() => {
+    // Delete promo code endpoint not implemented yet; close dialog for now
+    setDeleteConfirmOpen(false);
+    onClose();
+  }, [onClose]);
 
-  if (!banner) return null;
+  if (!promoCode) return null;
 
-  const formattedDateCreated = banner.created_at
-    ? (() => {
-        const d = new Date(banner.created_at!);
-        const dateStr = d.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-        const timeStr = d.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
-        return `${dateStr} | ${timeStr}`;
-      })()
-    : "—";
+  const formattedDateCreated = formatDateCreated(promoCode.created_at);
+  const valueDisplay =
+    promoCode.type === "percentage"
+      ? `${promoCode.value}%`
+      : formatCurrency(promoCode.value, { minimumFractionDigits: 2 });
+  const minOrderDisplay =
+    promoCode.min_order_amount > 0
+      ? formatCurrency(promoCode.min_order_amount, {
+          minimumFractionDigits: 2,
+        })
+      : "—";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -83,11 +107,11 @@ export function BannerDetailsModal({
           <div className="flex items-start justify-between gap-4 pr-12">
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-2xl font-bold text-[#101928] mb-1">
-                {banner.title}
+                {promoCode.code}
               </DialogTitle>
-              {banner.subheading && (
+              {promoCode.description && (
                 <DialogDescription className="text-[#101928] text-base font-normal">
-                  {banner.subheading}
+                  {promoCode.description}
                 </DialogDescription>
               )}
             </div>
@@ -112,11 +136,7 @@ export function BannerDetailsModal({
                     onEditClick?.();
                   }}
                 >
-                  Edit Banner
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-[#667085] text-[14px]">
-                  Duplicate
+                  Edit Promo Code
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -126,7 +146,7 @@ export function BannerDetailsModal({
                     setDeleteConfirmOpen(true);
                   }}
                 >
-                  Delete Banner
+                  Delete Promo Code
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -145,47 +165,38 @@ export function BannerDetailsModal({
           Date Created: {formattedDateCreated}
         </div>
 
-        <div className=" pb-6 space-y-6">
-          {/* Link */}
-          {banner.link_url && (
-            <div>
-              <a
-                href={banner.link_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#2390FA] underline hover:opacity-80 text-sm font-medium break-all"
-              >
-                {banner.link_url}
-              </a>
-            </div>
-          )}
-
-          {/* Two Column Layout - Left: Screen Location, Number of Clicks, Sort | Right: Type, Click Per Day */}
+        <div className="pb-6 space-y-6">
+          {/* Two Column Layout */}
           <div className="grid grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-4">
               <div>
-                <p className="text-[#667085] text-sm font-medium mb-1">
-                  Screen Location
-                </p>
+                <p className="text-[#667085] text-sm font-medium mb-1">Type</p>
                 <p className="text-[#101928] text-base font-medium">
-                  {banner.screen_location ?? "—"}
+                  {typeLabel(promoCode.type)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[#667085] text-sm font-medium mb-1">Value</p>
+                <p className="text-[#101928] text-base font-medium">
+                  {valueDisplay}
                 </p>
               </div>
 
               <div>
                 <p className="text-[#667085] text-sm font-medium mb-1">
-                  Number of Clicks
+                  Min. Order Amount
                 </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {new Intl.NumberFormat("en-US").format(banner.total_clicks)}
+                  {minOrderDisplay}
                 </p>
               </div>
 
               <div>
-                <p className="text-[#667085] text-sm font-medium mb-1">Sort</p>
+                <p className="text-[#667085] text-sm font-medium mb-1">Usage</p>
                 <p className="text-[#101928] text-base font-medium">
-                  {banner.position}
+                  {promoCode.used_count} / {promoCode.usage_limit}
                 </p>
               </div>
             </div>
@@ -193,18 +204,20 @@ export function BannerDetailsModal({
             {/* Right Column */}
             <div className="space-y-4">
               <div>
-                <p className="text-[#667085] text-sm font-medium mb-1">Type</p>
+                <p className="text-[#667085] text-sm font-medium mb-1">
+                  Expiry Date
+                </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {banner.banner_type}
+                  {formatExpiry(promoCode.expiry_date)}
                 </p>
               </div>
 
               <div>
                 <p className="text-[#667085] text-sm font-medium mb-1">
-                  Click Per Day
+                  Status
                 </p>
                 <p className="text-[#101928] text-base font-medium">
-                  {new Intl.NumberFormat("en-US").format(banner.clicks_per_day)}
+                  {promoCode.is_active ? "Active" : "Inactive"}
                 </p>
               </div>
             </div>
@@ -216,34 +229,23 @@ export function BannerDetailsModal({
         <AlertDialogContent className="rounded-[12px] border-0 p-6 sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-[#0B1E66] text-[18px]">
-              Are you sure you want to delete this banner?
+              Are you sure you want to delete this promo code?
             </AlertDialogTitle>
             <AlertDialogDescription className="sr-only">
-              Confirm banner deletion
+              Confirm promo code deletion
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row gap-3 sm:justify-center">
-            <AlertDialogCancel
-              disabled={deletingBanner}
-              className="rounded-[8px] h-12 border border-[#0B1E66] bg-transparent text-[#0B1E66] hover:bg-gray-50"
-            >
+            <AlertDialogCancel className="rounded-[8px] h-12 border border-[#0B1E66] bg-transparent text-[#0B1E66] hover:bg-gray-50">
               Cancel
             </AlertDialogCancel>
             <Button
               type="button"
               variant="destructive"
-              disabled={deletingBanner}
               className="rounded-[8px] h-12"
               onClick={handleDeleteConfirm}
             >
-              {deletingBanner ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="size-4 animate-spin" />
-                  Deleting…
-                </span>
-              ) : (
-                "Delete Banner"
-              )}
+              Delete Promo Code
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

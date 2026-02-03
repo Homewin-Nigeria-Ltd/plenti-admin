@@ -13,6 +13,9 @@ export type FormatCurrencyOptions = {
  * @param amount - Value to format
  * @param options - Optional overrides (defaults: en-NG, NGN, 0 fraction digits)
  */
+const FRACTION_DIGITS_MIN = 0;
+const FRACTION_DIGITS_MAX = 20;
+
 export function formatCurrency(
   amount: number,
   options?: FormatCurrencyOptions
@@ -21,13 +24,26 @@ export function formatCurrency(
     locale = DEFAULT_LOCALE,
     currency = DEFAULT_CURRENCY,
     minimumFractionDigits = 0,
-    maximumFractionDigits = 0,
+    maximumFractionDigits,
   } = options ?? {};
+
+  const min = Math.max(
+    FRACTION_DIGITS_MIN,
+    Math.min(FRACTION_DIGITS_MAX, minimumFractionDigits)
+  );
+  const max =
+    maximumFractionDigits !== undefined
+      ? Math.max(
+          FRACTION_DIGITS_MIN,
+          Math.min(FRACTION_DIGITS_MAX, maximumFractionDigits)
+        )
+      : min;
+  const resolvedMax = Math.max(min, max);
 
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
-    minimumFractionDigits,
-    maximumFractionDigits,
+    minimumFractionDigits: min,
+    maximumFractionDigits: resolvedMax,
   }).format(amount);
 }

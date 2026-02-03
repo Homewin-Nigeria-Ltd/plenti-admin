@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { useAccountStore } from "@/store/useAccountStore";
 
 export default function PasswordManagement() {
   const [currentPassword, setCurrentPassword] = React.useState("");
@@ -15,8 +16,27 @@ export default function PasswordManagement() {
   const [showNewPassword, setShowNewPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
-  const handleUpdatePassword = () => {
-    toast.success("Password updated successfully");
+  const { updatingPassword, updatePasswordError, updatePassword } =
+    useAccountStore();
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirmation do not match");
+      return;
+    }
+    const ok = await updatePassword({
+      current_password: currentPassword,
+      new_password: newPassword,
+      new_password_confirmation: confirmPassword,
+    });
+    if (ok) {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success("Password updated successfully");
+    } else {
+      toast.error("Failed to update password");
+    }
   };
 
   return (
@@ -34,7 +54,10 @@ export default function PasswordManagement() {
         <div className="w-full lg:flex-1">
           <div className="space-y-6 sm:space-y-8 mb-4 sm:mb-6">
             <div className="space-y-2">
-              <Label htmlFor="currentPassword" className="text-sm font-medium text-primary-700">
+              <Label
+                htmlFor="currentPassword"
+                className="text-sm font-medium text-primary-700"
+              >
                 Current Password
               </Label>
               <div className="relative">
@@ -50,7 +73,8 @@ export default function PasswordManagement() {
                 <button
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10">
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10"
+                >
                   {showCurrentPassword ? (
                     <EyeOff className="size-5" />
                   ) : (
@@ -61,7 +85,10 @@ export default function PasswordManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-sm font-medium text-primary-700">
+              <Label
+                htmlFor="newPassword"
+                className="text-sm font-medium text-primary-700"
+              >
                 New Password
               </Label>
               <div className="relative">
@@ -77,7 +104,8 @@ export default function PasswordManagement() {
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10">
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10"
+                >
                   {showNewPassword ? (
                     <EyeOff className="size-5" />
                   ) : (
@@ -88,7 +116,10 @@ export default function PasswordManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-sm font-medium text-primary-700">
+              <Label
+                htmlFor="confirmPassword"
+                className="text-sm font-medium text-primary-700"
+              >
                 Confirm Password
               </Label>
               <div className="relative">
@@ -104,7 +135,8 @@ export default function PasswordManagement() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10">
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10"
+                >
                   {showConfirmPassword ? (
                     <EyeOff className="size-5" />
                   ) : (
@@ -115,9 +147,23 @@ export default function PasswordManagement() {
             </div>
           </div>
 
+          {updatePasswordError && (
+            <p className="text-sm text-red-600 mb-4">{updatePasswordError}</p>
+          )}
+
           <div className="flex justify-end pt-4">
-            <Button className="btn btn-group-item btn-primary" onClick={handleUpdatePassword}>
-              Update Password
+            <Button
+              type="button"
+              className="btn btn-group-item btn-primary"
+              onClick={handleUpdatePassword}
+              disabled={
+                updatingPassword ||
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword
+              }
+            >
+              {updatingPassword ? "Updating…" : "Update Password"}
             </Button>
           </div>
         </div>
@@ -125,4 +171,3 @@ export default function PasswordManagement() {
     </div>
   );
 }
-

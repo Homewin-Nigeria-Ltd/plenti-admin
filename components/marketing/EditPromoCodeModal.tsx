@@ -22,11 +22,12 @@ import { Switch } from "@/components/ui/switch";
 import { X, Copy, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useMarketingStore } from "@/store/useMarketingStore";
-import type { PromoCodeType } from "@/types/MarketingTypes";
+import type { CreatePromoCodeRequest, PromoCode, PromoCodeType } from "@/types/MarketingTypes";
 
-type CreatePromoCodeModalProps = {
+type EditPromoCodeModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  promoCode: PromoCode | null;
 };
 
 const DISCOUNT_OPTIONS: { value: PromoCodeType; label: string }[] = [
@@ -34,21 +35,41 @@ const DISCOUNT_OPTIONS: { value: PromoCodeType; label: string }[] = [
   { value: "fixed", label: "Fixed Amount" },
 ];
 
-export function CreatePromoCodeModal({
+function expiryToDateInput(expiry: string | null): string {
+  if (!expiry) return "";
+  try {
+    const d = new Date(expiry);
+    return d.toISOString().split("T")[0];
+  } catch {
+    return "";
+  }
+}
+
+export function EditPromoCodeModal({
   isOpen,
   onClose,
-}: CreatePromoCodeModalProps) {
-  const { createPromoCode, creatingPromoCode, updateFaqError } =
-    useMarketingStore();
+  promoCode,
+}: EditPromoCodeModalProps) {
+  const { updatePromoCode, updatingPromoCode } = useMarketingStore();
   const [discountCode, setDiscountCode] = React.useState("");
-  const [discountType, setDiscountType] = React.useState<PromoCodeType | "">(
-    ""
-  );
+  const [discountType, setDiscountType] = React.useState<PromoCodeType | "">("");
   const [usageLimit, setUsageLimit] = React.useState("");
   const [value, setValue] = React.useState("");
   const [minOrderAmount, setMinOrderAmount] = React.useState("");
   const [expiryDate, setExpiryDate] = React.useState("");
   const [isActive, setIsActive] = React.useState(true);
+
+  React.useEffect(() => {
+    if (promoCode) {
+      setDiscountCode(promoCode.code);
+      setDiscountType(promoCode.type);
+      setUsageLimit(String(promoCode.usage_limit));
+      setValue(String(promoCode.value));
+      setMinOrderAmount(String(promoCode.min_order_amount));
+      setExpiryDate(expiryToDateInput(promoCode.expiry_date));
+      setIsActive(promoCode.is_active);
+    }
+  }, [promoCode]);
 
   const handleCopyCode = () => {
     if (discountCode) {
@@ -57,18 +78,9 @@ export function CreatePromoCodeModal({
     }
   };
 
-  const resetForm = () => {
-    setDiscountCode("");
-    setDiscountType("");
-    setUsageLimit("");
-    setValue("");
-    setMinOrderAmount("");
-    setExpiryDate("");
-    setIsActive(true);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!promoCode) return;
 
     const code = discountCode.trim().toUpperCase();
     if (!code) {
@@ -101,7 +113,7 @@ export function CreatePromoCodeModal({
 
     const expiryDateTime = `${expiryDate}T23:59:59`;
 
-    const ok = await createPromoCode({
+    const payload: CreatePromoCodeRequest = {
       code,
       type: discountType,
       value: valueNum,
@@ -109,31 +121,34 @@ export function CreatePromoCodeModal({
       usage_limit: usageLimitNum,
       expiry_date: expiryDateTime,
       is_active: isActive,
-    });
+    };
+
+    const ok = await updatePromoCode(promoCode.id, payload);
 
     if (!ok) {
+      toast.error("Failed to update promo code");
       return;
     }
 
-    toast.success("Promo code created successfully");
-    resetForm();
+    toast.success("Promo code updated successfully");
     onClose();
   };
 
   const handleClose = () => {
-    resetForm();
     onClose();
   };
+
+  if (!promoCode) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-[600px]" showCloseButton={false}>
         <DialogHeader className="relative pb-4">
           <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
-            Create Discount Code
+            Edit Discount Code
           </DialogTitle>
           <DialogDescription className="text-[#667085] text-base font-normal">
-            Create a new discount code for customers
+            Update this discount code
           </DialogDescription>
 
           <button
@@ -147,20 +162,20 @@ export function CreatePromoCodeModal({
         </DialogHeader>
 
         <form
-          id="create-promo-code-form"
+          id="edit-promo-code-form"
           onSubmit={handleSubmit}
           className="space-y-6"
         >
           <div className="space-y-2">
             <Label
-              htmlFor="discountCode"
+              htmlFor="edit-discountCode"
               className="text-[#101928] font-medium"
             >
               Discount Code
             </Label>
             <div className="relative">
               <Input
-                id="discountCode"
+                id="edit-discountCode"
                 placeholder="e.g DISCOUNT 123"
                 value={discountCode}
                 onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
@@ -182,7 +197,7 @@ export function CreatePromoCodeModal({
 
           <div className="space-y-2">
             <Label
-              htmlFor="discountType"
+              htmlFor="edit-discountType"
               className="text-[#101928] font-medium"
             >
               Discount Type
@@ -192,7 +207,7 @@ export function CreatePromoCodeModal({
               onValueChange={(v) => setDiscountType(v as PromoCodeType)}
             >
               <SelectTrigger
-                id="discountType"
+                id="edit-discountType"
                 className="w-full focus-visible:ring-0 h-[48px]"
               >
                 <SelectValue placeholder="Select discount type" />
@@ -209,13 +224,13 @@ export function CreatePromoCodeModal({
 
           <div className="space-y-2">
             <Label
-              htmlFor="minOrderAmount"
+              htmlFor="edit-minOrderAmount"
               className="text-[#101928] font-medium"
             >
               Min. order amount
             </Label>
             <Input
-              id="minOrderAmount"
+              id="edit-minOrderAmount"
               type="number"
               placeholder="e.g. 5000"
               value={minOrderAmount}
@@ -227,11 +242,11 @@ export function CreatePromoCodeModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="usageLimit" className="text-[#101928] font-medium">
+            <Label htmlFor="edit-usageLimit" className="text-[#101928] font-medium">
               Usage Limit
             </Label>
             <Input
-              id="usageLimit"
+              id="edit-usageLimit"
               type="number"
               placeholder="Input usage Limit"
               value={usageLimit}
@@ -243,11 +258,11 @@ export function CreatePromoCodeModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="value" className="text-[#101928] font-medium">
+            <Label htmlFor="edit-value" className="text-[#101928] font-medium">
               Value
             </Label>
             <Input
-              id="value"
+              id="edit-value"
               type="number"
               placeholder="Input value"
               value={value}
@@ -260,19 +275,18 @@ export function CreatePromoCodeModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="expiryDate" className="text-[#101928] font-medium">
+            <Label htmlFor="edit-expiryDate" className="text-[#101928] font-medium">
               Expiry date
             </Label>
             <div className="relative">
               <Input
-                id="expiryDate"
+                id="edit-expiryDate"
                 type="date"
                 placeholder="Input expiry date"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
                 className="focus-visible:ring-0 h-[48px] pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 required
-                min={new Date().toISOString().split("T")[0]}
               />
               <Calendar
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#667085] pointer-events-none"
@@ -282,11 +296,11 @@ export function CreatePromoCodeModal({
           </div>
 
           <div className="flex items-center justify-between rounded-lg border border-input p-4">
-            <Label htmlFor="is_active" className="text-[#101928] font-medium">
+            <Label htmlFor="edit-is_active" className="text-[#101928] font-medium">
               Active
             </Label>
             <Switch
-              id="is_active"
+              id="edit-is_active"
               checked={isActive}
               onCheckedChange={setIsActive}
             />
@@ -295,11 +309,11 @@ export function CreatePromoCodeModal({
           <div className="pt-4">
             <Button
               type="submit"
-              form="create-promo-code-form"
+              form="edit-promo-code-form"
               className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white w-full h-[52px] text-base font-medium"
-              disabled={creatingPromoCode}
+              disabled={updatingPromoCode}
             >
-              {creatingPromoCode ? "Creating…" : "Create Discount"}
+              {updatingPromoCode ? "Updating…" : "Update Discount"}
             </Button>
           </div>
         </form>

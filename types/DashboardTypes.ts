@@ -1,12 +1,19 @@
+/** Stat value with trend and sparkline data */
+export type StatValue = {
+  value: number | string;
+  trend: string;
+  sparkline?: number[];
+};
+
 /** Stats from GET {{admin_url}}/dashboard/overview (data.stats) */
 export type DashboardStats = {
-  total_revenue: number;
-  total_orders: number;
-  active_users: number;
-  conversion_rate: number;
-  today_revenue: number;
-  total_deliveries: number;
-  total_products: number;
+  total_revenue: StatValue;
+  total_orders: StatValue;
+  active_users: StatValue;
+  conversion_rate: StatValue;
+  today_revenue: StatValue;
+  total_deliveries: StatValue;
+  total_products: StatValue;
   top_weekly_category: string;
 };
 
@@ -37,18 +44,44 @@ export type DashboardRecentOrder = {
   status: string;
 };
 
-/** Dashboard overview payload – excludes revenue_overview (handled by separate endpoint with filters) */
+/** Revenue overview data point */
+export type RevenueOverviewData = {
+  month: string;
+  revenue: number;
+};
+
+/** Best selling category from dashboard */
+export type BestSellingCategory = {
+  category_name: string;
+  order_frequency: number;
+  units_sold: string;
+  total_income: string;
+};
+
+/** Dashboard overview payload – includes all data from API response */
 export type DashboardOverview = {
   stats: DashboardStats;
   top_products: DashboardTopProduct[];
   cart_analysis: DashboardCartAnalysis;
   recent_orders: DashboardRecentOrder[];
+  revenue_overview: RevenueOverviewData[];
+  best_selling_categories: BestSellingCategory[];
 };
+
+export type TopProductsFilter = "day" | "week" | "month" | "year";
 
 export type DashboardState = {
   overview: DashboardOverview | null;
   loadingOverview: boolean;
   overviewError: string | null;
 
+  topProducts: DashboardTopProduct[] | null;
+  loadingTopProducts: boolean;
+
+  bestSellingCategories: BestSellingCategory[] | null;
+  loadingBestSellingCategories: boolean;
+
   fetchDashboardOverview: () => Promise<boolean>;
+  fetchTopProducts: (filter: TopProductsFilter) => Promise<boolean>;
+  fetchBestSellingCategories: (filter: TopProductsFilter) => Promise<boolean>;
 };

@@ -1,3 +1,48 @@
+/** Body for PUT {{base_url}}/api/admin/account-settings/profile */
+export type UpdateProfileRequest = {
+  name: string;
+  avatar_url?: string | null;
+};
+
+/** Body for PUT {{base_url}}/api/admin/account-settings/password */
+export type UpdatePasswordRequest = {
+  current_password: string;
+  new_password: string;
+  new_password_confirmation: string;
+};
+
+/** Logged-in admin account from GET {{base_url}}/api/admin/account-settings */
+export type AccountSettingsUser = {
+  id: number;
+  social_id: string | null;
+  social_type: string | null;
+  name: string;
+  email: string;
+  role: string;
+  department: string | null;
+  position: string | null;
+  created_by: number | null;
+  status: string;
+  is_verified: boolean;
+  phone: string | null;
+  address: string | null;
+  avatar_url: string | null;
+  points: number;
+  trust_score: number;
+  is_admin: boolean;
+  account_locked: number;
+  enabled: number;
+  email_verified_at: string | null;
+  phone_verified_at: string | null;
+  otp_expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  amount_spent: number;
+  total_orders: number;
+  roles: string[];
+};
+
 export type AdminUserStatus = "active" | "pending" | "inactive" | (string & {});
 
 export type AdminUser = {
@@ -110,4 +155,3 @@ export type UserState = {
 
   createUser: (payload: CreateUserRequest) => Promise<CreateUserResult>;
 };
-

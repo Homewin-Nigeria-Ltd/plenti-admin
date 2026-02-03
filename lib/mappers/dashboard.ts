@@ -23,6 +23,18 @@ export type MetricCardItem = {
 const PLACEHOLDER_TREND = [0, 0, 0] as const;
 
 /**
+ * Parses a trend string (e.g., "+100%", "-5%", "0%") to extract percentage and direction.
+ */
+function parseTrend(trend: string): { percent: number; increased: boolean } {
+  const cleanTrend = trend.replace("%", "").trim();
+  const percent = parseFloat(cleanTrend);
+  return {
+    percent: isNaN(percent) ? 0 : Math.abs(percent),
+    increased: percent >= 0,
+  };
+}
+
+/**
  * Maps dashboard overview stats to stat cards for the main dashboard grid.
  */
 export function mapOverviewToStatCards(
@@ -30,34 +42,42 @@ export function mapOverviewToStatCards(
 ): StatCardItem[] | null {
   if (!overview?.stats) return null;
   const s = overview.stats;
+
+  const revenueTrend = parseTrend(s.total_revenue.trend);
+  const ordersTrend = parseTrend(s.total_orders.trend);
+  const usersTrend = parseTrend(s.active_users.trend);
+  const conversionTrend = parseTrend(s.conversion_rate.trend);
+
   return [
     {
       title: "Total Revenue",
-      value: formatCurrency(s.total_revenue),
-      changePercent: 0,
-      increased: true,
-      trendData: [...PLACEHOLDER_TREND],
+      value: formatCurrency(Number(s.total_revenue.value)),
+      changePercent: revenueTrend.percent,
+      increased: revenueTrend.increased,
+      trendData: s.total_revenue.sparkline || [...PLACEHOLDER_TREND],
     },
     {
       title: "Total Orders",
-      value: new Intl.NumberFormat("en-US").format(s.total_orders),
-      changePercent: 0,
-      increased: true,
-      trendData: [...PLACEHOLDER_TREND],
+      value: new Intl.NumberFormat("en-US").format(
+        Number(s.total_orders.value)
+      ),
+      changePercent: ordersTrend.percent,
+      increased: ordersTrend.increased,
+      trendData: s.total_orders.sparkline || [...PLACEHOLDER_TREND],
     },
     {
       title: "Active Users",
-      value: formatCompact(s.active_users),
-      changePercent: 0,
-      increased: true,
-      trendData: [...PLACEHOLDER_TREND],
+      value: formatCompact(Number(s.active_users.value)),
+      changePercent: usersTrend.percent,
+      increased: usersTrend.increased,
+      trendData: s.active_users.sparkline || [...PLACEHOLDER_TREND],
     },
     {
       title: "Conversion Rate",
-      value: `${s.conversion_rate}%`,
-      changePercent: 0,
-      increased: true,
-      trendData: [...PLACEHOLDER_TREND],
+      value: String(s.conversion_rate.value),
+      changePercent: conversionTrend.percent,
+      increased: conversionTrend.increased,
+      trendData: s.conversion_rate.sparkline || [...PLACEHOLDER_TREND],
     },
   ];
 }
@@ -70,21 +90,30 @@ export function mapOverviewToMetricCards(
 ): MetricCardItem[] | null {
   if (!overview?.stats) return null;
   const s = overview.stats;
+
+  const deliveriesTrend = parseTrend(s.total_deliveries.trend);
+  const todayRevenueTrend = parseTrend(s.today_revenue.trend);
+  const productsTrend = parseTrend(s.total_products.trend);
+
   return [
     {
       title: "Total Deliveries",
-      value: new Intl.NumberFormat("en-US").format(s.total_deliveries),
-      changePercent: 0,
+      value: new Intl.NumberFormat("en-US").format(
+        Number(s.total_deliveries.value)
+      ),
+      changePercent: deliveriesTrend.percent,
     },
     {
       title: "Today's Revenue",
-      value: formatCurrency(s.today_revenue),
-      changePercent: 0,
+      value: formatCurrency(Number(s.today_revenue.value)),
+      changePercent: todayRevenueTrend.percent,
     },
     {
       title: "Number of Products",
-      value: new Intl.NumberFormat("en-US").format(s.total_products),
-      changePercent: 0,
+      value: new Intl.NumberFormat("en-US").format(
+        Number(s.total_products.value)
+      ),
+      changePercent: productsTrend.percent,
     },
     {
       title: "Top Weekly Category",

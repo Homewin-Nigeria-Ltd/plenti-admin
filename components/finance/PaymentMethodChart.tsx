@@ -15,45 +15,59 @@ type PaymentMethodChartProps = {
   height?: number;
 };
 
+const defaultPaymentItem: PaymentData = {
+  name: "",
+  value: 0,
+  color: "#E5E7EB",
+};
+
 export function PaymentMethodChart({
   data,
   formatCurrency,
   width = 200,
   height = 200,
 }: PaymentMethodChartProps) {
-  // Find each payment method
-  const cardPayments = data.find((d) => d.name === "Card Payments") || data[0];
+  // Find each payment method with safe fallbacks
+  const cardPayments =
+    data.find((d) => d.name === "Card Payments") ??
+    data[0] ??
+    defaultPaymentItem;
   const walletPayments =
-    data.find((d) => d.name === "Wallet Payments") || data[1];
-  const bankTransfer = data.find((d) => d.name === "Bank Transfer") || data[2];
+    data.find((d) => d.name === "Wallet Payments") ??
+    data[1] ??
+    defaultPaymentItem;
+  const bankTransfer =
+    data.find((d) => d.name === "Bank Transfer") ??
+    data[2] ??
+    defaultPaymentItem;
 
   // Calculate radii for nested donut charts
   const outerRing = { innerRadius: 84, outerRadius: 96 };
   const middleRing = { innerRadius: 69, outerRadius: 81 };
   const innerRing = { innerRadius: 54, outerRadius: 66 };
 
+  const pct = (num: number, total: number) =>
+    total > 0 ? (num / total) * 100 : 50;
+
   // Outer ring: Card Payments + Bank Transfer (2 segments)
   const outerRingTotal = cardPayments.value + bankTransfer.value;
   const outerRingData = [
-    { ...cardPayments, value: (cardPayments.value / outerRingTotal) * 100 },
-    { ...bankTransfer, value: (bankTransfer.value / outerRingTotal) * 100 },
+    { ...cardPayments, value: pct(cardPayments.value, outerRingTotal) },
+    { ...bankTransfer, value: pct(bankTransfer.value, outerRingTotal) },
   ];
 
   // Middle ring: Wallet Payments + Card Payments (2 segments)
   const middleRingTotal = walletPayments.value + cardPayments.value;
   const middleRingData = [
-    {
-      ...walletPayments,
-      value: (walletPayments.value / middleRingTotal) * 100,
-    },
-    { ...cardPayments, value: (cardPayments.value / middleRingTotal) * 100 },
+    { ...walletPayments, value: pct(walletPayments.value, middleRingTotal) },
+    { ...cardPayments, value: pct(cardPayments.value, middleRingTotal) },
   ];
 
   // Inner ring: Bank Transfer + Wallet Payments (2 segments)
   const innerRingTotal = bankTransfer.value + walletPayments.value;
   const innerRingData = [
-    { ...bankTransfer, value: (bankTransfer.value / innerRingTotal) * 100 },
-    { ...walletPayments, value: (walletPayments.value / innerRingTotal) * 100 },
+    { ...bankTransfer, value: pct(bankTransfer.value, innerRingTotal) },
+    { ...walletPayments, value: pct(walletPayments.value, innerRingTotal) },
   ];
 
   return (

@@ -10,29 +10,28 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useFinanceStore } from "@/store/useFinanceStore";
 
 type Range = "day" | "week" | "month" | "year";
 
-const monthData = [
-  { label: "Jan", value: 1 },
-  { label: "Feb", value: 1.2 },
-  { label: "Mar", value: 10 },
-  { label: "Apr", value: 6 },
-  { label: "May", value: 0.3 },
-  { label: "Jun", value: 12 },
-  { label: "Jul", value: 9 },
-  { label: "Aug", value: 13 },
-  { label: "Sep", value: 8 },
-  { label: "Oct", value: 2 },
-  { label: "Nov", value: 1 },
-  { label: "Dec", value: 7 },
-];
+function useChartData(
+  range: Range,
+  apiData?: { month: string; total: string }[]
+) {
+  const [data, setData] = React.useState<{ label: string; value: number }[]>(
+    []
+  );
 
-function useChartData(range: Range) {
-  const [data, setData] = React.useState(monthData);
   React.useEffect(() => {
-    if (range === "month") setData(monthData);
-    else if (range === "week")
+    // For month view, use API data if available
+    if (range === "month" && apiData && apiData.length > 0) {
+      setData(
+        apiData.map((item) => ({
+          label: item.month,
+          value: parseFloat(item.total) / 1000000, // Convert to millions
+        }))
+      );
+    } else if (range === "week") {
       setData([
         { label: "Mon", value: 2 },
         { label: "Tue", value: 2.5 },
@@ -42,7 +41,7 @@ function useChartData(range: Range) {
         { label: "Sat", value: 3.1 },
         { label: "Sun", value: 3.0 },
       ]);
-    else if (range === "day")
+    } else if (range === "day") {
       setData([
         { label: "8a", value: 0.5 },
         { label: "10a", value: 0.9 },
@@ -52,7 +51,7 @@ function useChartData(range: Range) {
         { label: "6p", value: 1.6 },
         { label: "8p", value: 1.8 },
       ]);
-    else
+    } else {
       setData([
         { label: "2020", value: 50 },
         { label: "2021", value: 65 },
@@ -60,13 +59,25 @@ function useChartData(range: Range) {
         { label: "2023", value: 72 },
         { label: "2024", value: 90 },
       ]);
-  }, [range]);
+    }
+  }, [range, apiData]);
+
   return data;
 }
 
 export function RevenueOverviewChart() {
+  const { overview } = useFinanceStore();
   const [range, setRange] = React.useState<Range>("month");
-  const data = useChartData(range);
+  const data = useChartData(range, overview?.charts?.revenue_trend);
+
+  // Calculate total revenue from API
+  const totalRevenue = React.useMemo(() => {
+    if (overview?.summary?.total_revenue) {
+      const amount = parseFloat(overview.summary.total_revenue);
+      return new Intl.NumberFormat("en-US").format(amount);
+    }
+    return "0";
+  }, [overview]);
 
   return (
     <div className="bg-white rounded-[12px] border border-[#EEF1F6] p-6">
@@ -75,7 +86,7 @@ export function RevenueOverviewChart() {
           <p className="text-[#667085] text-sm">Revenue Overview</p>
           <div className="flex items-end gap-3">
             <p className="text-[#0B1E66] text-[36px] font-semibold leading-none">
-              3,000
+              {totalRevenue}
             </p>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs">
@@ -97,7 +108,8 @@ export function RevenueOverviewChart() {
                   active
                     ? "rounded-full bg-white shadow-sm px-6 py-1 text-[#0B1E66] text-sm"
                     : "rounded-full px-6 py-1 text-[#9198AD] text-sm"
-                }>
+                }
+              >
                 {r[0].toUpperCase() + r.slice(1)}
               </button>
             );
