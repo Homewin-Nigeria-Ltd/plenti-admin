@@ -11,13 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useMarketingStore } from "@/store/useMarketingStore";
@@ -28,26 +21,16 @@ type CreateFaqModalProps = {
   onClose: () => void;
 };
 
-const STATUS_OPTIONS: { value: CreateFaqRequest["status"]; label: string }[] = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
-
 export function CreateFaqModal({ isOpen, onClose }: CreateFaqModalProps) {
   const { createFaq, creatingFaq } = useMarketingStore();
   const [question, setQuestion] = React.useState("");
   const [answer, setAnswer] = React.useState("");
   const [category, setCategory] = React.useState("");
-  const [status, setStatus] =
-    React.useState<CreateFaqRequest["status"]>("active");
-  const [priority, setPriority] = React.useState("1");
 
   const resetForm = () => {
     setQuestion("");
     setAnswer("");
     setCategory("");
-    setStatus("active");
-    setPriority("1");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,18 +51,11 @@ export function CreateFaqModal({ isOpen, onClose }: CreateFaqModalProps) {
       toast.error("Please enter a category");
       return;
     }
-    const priorityNum = Number(priority);
-    if (!Number.isInteger(priorityNum) || priorityNum < 0) {
-      toast.error("Please enter a valid priority (0 or greater)");
-      return;
-    }
 
     const ok = await createFaq({
       question: questionTrim,
       answer: answerTrim,
       category: categoryTrim,
-      status,
-      priority: priorityNum,
     });
 
     if (!ok) {
