@@ -1,10 +1,10 @@
 "use client";
 
-import * as React from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import * as React from "react";
 // import {
 //   Select,
 //   SelectContent,
@@ -12,10 +12,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 //   SelectTrigger,
 //   SelectValue,
 // } from "@/components/ui/select";
-import { Check, X, Upload, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { uploadImage } from "@/lib/upload";
 import { useAccountStore } from "@/store/useAccountStore";
+import { Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 function nameToFirstLast(name: string): { first: string; last: string } {
   const parts = name.trim().split(/\s+/);
@@ -82,12 +82,12 @@ export default function PersonalInformation() {
     fileInputRef.current?.click();
   };
 
-  const handleRemoveImage = () => {
-    setProfileImageUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+  // const handleRemoveImage = () => {
+  //   setProfileImageUrl(null);
+  //   if (fileInputRef.current) {
+  //     fileInputRef.current.value = "";
+  //   }
+  // };
 
   const handleSaveChanges = async () => {
     const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
@@ -139,61 +139,14 @@ export default function PersonalInformation() {
               accept="image/png,image/jpeg,image/jpg,image/webp"
               className="hidden"
             />
-            {avatarUrl ? (
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="outline"
-                  className="btn-outline w-full sm:w-auto justify-center"
-                  onClick={handleChangePhotoClick}
-                  type="button"
-                  disabled={uploadingImage}
-                >
-                  {uploadingImage ? (
-                    <>
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                      Uploading…
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="size-4 mr-2" />
-                      Replace
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="btn border-red-500 text-red-500 hover:bg-red-50 w-full sm:w-auto justify-center"
-                  onClick={handleRemoveImage}
-                  type="button"
-                  disabled={uploadingImage}
-                >
-                  <X className="size-4 mr-2" />
-                  Remove
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="outline"
-                  className="btn-outline w-full sm:w-auto justify-center"
-                  onClick={handleChangePhotoClick}
-                  type="button"
-                  disabled={uploadingImage}
-                >
-                  {uploadingImage ? (
-                    <>
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                      Uploading…
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="size-4 mr-2" />
-                      Upload Photo
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
+            <Button
+              variant="outline"
+              className="btn w-full text-[#0B1E66]"
+              onClick={handleChangePhotoClick}
+              disabled={uploadingImage}
+            >
+              <p>{avatarUrl ? "Change Photo" : "Upload Photo"}</p>
+            </Button>
           </div>
           <div className="relative shrink-0 mx-auto sm:mx-0 w-fit">
             <Avatar
@@ -215,10 +168,10 @@ export default function PersonalInformation() {
       <div className="bg-white rounded-lg p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           <div className="w-full lg:w-[300px] shrink-0">
-            <h2 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
+            <h2 className="font-semibold text-[#878787] text-base sm:text-lg mb-2">
               Personal Information
             </h2>
-            <p className="text-xs sm:text-sm text-neutral-500">
+            <p className="text-xs sm:text-sm text-[#9B9B9B]">
               Update your personal details here.
             </p>
           </div>

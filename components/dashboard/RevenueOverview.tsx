@@ -129,7 +129,7 @@ export default function RevenueOverview() {
         </div>
 
         <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1">
-          {(["day", "week", "month", "year"] as const).map((r) => {
+          {(["week", "month", "year"] as const).map((r) => {
             const active = range === r;
             return (
               <button

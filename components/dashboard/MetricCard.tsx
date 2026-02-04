@@ -25,13 +25,21 @@ export default function MetricCard({
   return (
     <div
       className={cn(
-        "rounded-[8px] border border-[#E4E7EC] p-3 shadow-xs",
+        "min-w-0 rounded-[8px] border border-[#E4E7EC] p-3 shadow-xs",
         className
       )}
     >
-      <div className="bg-[#E8EEFF] rounded-[8px] p-4">
-        <p className="text-[#98A2B3] text-sm font-normal mb-3">{title}</p>
-        <p className="text-[#0B1E66] text-[32px] font-semibold tracking-tight mb-3">
+      <div className="min-w-0 bg-[#E8EEFF] rounded-[8px] p-4 @container">
+        <p
+          className="text-[#98A2B3] text-sm font-normal mb-3 truncate"
+          title={title}
+        >
+          {title}
+        </p>
+        <p
+          className="text-[#0B1E66] font-semibold tracking-tight mb-3 truncate text-[clamp(1.4rem,6cqw,2rem)]"
+          title={String(formattedValue)}
+        >
           {formattedValue}
         </p>
         <div className="flex items-center gap-2">

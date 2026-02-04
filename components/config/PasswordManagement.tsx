@@ -43,20 +43,29 @@ export default function PasswordManagement() {
     <div className="bg-white rounded-lg p-4 sm:p-6">
       <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
         <div className="w-full lg:w-[300px] shrink-0">
-          <h2 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
+          <h2 className="font-semibold text-[#878787] text-base sm:text-lg mb-2">
             Update Password
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-500">
+          <p className="text-xs sm:text-sm text-[#9B9B9B]">
             Last update 29th July 2023
           </p>
         </div>
 
-        <div className="w-full lg:flex-1">
+        <div className="w-full lg:flex-1 p-8 border border-[#EDEDF2] rounded-[12px]">
+          <div className="mb-4">
+            <h4 className="text-[#0B1E66] font-semibold text-[16px]">
+              Update Password
+            </h4>
+            <p className="text-[#9B9B9B] text-xs font-medium">
+              Enter your current password to make update
+            </p>
+          </div>
+
           <div className="space-y-6 sm:space-y-8 mb-4 sm:mb-6">
             <div className="space-y-2">
               <Label
                 htmlFor="currentPassword"
-                className="text-sm font-medium text-primary-700"
+                className="text-[16px] font-semibold text-[#878787]"
               >
                 Current Password
               </Label>
@@ -68,7 +77,7 @@ export default function PasswordManagement() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Enter Password"
-                  className="form-control !pl-[48px] !pr-12"
+                  className="form-control pl-[48px]! pr-12!"
                 />
                 <button
                   type="button"
@@ -87,7 +96,7 @@ export default function PasswordManagement() {
             <div className="space-y-2">
               <Label
                 htmlFor="newPassword"
-                className="text-sm font-medium text-primary-700"
+                className="text-[16px] font-semibold text-[#878787]"
               >
                 New Password
               </Label>
@@ -99,7 +108,7 @@ export default function PasswordManagement() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter New Password"
-                  className="form-control !pl-[48px] !pr-12"
+                  className="form-control pl-[48px]! pr-12!"
                 />
                 <button
                   type="button"
@@ -118,7 +127,7 @@ export default function PasswordManagement() {
             <div className="space-y-2">
               <Label
                 htmlFor="confirmPassword"
-                className="text-sm font-medium text-primary-700"
+                className="text-[16px] font-semibold text-[#878787]"
               >
                 Confirm Password
               </Label>
@@ -130,7 +139,7 @@ export default function PasswordManagement() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Enter New Password"
-                  className="form-control !pl-[48px] !pr-12"
+                  className="form-control pl-[48px]! pr-12!"
                 />
                 <button
                   type="button"
