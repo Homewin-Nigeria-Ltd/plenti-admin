@@ -59,7 +59,10 @@ export function OrderDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="min-w-[750px]" showCloseButton={false}>
+      <DialogContent
+        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[750px] sm:w-[750px] sm:max-w-[750px]"
+        showCloseButton={false}
+      >
         {loadingSingle ? (
           <>
             <DialogTitle className="sr-only">Loading order details</DialogTitle>
@@ -70,7 +73,7 @@ export function OrderDetailsModal({
           </>
         ) : (
           <>
-        <DialogHeader className="relative">
+        <DialogHeader className="relative px-6 pt-6 pb-4 border-b border-neutral-100 shrink-0">
           <DialogTitle className="font-medium text-[24px]">
             Order Details – {singleOrder?.order_number ?? selectedId ?? "—"}
           </DialogTitle>
@@ -78,7 +81,7 @@ export function OrderDetailsModal({
             Complete order information and actions
           </DialogDescription>
 
-          <div className="flex items-center gap-[8px] absolute top-2 right-6">
+          <div className="flex items-center gap-[8px] absolute top-6 right-6">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -130,7 +133,7 @@ export function OrderDetailsModal({
           </div>
         </DialogHeader>
 
-        <div className="px-6 pb-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
           <div className="space-y-6">
           {items.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
