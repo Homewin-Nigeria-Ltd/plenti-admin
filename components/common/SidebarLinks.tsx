@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { dmSans } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -66,13 +67,17 @@ type SidebarLinksProps = {
   collapsed?: boolean;
 };
 
-const SidebarLinks = ({ collapsed = false }: SidebarLinksProps) => {
+const SidebarLinks = React.memo(function SidebarLinks({
+  collapsed = false,
+}: SidebarLinksProps) {
   const pathname = usePathname();
   const router = useRouter();
 
   const linkBaseClass = cn(
-    "text-[16px] font-semibold h-13.75 flex items-center cursor-pointer mx-3",
-    collapsed ? "justify-center px-2" : "px-4 gap-3"
+    "text-[16px] font-semibold h-13.75 flex items-center cursor-pointer",
+    collapsed
+      ? "justify-center px-2 mx-7 rounded-[4px] "
+      : "px-4 gap-3 mx-3 rounded-lg"
   );
 
   return (
@@ -84,7 +89,7 @@ const SidebarLinks = ({ collapsed = false }: SidebarLinksProps) => {
           <li
             key={idx}
             className={cn(
-              isActive ? "bg-primary text-white rounded-lg" : "text-[#98A2B3]",
+              isActive ? "bg-primary text-white" : "text-[#98A2B3]",
               linkBaseClass
             )}
             onClick={() => router.push(link.href)}
@@ -167,6 +172,8 @@ const SidebarLinks = ({ collapsed = false }: SidebarLinksProps) => {
       })()}
     </ul>
   );
-};
+});
+
+SidebarLinks.displayName = "SidebarLinks";
 
 export default SidebarLinks;

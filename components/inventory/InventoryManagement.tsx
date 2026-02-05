@@ -92,7 +92,7 @@ export default function InventoryManagement() {
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-col-1 md:grid-cols-2 gap-4">
             <StockLevelCard stockLevel={stockLevel} />
             <RecentlyStockCard recentStocks={recentStocks.slice(0, 4)} />
           </div>

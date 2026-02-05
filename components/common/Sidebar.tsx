@@ -25,19 +25,30 @@ import { cn } from "@/lib/utils";
 const SIDEBAR_WIDTH_EXPANDED = 340;
 const SIDEBAR_WIDTH_COLLAPSED = 135;
 
-const Sidebar = () => {
+const Sidebar = React.memo(function Sidebar() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(false);
-  const { account, fetchAccountSettings } = useAccountStore();
+  const [footerMounted, setFooterMounted] = React.useState(false);
+
+  // Only re-render when account changes (not when loadingAccount, etc.)
+  const account = useAccountStore((state) => state.account);
+
+  React.useEffect(() => {
+    const t = requestAnimationFrame(() => setFooterMounted(true));
+    return () => cancelAnimationFrame(t);
+  }, []);
+
+  const handleExpand = React.useCallback(() => setIsExpanded(true), []);
+  const handleCollapse = React.useCallback(() => setIsExpanded(false), []);
 
   React.useEffect(() => {
     if (!account) {
-      fetchAccountSettings();
+      useAccountStore.getState().fetchAccountSettings();
     }
-  }, [account, fetchAccountSettings]);
+  }, [account]);
 
-  async function logout() {
+  const logout = React.useCallback(async () => {
     setIsLoggingOut(true);
     try {
       const response = await fetch("/api/auth/logout", {
@@ -60,7 +71,7 @@ const Sidebar = () => {
     } finally {
       setIsLoggingOut(false);
     }
-  }
+  }, [router]);
 
   const collapsed = !isExpanded;
 
@@ -72,8 +83,8 @@ const Sidebar = () => {
           isExpanded ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COLLAPSED
         }px`,
       }}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
+      onMouseEnter={handleExpand}
+      onMouseLeave={handleCollapse}
     >
       <div className="overflow-hidden flex flex-col flex-1 min-h-0 shrink">
         <div
@@ -108,37 +119,39 @@ const Sidebar = () => {
 
       <div
         className={cn(
-          "border-t-[0.5px] border-gray-300 flex items-center pb-2 pt-4 shrink-0",
+          "border-t-[0.5px] border-gray-300 flex items-center pb-2 pt-4 shrink-0 min-h-[72px]",
           collapsed ? "flex-col gap-2 px-2" : "justify-between gap-5 px-4"
         )}
       >
-        <div
-          className={cn(
-            "flex items-center min-w-0",
-            collapsed ? "justify-center" : "gap-3"
-          )}
-        >
-          <Avatar className={cn("shrink-0", collapsed ? "size-9" : "size-10")}>
-            <AvatarImage src={account?.avatar_url || ""} />
-            <AvatarFallback>{account?.name?.[0] || ""}</AvatarFallback>
-          </Avatar>
-          {!collapsed && (
-            <div className="min-w-0">
-              <h5
-                className={`text-gray-400 text-[16px] font-medium truncate ${dmSans.className}`}
-              >
-                {account?.name || ""}
-              </h5>
-              <p
-                className={`${dmSans.className} font-normal text-gray-400 text-[16px] max-w-42.5 truncate`}
-              >
-                {account?.email || ""}
-              </p>
+        {footerMounted ? (
+          <>
+            <div
+              className={cn(
+                "flex items-center min-w-0",
+                collapsed ? "justify-center" : "gap-3"
+              )}
+            >
+              <Avatar className={cn("shrink-0", collapsed ? "size-9" : "size-10")}>
+                <AvatarImage src={account?.avatar_url || ""} />
+                <AvatarFallback>{account?.name?.[0] || ""}</AvatarFallback>
+              </Avatar>
+              {!collapsed && (
+                <div className="min-w-0">
+                  <h5
+                    className={`text-gray-400 text-[16px] font-medium truncate ${dmSans.className}`}
+                  >
+                    {account?.name || ""}
+                  </h5>
+                  <p
+                    className={`${dmSans.className} font-normal text-gray-400 text-[16px] max-w-42.5 truncate`}
+                  >
+                    {account?.email || ""}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <AlertDialog>
+            <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
               type="button"
@@ -174,9 +187,13 @@ const Sidebar = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+          </>
+        ) : null}
       </div>
     </aside>
   );
-};
+});
+
+Sidebar.displayName = "Sidebar";
 
 export default Sidebar;
