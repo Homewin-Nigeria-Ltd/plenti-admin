@@ -1,34 +1,26 @@
 "use client";
 
 import * as React from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Check, X, UserX } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast } from "sonner";
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import DataTable from "@/components/common/DataTable";
+import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
+import CartMetrics from "@/components/dashboard/CartMetrics";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Calendar, MapPin, Search } from "lucide-react";
 import type { AdminUser, UserStats } from "@/types/UserTypes";
-import { ApproveUserModal } from "./ApproveUserModal";
-import { RejectUserModal } from "./RejectUserModal";
-import { SuspendUserModal } from "./SuspendUserModal";
 
 type ViewUserProps = {
   user: AdminUser;
   stats: UserStats | null;
 };
-
-function splitName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const firstName = parts[0] ?? "";
-  const lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
-  return { firstName, lastName };
-}
 
 function getInitialsFromName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -37,230 +29,337 @@ function getInitialsFromName(name: string) {
   return (first + last).toUpperCase() || "U";
 }
 
-export default function ViewUser({ user, stats }: ViewUserProps) {
-  const { firstName, lastName } = splitName(user.name);
-  const [position, setPosition] = React.useState(user.position || "Executive");
-  const [isApproveModalOpen, setIsApproveModalOpen] = React.useState(false);
-  const [isRejectModalOpen, setIsRejectModalOpen] = React.useState(false);
-  const [isSuspendModalOpen, setIsSuspendModalOpen] = React.useState(false);
+const formatNaira = (value: string | number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(typeof value === "string" ? parseFloat(value) || 0 : value);
 
-  const userName = user.name;
+// Mock trend data for metric cards (in real app could come from API)
+const mockTrendUp = [1, 1.5, 2, 2.2, 2.5, 2.4, 2.8];
+const mockTrendDown = [3, 2.8, 2.5, 2.2, 2, 1.5, 1.2];
 
-  const handleApprove = () => {
-    toast.success("User account approved successfully");
-  };
+// Mock revenue chart data
+const mockRevenueData = [
+  { label: "16", value: 1.2 },
+  { label: "18", value: 1.5 },
+  { label: "20", value: 1.8 },
+  { label: "22", value: 2.0 },
+  { label: "24", value: 2.2 },
+  { label: "26", value: 2.5 },
+  { label: "28", value: 2.3 },
+  { label: "30", value: 2.1 },
+  { label: "02", value: 2.4 },
+];
 
-  const handleReject = () => {
-    toast.error("User account rejected");
-  };
+// Mock orders for this user (in real app would fetch by user id)
+type OrderRow = {
+  orderDate: string;
+  orderId: string;
+  customerName: React.ReactNode;
+  orderValue: string;
+  quantity: number;
+  orderStatus: React.ReactNode;
+};
 
-  const handleSuspend = () => {
-    toast.warning("User account suspended");
-  };
+const MOCK_ORDERS: OrderRow[] = [
+  {
+    orderDate: "Apr 12, 2023 09:32AM",
+    orderId: "#0001",
+    customerName: null as unknown as React.ReactNode,
+    orderValue: "₦2,300.00",
+    quantity: 30,
+    orderStatus: null as unknown as React.ReactNode,
+  },
+  {
+    orderDate: "Apr 12, 2023 09:32AM",
+    orderId: "#0001",
+    customerName: null as unknown as React.ReactNode,
+    orderValue: "₦2,300.00",
+    quantity: 1,
+    orderStatus: null as unknown as React.ReactNode,
+  },
+];
 
+function StatusPill({ status }: { status: string }) {
+  const s = status?.toLowerCase?.() ?? "";
+  const isSuccess = s === "successful" || s === "completed";
+  const isProcessing = s === "processing" || s === "pending";
+  const className = isSuccess
+    ? "bg-[#ECFDF3] text-[#027A48]"
+    : isProcessing
+    ? "bg-[#FFF7ED] text-[#B54708]"
+    : "bg-[#F2F4F7] text-[#667085]";
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="bg-white rounded-xl p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
-        <div className="flex flex-col items-center">
-          <Avatar className="size-24 sm:size-32 mb-6">
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${className}`}
+    >
+      {status}
+    </span>
+  );
+}
+
+export default function ViewUser({ user, stats }: ViewUserProps) {
+  const [orderSearch, setOrderSearch] = React.useState("");
+  const [ordersPage, setOrdersPage] = React.useState(1);
+
+  const totalRevenue = stats?.total_revenue ?? "0";
+  const totalOrders = stats?.total_orders ?? 0;
+  const refunds = stats?.refunds ?? 0;
+  const netProfit = stats?.net_profit ?? "0";
+
+  const metricCards = React.useMemo(
+    () => [
+      {
+        title: "Total Revenue",
+        value: formatNaira(totalRevenue),
+        changePercent: 22,
+        increased: true,
+        trendData: mockTrendUp,
+      },
+      {
+        title: "Total Orders",
+        value: totalOrders,
+        changePercent: 25,
+        increased: false,
+        trendData: mockTrendDown,
+      },
+      {
+        title: "Refunds",
+        value: refunds,
+        changePercent: 49,
+        increased: true,
+        trendData: mockTrendUp,
+      },
+      {
+        title: "Net Profit",
+        value: `${netProfit}%`,
+        changePercent: 1.9,
+        increased: true,
+        trendData: mockTrendUp,
+      },
+    ],
+    [totalRevenue, totalOrders, refunds, netProfit]
+  );
+
+  const ordersWithCells = React.useMemo(() => {
+    return MOCK_ORDERS.map((row) => ({
+      orderDate: (
+        <span className="text-[#101928] text-sm">{row.orderDate}</span>
+      ),
+      orderId: (
+        <span className="text-sm font-medium text-[#101928]">
+          {row.orderId}
+        </span>
+      ),
+      customerName: (
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar className="size-8 shrink-0">
             {user.avatar_url ? (
               <AvatarImage src={user.avatar_url} alt={user.name} />
             ) : null}
-            <AvatarFallback className="bg-primary text-white text-2xl sm:text-3xl font-semibold">
+            <AvatarFallback className="bg-[#E8EEFF] text-[#0B1E66] text-xs font-semibold">
               {getInitialsFromName(user.name)}
             </AvatarFallback>
           </Avatar>
-
-          {stats ? (
-            <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-              <div className="rounded-lg border border-neutral-100 p-3">
-                <p className="text-xs text-neutral-500">Total revenue</p>
-                <p className="font-semibold text-primary">
-                  {stats.total_revenue}
-                </p>
-              </div>
-              <div className="rounded-lg border border-neutral-100 p-3">
-                <p className="text-xs text-neutral-500">Total orders</p>
-                <p className="font-semibold text-primary">
-                  {stats.total_orders}
-                </p>
-              </div>
-              <div className="rounded-lg border border-neutral-100 p-3">
-                <p className="text-xs text-neutral-500">Refunds</p>
-                <p className="font-semibold text-primary">{stats.refunds}</p>
-              </div>
-              <div className="rounded-lg border border-neutral-100 p-3">
-                <p className="text-xs text-neutral-500">Net profit</p>
-                <p className="font-semibold text-primary">{stats.net_profit}</p>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="space-y-2">
-              <label className="text-xs sm:text-sm text-neutral-500 font-medium">
-                First Name
-              </label>
-              <Input
-                value={firstName}
-                readOnly
-                className="form-control bg-neutral-50! border-0! focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs sm:text-sm text-neutral-500 font-medium block">
-                Last Name
-              </label>
-              <Input
-                value={lastName}
-                readOnly
-                className="form-control bg-neutral-50! border-0! focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <label className="text-xs sm:text-sm text-neutral-500 font-medium">
-                Email
-              </label>
-              <Input
-                type="email"
-                value={user.email}
-                readOnly
-                className="form-control bg-neutral-50! border-0! focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <label className="text-xs sm:text-sm text-neutral-500 font-medium">
-                Phone
-              </label>
-              <Input
-                value={user.phone ?? "-"}
-                readOnly
-                className="form-control bg-neutral-50! border-0! focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs sm:text-sm text-neutral-500 font-medium block">
-                Department
-              </label>
-              <Input
-                value={user.department ?? "-"}
-                readOnly
-                className="form-control bg-neutral-50! border-0! focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs sm:text-sm text-neutral-500 font-medium block">
-                Role
-              </label>
-              <Input
-                value={user.role ?? "-"}
-                readOnly
-                className="form-control bg-neutral-50! border-0! focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <label className="text-xs sm:text-sm text-neutral-500 font-medium">
-                Position
-              </label>
-              <Select value={position} onValueChange={setPosition}>
-                <SelectTrigger className="form-control bg-neutral-50! border-0! w-full! focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Executive">Executive</SelectItem>
-                  <SelectItem value="Developer">Developer</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Viewer">Viewer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="mt-4 sm:mt-6 text-center px-4">
-            <p className="text-xs sm:text-sm text-neutral-500">
-              Account created by{" "}
-              <span className="font-medium text-neutral-700">
-                {user.created_by_name ?? "System"}
-              </span>{" "}
-              • Joined{" "}
-              <span className="font-medium text-neutral-700">
-                {user.joined_date}
-              </span>{" "}
-              • Updated{" "}
-              <span className="font-medium text-neutral-700">
-                {user.last_updated}
-              </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[#101928] truncate">
+              {user.name}
             </p>
+            <p className="text-xs text-[#667085] truncate">{user.email}</p>
+          </div>
+        </div>
+      ),
+      orderValue: (
+        <span className="text-sm text-[#344054]">{row.orderValue}</span>
+      ),
+      quantity: <span className="text-sm text-[#344054]">{row.quantity}</span>,
+      orderStatus: (
+        <StatusPill
+          status={row.quantity === 30 ? "Successful" : "Processing"}
+        />
+      ),
+    }));
+  }, [user]);
+
+  const orderColumns = [
+    { key: "orderDate", label: "Order Date" },
+    { key: "orderId", label: "Order ID" },
+    { key: "customerName", label: "Customer Name" },
+    { key: "orderValue", label: "Order Value" },
+    { key: "quantity", label: "Quantity" },
+    { key: "orderStatus", label: "Order Status" },
+  ];
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <h1 className="text-lg font-semibold text-[#101928]">Single User</h1>
+
+      {/* Metric cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        {metricCards.map((m) => (
+          <DashboardStatCard
+            key={m.title}
+            title={m.title}
+            value={m.value}
+            changePercent={m.changePercent}
+            increased={m.increased}
+            trendData={m.trendData}
+          />
+        ))}
+      </div>
+
+      {/* User profile + Revenue + Cart row */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* User profile card */}
+        <div className="lg:col-span-4 bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
+          <div className="flex flex-col items-center text-center mb-6">
+            <Avatar className="size-20 sm:size-24 mb-4">
+              {user.avatar_url ? (
+                <AvatarImage src={user.avatar_url} alt={user.name} />
+              ) : null}
+              <AvatarFallback className="bg-[#E8EEFF] text-[#0B1E66] text-2xl font-semibold">
+                {getInitialsFromName(user.name)}
+              </AvatarFallback>
+            </Avatar>
+            <p className="font-semibold text-[#101928] text-base">
+              {user.name}
+            </p>
+            <p className="text-sm text-[#667085]">{user.email}</p>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <MapPin className="size-4 text-[#667085] mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-[#98A2B3] font-medium">Location</p>
+                <p className="text-sm text-[#344054]">
+                  24 Idah Market Road, Idah, Kogi
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Calendar className="size-4 text-[#667085] mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-[#98A2B3] font-medium">
+                  First Order
+                </p>
+                <p className="text-sm text-[#344054]">
+                  September 30, 2019 1:49 PM
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Calendar className="size-4 text-[#667085] mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-[#98A2B3] font-medium">
+                  Latest Orders
+                </p>
+                <p className="text-sm text-[#344054]">
+                  February 14, 2020 7:52 AM
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="border-t border-neutral-100 pt-4 sm:pt-6 lg:pt-8">
-          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
-            <div className="flex-1">
-              <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-primary-700 mb-2">
-                Account Management
-              </h2>
-              <p className="text-xs sm:text-sm lg:text-base text-neutral-500">
-                These options are essential for administrators to maintain
-                control over user accounts and ensure the security and integrity
-                of the platform.
-              </p>
+        {/* Revenue chart card */}
+        <div className="lg:col-span-5 bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-[#0B1E66] text-lg font-semibold">Revenue</h3>
+              <span className="size-2 rounded-full bg-[#0B1E66]" />
             </div>
-            <div className="flex flex-col gap-3 sm:gap-4 w-full lg:w-auto lg:min-w-[280px]">
-              <Button
-                onClick={() => setIsApproveModalOpen(true)}
-                variant={undefined}
-                className="btn btn-success w-full font-medium flex items-center gap-3 justify-start"
-              >
-                <div className="size-6 rounded-full bg-white/20 flex items-center justify-center">
-                  <Check className="size-4" />
-                </div>
-                Approve
-              </Button>
-              <Button
-                onClick={() => setIsRejectModalOpen(true)}
-                variant={undefined}
-                className="btn btn-danger w-full font-medium flex items-center gap-3 justify-start"
-              >
-                <div className="size-6 rounded-md bg-white/20 flex items-center justify-center">
-                  <X className="size-4" />
-                </div>
-                Reject Account
-              </Button>
-              <Button
-                onClick={() => setIsSuspendModalOpen(true)}
-                variant={undefined}
-                className="btn btn-neutral w-full font-medium flex items-center gap-3 justify-start"
-              >
-                <div className="size-6 rounded-full bg-white/20 flex items-center justify-center">
-                  <UserX className="size-4" />
-                </div>
-                Suspend
-              </Button>
-            </div>
+            <a
+              href="#"
+              className="text-sm font-medium text-[#0B1E66] hover:underline"
+            >
+              View Details →
+            </a>
           </div>
+          <div className="h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={mockRevenueData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "#667085", fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={{ stroke: "#EEF1F6" }}
+                />
+                <YAxis
+                  tick={{ fill: "#667085", fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={{ stroke: "#EEF1F6" }}
+                  tickFormatter={(v) => (v >= 1 ? `$${v}M` : String(v))}
+                  domain={[0, 2.5]}
+                  ticks={[0, 0.5, 1, 1.5, 2, 2.5]}
+                />
+                <Tooltip
+                  cursor={{ stroke: "#EEF1F6" }}
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid #EEF1F6",
+                    fontSize: 12,
+                  }}
+                  formatter={(value: number | undefined) => [
+                    `${value}k`,
+                    "Revenue",
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#0B1E66"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "#0B1E66" }}
+                  activeDot={{ r: 4, fill: "#0B1E66" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Cart summary card */}
+        <div className="lg:col-span-3">
+          <CartMetrics
+            percentage={38}
+            abandonedCart={720}
+            abandonedRevenue="500900"
+          />
         </div>
       </div>
 
-      <ApproveUserModal
-        isOpen={isApproveModalOpen}
-        onClose={() => setIsApproveModalOpen(false)}
-        userName={userName}
-        onConfirm={handleApprove}
-      />
-      <RejectUserModal
-        isOpen={isRejectModalOpen}
-        onClose={() => setIsRejectModalOpen(false)}
-        userName={userName}
-        onConfirm={handleReject}
-      />
-      <SuspendUserModal
-        isOpen={isSuspendModalOpen}
-        onClose={() => setIsSuspendModalOpen(false)}
-        userName={userName}
-        onConfirm={handleSuspend}
-      />
+      {/* Orders table */}
+      <div className="bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="relative w-full sm:max-w-[280px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#98A2B3]" />
+            <Input
+              placeholder="Search"
+              value={orderSearch}
+              onChange={(e) => setOrderSearch(e.target.value)}
+              className="pl-9 form-control"
+              aria-label="Search orders"
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <DataTable
+            columns={orderColumns}
+            rows={ordersWithCells}
+            page={ordersPage}
+            pageCount={6}
+            pageSize={10}
+            total={24}
+            onPageChange={setOrdersPage}
+            className="border border-[#EEF1F6] shadow-xs"
+          />
+        </div>
+      </div>
     </div>
   );
 }

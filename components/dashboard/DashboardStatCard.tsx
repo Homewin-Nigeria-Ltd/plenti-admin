@@ -36,9 +36,11 @@ export default function DashboardStatCard({
     }
   };
 
-  // For conversion rate, use orange
-  const isConversionRate = title.toLowerCase().includes("conversion");
-  const color = isConversionRate ? "#F97316" : getColor(); // orange-500 for conversion rate
+  // For conversion rate or net profit, use orange
+  const titleLower = title.toLowerCase();
+  const isOrange =
+    titleLower.includes("conversion") || titleLower.includes("net profit");
+  const color = isOrange ? "#F97316" : getColor(); // orange-500 for conversion / net profit
 
   // Prepare chart data
   const chartData = trendData.map((val, index) => ({
@@ -64,11 +66,11 @@ export default function DashboardStatCard({
           <span
             className={cn(
               " items-center gap-1 text-sm font-medium",
-              increased && !isConversionRate
+              increased && !isOrange
                 ? "text-[#10B981]"
                 : !increased
-                ? "text-[#EF4444]"
-                : "text-[#F97316]"
+                  ? "text-[#EF4444]"
+                  : "text-[#F97316]"
             )}
           >
             {increased ? "+" : "-"} {Math.abs(changePercent)}%

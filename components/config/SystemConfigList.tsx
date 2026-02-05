@@ -9,7 +9,7 @@ type ConfigItem = {
   title: string;
   description: string;
   icon: string;
-  href?: string;
+  href: string;
 };
 
 const configItems: ConfigItem[] = [
@@ -19,12 +19,14 @@ const configItems: ConfigItem[] = [
     description:
       "Profile settings for individual admins, including name, email, profile picture,",
     icon: "/icons/user.png",
+    href: "/configuration/account",
   },
   {
     id: "permission",
     title: "Control and Permission",
     description: "User accounts with different permission levels",
     icon: "/icons/shield.png",
+    href: "/configuration/permission",
   },
   {
     id: "notifications",
@@ -32,6 +34,7 @@ const configItems: ConfigItem[] = [
     description:
       "Ability to customize notification preferences based on user roles",
     icon: "/icons/bell.png",
+    href: "/configuration/notifications",
   },
   {
     id: "integration",
@@ -39,6 +42,7 @@ const configItems: ConfigItem[] = [
     description:
       "API settings for developers to integrate custom functionalities",
     icon: "/icons/link.png",
+    href: "/configuration/integration",
   },
   {
     id: "data-backup",
@@ -46,25 +50,19 @@ const configItems: ConfigItem[] = [
     description:
       "Export your data for compliance, analysis, or migration purposes",
     icon: "/icons/cloud.png",
+    href: "/configuration/data-backup",
+  },
+  {
+    id: "chatbot-configuration",
+    title: "Chatbot Configuration",
+    description: "Chatbot Keywords & Responses",
+    icon: "/icons/sms-tracking.png",
+    href: "/configuration/chatbot-configuration",
   },
 ];
 
 export default function SystemConfigList() {
   const router = useRouter();
-
-  const handleItemClick = (item: ConfigItem) => {
-    if (item.id === "account") {
-      router.push("/configuration/account");
-    } else if (item.id === "permission") {
-      router.push("/configuration/permission");
-    } else if (item.id === "notifications") {
-      router.push("/configuration/notifications");
-    } else if (item.id === "integration") {
-      router.push("/configuration/integration");
-    } else {
-      console.log("Navigate to:", item.id);
-    }
-  };
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -72,7 +70,7 @@ export default function SystemConfigList() {
         return (
           <div
             key={item.id}
-            onClick={() => handleItemClick(item)}
+            onClick={() => router.push(item.href)}
             className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg cursor-pointer transition-colors"
           >
             <div className="shrink-0 bg-[#E8EEFF] rounded-full p-3">

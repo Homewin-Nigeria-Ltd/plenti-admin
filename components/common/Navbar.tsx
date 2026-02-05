@@ -16,7 +16,11 @@ const Navbar = () => {
   const segments = pathname.split("/").filter(Boolean);
   const section = segments[0] || "dashboard";
   const matchedLink = links.find((l) => l.href === pathname);
-  const title = matchedLink?.name ?? formatTitle(section);
+  const isSingleUserPage =
+    pathname.startsWith("/user/") && pathname !== "/user";
+  const title = isSingleUserPage
+    ? "Single User"
+    : matchedLink?.name ?? formatTitle(section);
 
   return (
     <nav className="h-(--navbar-height) px-6 md:px-6 bg-[#F5F5F5] w-full flex items-center justify-between sticky top-0 z-30">

@@ -40,8 +40,13 @@ export function OrderDetailsModal({
   onClose: () => void;
   selectedId: number | null;
 }) {
-  const { fetchSingleOrders, singleOrder, loadingSingle, fetchOrders, lastQuery } =
-    useOrderStore();
+  const {
+    fetchSingleOrders,
+    singleOrder,
+    loadingSingle,
+    fetchOrders,
+    lastQuery,
+  } = useOrderStore();
   const [assignOpen, setAssignOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -73,200 +78,216 @@ export function OrderDetailsModal({
           </>
         ) : (
           <>
-        <DialogHeader className="relative px-6 pt-6 pb-4 border-b border-neutral-100 shrink-0">
-          <DialogTitle className="font-medium text-[24px]">
-            Order Details – {singleOrder?.order_number ?? selectedId ?? "—"}
-          </DialogTitle>
-          <DialogDescription className="text-[#808080] text-[14px] font-normal">
-            Complete order information and actions
-          </DialogDescription>
+            <DialogHeader className="relative px-6 pt-6 pb-4 border-b border-neutral-100 shrink-0">
+              <DialogTitle className="font-medium text-[24px]">
+                Order Details – {singleOrder?.order_number ?? selectedId ?? "—"}
+              </DialogTitle>
+              <DialogDescription className="text-[#808080] text-[14px] font-normal">
+                Complete order information and actions
+              </DialogDescription>
 
-          <div className="flex items-center gap-[8px] absolute top-6 right-6">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-[8px] absolute top-6 right-6">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="More actions"
+                      className="border-[0.2px] border-[#98A2B3] rounded-[4px] size-[24px] flex items-center justify-center cursor-pointer"
+                    >
+                      <Ellipsis color="#0B1E66" size={18} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="border-0 rounded-[12px] p-2 min-w-[220px]">
+                    <DropdownMenuItem
+                      className="text-[#0B1E66] text-[14px] font-medium place-self-center"
+                      onSelect={markAsInTransit}
+                    >
+                      Mark As In Transit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-[#667085] text-[14px] place-self-center">
+                      Issue Refund
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem
+                      className="text-[#D69200] text-[14px] place-self-center"
+                      onSelect={() => setAssignOpen(true)}
+                    >
+                      Assign Rider
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem
+                      variant="destructive"
+                      className="text-[#D42620] text-[14px] place-self-center"
+                      onSelect={() => setConfirmOpen(true)}
+                    >
+                      Delete Order
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <button
                   type="button"
-                  aria-label="More actions"
-                  className="border-[0.2px] border-[#98A2B3] rounded-[4px] size-[24px] flex items-center justify-center cursor-pointer"
+                  onClick={onClose}
+                  aria-label="Close dialog"
+                  className="flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
                 >
-                  <Ellipsis color="#0B1E66" size={18} />
+                  <X color="#0B1E66" size={20} cursor="pointer" />
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="border-0 rounded-[12px] p-2 min-w-[220px]">
-                <DropdownMenuItem
-                  className="text-[#0B1E66] text-[14px] font-medium place-self-center"
-                  onSelect={markAsInTransit}
-                >
-                  Mark As In Transit
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-[#667085] text-[14px] place-self-center">
-                  Issue Refund
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+              </div>
+            </DialogHeader>
 
-                <DropdownMenuItem
-                  className="text-[#D69200] text-[14px] place-self-center"
-                  onSelect={() => setAssignOpen(true)}
-                >
-                  Assign Rider
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                  variant="destructive"
-                  className="text-[#D42620] text-[14px] place-self-center"
-                  onSelect={() => setConfirmOpen(true)}
-                >
-                  Delete Order
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close dialog"
-              className="flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
-            >
-              <X color="#0B1E66" size={20} cursor="pointer" />
-            </button>
-          </div>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
-          <div className="space-y-6">
-          {items.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-4">
-                  <div className="size-16 shrink-0 rounded-md bg-[#E8EEFF80] border-[0.5px] border-[#D0D5DD] overflow-hidden">
-                    {item.product?.image_url ? (
-                      <Image
-                        src={item.product.image_url}
-                        alt={item.product_name}
-                        width={64}
-                        height={64}
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <div className="size-full bg-[#E8EEFF80]" />
-                    )}
+            <div className="flex-1 overflow-y-auto px-6 pb-6">
+              <div className="space-y-6">
+                {items.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {items.map((item) => (
+                      <div key={item.id} className="flex items-center gap-4">
+                        <div className="size-16 shrink-0 rounded-md bg-[#E8EEFF80] border-[0.5px] border-[#D0D5DD] overflow-hidden">
+                          {item.product?.image_url ? (
+                            <Image
+                              src={item.product.image_url}
+                              alt={item.product_name}
+                              width={64}
+                              height={64}
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <div className="size-full bg-[#E8EEFF80]" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-[16px] text-[#1A1A1A]">
+                            {item.product_name ?? "—"}
+                          </p>
+                          <p className="text-xs text-[#9B9B9B] truncate">
+                            {item.product?.description ?? "—"}
+                          </p>
+                          <div className="flex items-center mt-2 gap-6 text-sm">
+                            <span>
+                              Price:{" "}
+                              <span className="font-medium">
+                                {item.price != null
+                                  ? formatCurrency(Number(item.price) || 0)
+                                  : "—"}
+                              </span>
+                            </span>
+                            <span className="text-[#9B9B9B]">
+                              QTY:{" "}
+                              <span className="text-black">
+                                {item.quantity ?? "—"}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-[16px] text-[#1A1A1A]">
-                      {item.product_name ?? "—"}
+                ) : (
+                  <div className="rounded-xl border border-[#EEF1F6] bg-[#F9FAFB] p-6">
+                    <p className="text-[#1F3A78] font-semibold">Order Items</p>
+                    <p className="text-[#667085] text-sm mt-1">—</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="rounded-xl border border-[#EEF1F6] bg-[#F9FAFB] p-6 space-y-4">
+                    <p className="text-[#1F3A78] font-semibold">
+                      Payment Details
                     </p>
-                    <p className="text-xs text-[#9B9B9B] truncate">
-                      {item.product?.description ?? "—"}
+                    <div className="space-y-1">
+                      <p className="text-[#101928] font-medium">
+                        Payment Method
+                      </p>
+                      <p className="text-[#667085] text-sm">
+                        {singleOrder?.payment_method ?? "—"}
+                      </p>
+                    </div>
+                    <div className="space-y-1 mt-5">
+                      <p className="text-[#101928] font-medium">
+                        Payment Status
+                      </p>
+                      <span
+                        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm ${
+                          (singleOrder?.payment_status ?? "").toLowerCase() ===
+                          "paid"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        <span
+                          className={`size-2 rounded-full ${
+                            (
+                              singleOrder?.payment_status ?? ""
+                            ).toLowerCase() === "paid"
+                              ? "bg-green-600"
+                              : "bg-amber-600"
+                          }`}
+                        />
+                        {singleOrder?.payment_status ?? "—"}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[#101928] text-[16px] font-medium">
+                        Transaction Reference
+                      </p>
+                      <p className="text-[#98A2B3] text-sm">
+                        {singleOrder?.payment_reference ?? "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-[#EEF1F6] bg-[#F9FAFB] p-6 space-y-4">
+                    <p className="text-[#1F3A78] font-semibold">
+                      Shipping Details
                     </p>
-                    <div className="flex items-center mt-2 gap-6 text-sm">
-                      <span>
-                        Price:{" "}
-                        <span className="font-medium">
-                          {item.price != null
-                            ? formatCurrency(Number(item.price) || 0)
-                            : "—"}
-                        </span>
-                      </span>
-                      <span className="text-[#9B9B9B]">
-                        QTY:{" "}
-                        <span className="text-black">
-                          {item.quantity ?? "—"}
-                        </span>
-                      </span>
+                    <div className="space-y-1">
+                      <p className="text-[#101928] font-medium">
+                        Shipping Address
+                      </p>
+                      <p className="text-[#667085] text-sm">
+                        {singleOrder?.shipping_address ?? "—"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[#101928] font-medium">
+                        Shipping Details
+                      </p>
+                      <p className="text-[#98A2B3] text-sm">
+                        {singleOrder?.delivery_tracking ?? "—"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[#101928] font-medium">Shipping Fee</p>
+                      <p className="text-[#98A2B3] text-sm">—</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[#101928] font-medium">Phone</p>
+                      <p className="text-[#98A2B3] text-sm">
+                        {singleOrder?.phone_number ?? "—"}
+                      </p>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-[#EEF1F6] bg-[#F9FAFB] p-6">
-              <p className="text-[#1F3A78] font-semibold">Order Items</p>
-              <p className="text-[#667085] text-sm mt-1">—</p>
-            </div>
-          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-[#EEF1F6] bg-[#F9FAFB] p-6 space-y-4">
-              <p className="text-[#1F3A78] font-semibold">Payment Details</p>
-              <div className="space-y-1">
-                <p className="text-[#101928] font-medium">Payment Method</p>
-                <p className="text-[#667085] text-sm">
-                  {singleOrder?.payment_method ?? "—"}
-                </p>
-              </div>
-              <div className="space-y-1 mt-5">
-                <p className="text-[#101928] font-medium">Payment Status</p>
-                <span
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm ${
-                    (singleOrder?.payment_status ?? "").toLowerCase() === "paid"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-amber-100 text-amber-700"
-                  }`}>
-                  <span
-                    className={`size-2 rounded-full ${
-                      (singleOrder?.payment_status ?? "").toLowerCase() === "paid"
-                        ? "bg-green-600"
-                        : "bg-amber-600"
-                    }`}
-                  />
-                  {singleOrder?.payment_status ?? "—"}
-                </span>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[#101928] text-[16px] font-medium">
-                  Transaction Reference
-                </p>
-                <p className="text-[#98A2B3] text-sm">
-                  {singleOrder?.payment_reference ?? "—"}
-                </p>
+                <div className="border-t border-dashed border-[#EAECF0] pt-6 flex items-center justify-between">
+                  <p className="text-[#667085]">Amount Total</p>
+                  <p className="text-[#101928] font-semibold">
+                    {singleOrder?.total != null
+                      ? formatCurrency(Number(singleOrder.total))
+                      : "—"}
+                  </p>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full h-[52px] rounded-[8px] border-primary text-primary hover:bg-primary hover:text-white cursor-pointer"
+                >
+                  View Order Timeline
+                </Button>
               </div>
             </div>
-
-            <div className="rounded-xl border border-[#EEF1F6] bg-[#F9FAFB] p-6 space-y-4">
-              <p className="text-[#1F3A78] font-semibold">Shipping Details</p>
-              <div className="space-y-1">
-                <p className="text-[#101928] font-medium">Shipping Address</p>
-                <p className="text-[#667085] text-sm">
-                  {singleOrder?.shipping_address ?? "—"}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[#101928] font-medium">Shipping Details</p>
-                <p className="text-[#98A2B3] text-sm">
-                  {singleOrder?.delivery_tracking ?? "—"}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[#101928] font-medium">Shipping Fee</p>
-                <p className="text-[#98A2B3] text-sm">—</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[#101928] font-medium">Phone</p>
-                <p className="text-[#98A2B3] text-sm">
-                  {singleOrder?.phone_number ?? "—"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-dashed border-[#EAECF0] pt-6 flex items-center justify-between">
-            <p className="text-[#667085]">Amount Total</p>
-            <p className="text-[#101928] font-semibold">
-              {singleOrder?.total != null
-                ? formatCurrency(Number(singleOrder.total))
-                : "—"}
-            </p>
-          </div>
-
-          <Button
-            variant="outline"
-            className="w-full h-[52px] rounded-[8px] border-primary text-primary hover:bg-primary hover:text-white cursor-pointer"
-          >
-            View Order Timeline
-          </Button>
-          </div>
-        </div>
           </>
         )}
         <AssignRiderModal
@@ -291,26 +312,27 @@ export function OrderDetailsModal({
                 status?: string;
                 message?: string;
               };
-              const ok = res.ok && (data?.status !== "error" && data?.status !== "failed");
+              const ok =
+                res.ok && data?.status !== "error" && data?.status !== "failed";
               if (!ok) {
-                throw new Error(
-                  data?.message ?? "Failed to delete order"
-                );
+                throw new Error(data?.message ?? "Failed to delete order");
               }
-            
+
               setConfirmOpen(false);
               setAssignOpen(false);
               onClose();
-            
+
               toast.success("Order has been cancelled");
-              await fetchOrders({ page: lastQuery.page, search: lastQuery.search });
+              await fetchOrders({
+                page: lastQuery.page,
+                search: lastQuery.search,
+              });
             } catch (e) {
               toast.error(
                 e instanceof Error ? e.message : "Failed to delete order"
               );
             } finally {
               setIsDeleting(false);
-
             }
           }}
         />

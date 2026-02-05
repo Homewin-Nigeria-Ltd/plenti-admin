@@ -1,7 +1,7 @@
 import UserDetailsContainer from "@/components/user/UserDetailsContainer";
 
 export const metadata = {
-  title: "View User",
+  title: "Single User",
 };
 
 export default async function ViewUserPage({
