@@ -152,7 +152,7 @@ export default function ProductCard({
           <div className="flex justify-between items-center text-sm">
             <span className="text-neutral-500">Sub-category:</span>
             <span className="font-semibold text-primary">
-              {product.subCategory}
+              {product.subCategory || "-"}
             </span>
           </div>
 

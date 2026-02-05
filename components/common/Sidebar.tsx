@@ -19,10 +19,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useAccountStore } from "@/store/useAccountStore";
+import { cn } from "@/lib/utils";
+
+const SIDEBAR_WIDTH_EXPANDED = 340;
+const SIDEBAR_WIDTH_COLLAPSED = 135;
 
 const Sidebar = () => {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const { account, fetchAccountSettings } = useAccountStore();
+
+  React.useEffect(() => {
+    if (!account) {
+      fetchAccountSettings();
+    }
+  }, [account, fetchAccountSettings]);
 
   async function logout() {
     setIsLoggingOut(true);
@@ -49,40 +62,90 @@ const Sidebar = () => {
     }
   }
 
+  const collapsed = !isExpanded;
+
   return (
-    <aside className="w-[--sidebar-width] px-8 pb-8 pt-10 h-screen flex flex-col justify-between bg-white md:sticky md:top-0 md:left-0 md:h-screen md:z-20 md:overflow-auto sm:fixed sm:inset-0 sm:h-auto sm:flex-col sm:justify-start sm:px-4">
-      <div className="mb-3">
-        <Image
-          src={"/icons/plenti-logo-blue.svg"}
-          alt="Plenti"
-          width={270}
-          height={64}
-          className="w-40 h-auto md:w-67.5"
-        />
-      </div>
-      <SidebarLinks />
-      <div className="border-t-[0.5px] border-gray-300 flex justify-between items-center gap-5 pb-2 pt-4 px-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="size-10">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <div>
-            <h5
-              className={`text-gray-400 text-[16px] font-medium ${dmSans.className}`}
-            >
-              Amarachi Anigbogu
-            </h5>
-            <p
-              className={`${dmSans.className} font-normal text-gray-400 text-[16px] max-w-42.5 truncate`}
-            >
-              amarachianigbogu@hotmail.com
-            </p>
-          </div>
+    <aside
+      className="h-screen max-h-screen flex flex-col justify-between bg-white md:sticky md:top-0 md:left-0 md:z-20 overflow-hidden sm:fixed sm:inset-0 transition-[width] duration-200 ease-in-out shrink-0"
+      style={{
+        width: `${
+          isExpanded ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COLLAPSED
+        }px`,
+      }}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+    >
+      <div className="overflow-hidden flex flex-col flex-1 min-h-0 shrink">
+        <div
+          className={cn(
+            "mb-3 pt-10 shrink-0",
+            collapsed ? "px-2 flex justify-center" : "px-8 sm:px-4"
+          )}
+        >
+          {collapsed ? (
+            <div className="w-10 h-10 flex items-center justify-center">
+              <Image
+                src="/favicon.ico"
+                alt="Plenti"
+                width={40}
+                height={40}
+                className="w-10 h-10 object-contain"
+              />
+            </div>
+          ) : (
+            <Image
+              src={"/icons/plenti-logo-blue.svg"}
+              alt="Plenti"
+              width={270}
+              height={64}
+              className="w-40 h-auto md:w-67.5"
+            />
+          )}
         </div>
+
+        <SidebarLinks collapsed={collapsed} />
+      </div>
+
+      <div
+        className={cn(
+          "border-t-[0.5px] border-gray-300 flex items-center pb-2 pt-4 shrink-0",
+          collapsed ? "flex-col gap-2 px-2" : "justify-between gap-5 px-4"
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center min-w-0",
+            collapsed ? "justify-center" : "gap-3"
+          )}
+        >
+          <Avatar className={cn("shrink-0", collapsed ? "size-9" : "size-10")}>
+            <AvatarImage src={account?.avatar_url || ""} />
+            <AvatarFallback>{account?.name?.[0] || ""}</AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <div className="min-w-0">
+              <h5
+                className={`text-gray-400 text-[16px] font-medium truncate ${dmSans.className}`}
+              >
+                {account?.name || ""}
+              </h5>
+              <p
+                className={`${dmSans.className} font-normal text-gray-400 text-[16px] max-w-42.5 truncate`}
+              >
+                {account?.email || ""}
+              </p>
+            </div>
+          )}
+        </div>
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <button type="button" disabled={isLoggingOut} aria-label="Log out">
+            <button
+              type="button"
+              disabled={isLoggingOut}
+              aria-label="Log out"
+              className={cn(collapsed && "ml-0")}
+            >
               <LogOut
                 color="#D42620"
                 cursor={isLoggingOut ? "wait" : "pointer"}

@@ -16,8 +16,6 @@ export default function UserDetailsContainer({ userId }: { userId: string }) {
   } = useUserStore();
   const [hasRequested, setHasRequested] = React.useState(false);
 
-  console.log(singleUser);
-
   React.useEffect(() => {
     if (!Number.isFinite(id) || id <= 0) return;
     setHasRequested(true);
