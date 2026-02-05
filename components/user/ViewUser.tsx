@@ -90,8 +90,8 @@ function StatusPill({ status }: { status: string }) {
   const className = isSuccess
     ? "bg-[#ECFDF3] text-[#027A48]"
     : isProcessing
-      ? "bg-[#FFF7ED] text-[#B54708]"
-      : "bg-[#F2F4F7] text-[#667085]";
+    ? "bg-[#FFF7ED] text-[#B54708]"
+    : "bg-[#F2F4F7] text-[#667085]";
   return (
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${className}`}
@@ -150,7 +150,9 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
         <span className="text-[#101928] text-sm">{row.orderDate}</span>
       ),
       orderId: (
-        <span className="text-sm font-medium text-[#101928]">{row.orderId}</span>
+        <span className="text-sm font-medium text-[#101928]">
+          {row.orderId}
+        </span>
       ),
       customerName: (
         <div className="flex items-center gap-3 min-w-0">
@@ -173,9 +175,7 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
       orderValue: (
         <span className="text-sm text-[#344054]">{row.orderValue}</span>
       ),
-      quantity: (
-        <span className="text-sm text-[#344054]">{row.quantity}</span>
-      ),
+      quantity: <span className="text-sm text-[#344054]">{row.quantity}</span>,
       orderStatus: (
         <StatusPill
           status={row.quantity === 30 ? "Successful" : "Processing"}
@@ -224,16 +224,16 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
                 {getInitialsFromName(user.name)}
               </AvatarFallback>
             </Avatar>
-            <p className="font-semibold text-[#101928] text-base">{user.name}</p>
+            <p className="font-semibold text-[#101928] text-base">
+              {user.name}
+            </p>
             <p className="text-sm text-[#667085]">{user.email}</p>
           </div>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
               <MapPin className="size-4 text-[#667085] mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs text-[#98A2B3] font-medium">
-                  Location
-                </p>
+                <p className="text-xs text-[#98A2B3] font-medium">Location</p>
                 <p className="text-sm text-[#344054]">
                   24 Idah Market Road, Idah, Kogi
                 </p>
@@ -305,7 +305,10 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
                     border: "1px solid #EEF1F6",
                     fontSize: 12,
                   }}
-                  formatter={(value: number) => [`${value}k`, "Revenue"]}
+                  formatter={(value: number | undefined) => [
+                    `${value}k`,
+                    "Revenue",
+                  ]}
                 />
                 <Line
                   type="monotone"

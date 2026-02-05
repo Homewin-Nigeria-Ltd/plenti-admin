@@ -144,7 +144,7 @@ const Sidebar = () => {
               type="button"
               disabled={isLoggingOut}
               aria-label="Log out"
-              className={cn(collapsed && "ml-0")}
+              className={cn(collapsed && "hidden")}
             >
               <LogOut
                 color="#D42620"
