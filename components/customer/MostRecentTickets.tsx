@@ -124,9 +124,9 @@ export default function MostRecentTickets() {
         <h3 className="text-[#0B1E66] text-lg font-semibold">
           Most Recent Tickets
         </h3>
-        <Button className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-9 px-4">
+        {/* <Button className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-9 px-4">
           View All
-        </Button>
+        </Button> */}
       </div>
 
       {loadingTickets ? (

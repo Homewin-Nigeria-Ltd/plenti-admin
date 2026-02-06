@@ -159,12 +159,12 @@ export function RefundRequestTable() {
   console.log("Refunds data in refunds components =>", refunds);
 
   // FETCH ALL REFUNDS ON MOUNT
-  React.useEffect(() => {
-    // FETCH ONLY WHEN THERE ARE NOT REFUNDS
-    if (refunds.length === 0) {
-      fetchRefunds(1);
-    }
-  }, [fetchRefunds, refunds]);
+  // React.useEffect(() => {
+  //   // FETCH ONLY WHEN THERE ARE NOT REFUNDS
+  //   if (refunds.length === 0) {
+  //     fetchRefunds(1);
+  //   }
+  // }, [fetchRefunds, refunds]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {

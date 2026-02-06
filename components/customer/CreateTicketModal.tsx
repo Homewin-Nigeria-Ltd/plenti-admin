@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import {
   Dialog,
   DialogContent,
@@ -18,23 +19,68 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Upload, Eye, Download, FileText } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { X } from "lucide-react";
+// import { Upload, Eye, Download, FileText } from "lucide-react"; // attachment section
 import { toast } from "sonner";
 import {
-  type TicketCategory,
-  type TicketPriority,
   type CreateTicketFormData,
+  type TicketCategorySlug,
+  type TicketPrioritySlug,
   initialCreateTicketFormData,
   TICKET_CATEGORIES,
   TICKET_PRIORITIES,
 } from "@/components/customer/createTicketForm";
-import { UserSearchSelect } from "@/components/customer/UserSearchSelect";
-import {
-  formatFileSize,
-  openFileInNewTab,
-  downloadFile,
-  filterValidImageFiles,
-} from "@/lib/fileUtils";
+import { useSupportStore } from "@/store/useSupportStore";
+
+function CustomerNameFieldSkeleton() {
+  return (
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-28" />
+      <Skeleton className="h-12 w-full rounded-md" />
+    </div>
+  );
+}
+
+const UserSearchSelectWithSkeleton = dynamic(
+  () =>
+    import("@/components/customer/UserSearchSelect").then((mod) => ({
+      default: mod.UserSearchSelect,
+    })),
+  {
+    ssr: false,
+    loading: () => <CustomerNameFieldSkeleton />,
+  }
+);
+// Attachment section - uncomment when adding attachments back
+// import {
+//   formatFileSize,
+//   openFileInNewTab,
+//   downloadFile,
+//   filterValidImageFiles,
+// } from "@/lib/fileUtils";
+
+// function isImageFile(file: File): boolean {
+//   return file.type.startsWith("image/");
+// }
+
+// function ImagePreviewThumbnail({ file }: { file: File }) {
+//   const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
+//   React.useEffect(() => {
+//     if (!isImageFile(file)) return;
+//     const url = URL.createObjectURL(file);
+//     setObjectUrl(url);
+//     return () => { URL.revokeObjectURL(url); };
+//   }, [file]);
+//   if (!objectUrl) return null;
+//   return (
+//     <img
+//       src={objectUrl}
+//       alt={file.name}
+//       className="size-14 sm:size-16 rounded-lg object-cover border border-[#EEF1F6] bg-[#F9FAFB]"
+//     />
+//   );
+// }
 
 type CreateTicketModalProps = {
   isOpen: boolean;
@@ -45,7 +91,8 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
   const [formData, setFormData] = React.useState<CreateTicketFormData>(
     initialCreateTicketFormData
   );
-  const [isDragging, setIsDragging] = React.useState(false);
+  // const [isDragging, setIsDragging] = React.useState(false); // attachment section
+  const { createTicket, creatingTicket } = useSupportStore();
 
   const setFormField = <K extends keyof CreateTicketFormData>(
     field: K,
@@ -54,37 +101,54 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { customerName, category, priority, subject, description, assignTo } =
+    const { customerId, category, priority, subject, description, assignToId } =
       formData;
-    if (!customerName || !category || !priority || !subject || !description) {
+    if (
+      !formData.customerName ||
+      !customerId ||
+      !category ||
+      !priority ||
+      !subject ||
+      !description
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    if (!formData.assignToId || !assignTo) {
+    if (!assignToId || !formData.assignTo) {
       toast.error("Please assign ticket to an admin");
       return;
     }
 
-    console.log({
-      customerName,
+    const orderIdTrimmed = formData.orderId.trim();
+    const refundIdTrimmed = formData.refundId.trim();
+    const orderIdStr =
+      orderIdTrimmed && Number.isFinite(Number(orderIdTrimmed))
+        ? String(orderIdTrimmed)
+        : undefined;
+    const refundIdStr = refundIdTrimmed || undefined;
+
+    const result = await createTicket({
+      user_id: customerId,
       category,
-      priority,
-      orderId: formData.orderId,
-      refundId: formData.refundId,
       subject,
-      assignTo,
       description,
-      files: formData.files,
+      assigned_to: assignToId,
+      priority,
+      ...(orderIdStr !== undefined && { order_id: orderIdStr }),
+      ...(refundIdStr !== undefined && { refund_id: refundIdStr }),
     });
 
-    toast.success("Ticket created successfully");
-
-    setFormData(initialCreateTicketFormData);
-    onClose();
+    if (result.ok) {
+      toast.success("Ticket created successfully");
+      setFormData(initialCreateTicketFormData);
+      onClose();
+    } else {
+      toast.error(result.message);
+    }
   };
 
   const handleClose = () => {
@@ -92,6 +156,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
     onClose();
   };
 
+  /* Attachment section - uncomment when adding attachments back
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
@@ -102,17 +167,14 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
       setFormField("files", [...formData.files, ...validFiles]);
     }
   };
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
-
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
   };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -125,6 +187,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
       setFormField("files", [...formData.files, ...validFiles]);
     }
   };
+  */
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -153,7 +216,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
           className="space-y-6"
         >
           <div className="max-h-[70vh] overflow-auto">
-            <UserSearchSelect
+            <UserSearchSelectWithSkeleton
               id="customerName"
               role="customer"
               label="Customer's Name"
@@ -178,7 +241,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                 <Select
                   value={formData.category}
                   onValueChange={(value) =>
-                    setFormField("category", value as TicketCategory)
+                    setFormField("category", value as TicketCategorySlug)
                   }
                 >
                   <SelectTrigger
@@ -189,8 +252,8 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {TICKET_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -207,7 +270,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                 <Select
                   value={formData.priority}
                   onValueChange={(value) =>
-                    setFormField("priority", value as TicketPriority)
+                    setFormField("priority", value as TicketPrioritySlug)
                   }
                 >
                   <SelectTrigger
@@ -218,8 +281,8 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {TICKET_PRIORITIES.map((pri) => (
-                      <SelectItem key={pri} value={pri}>
-                        {pri}
+                      <SelectItem key={pri.value} value={pri.value}>
+                        {pri.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -258,7 +321,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
               </div>
             </div>
 
-            <UserSearchSelect
+            <UserSearchSelectWithSkeleton
               id="assignTo"
               role="admin"
               label="Assign To"
@@ -303,8 +366,8 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
               />
             </div>
 
-            {/* File Upload Section */}
-            <div className="space-y-2">
+            {/* File Upload Section - commented out for now, will work on it later */}
+            {/* <div className="space-y-2">
               <Label className="text-[#101928] font-medium">
                 Supporting Document
               </Label>
@@ -344,16 +407,19 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                 </label>
               </div>
 
-              {/* Display uploaded files */}
               {formData.files.length > 0 && (
                 <div className="mt-4 space-y-3">
                   {formData.files.map((file, index) => (
                     <div
-                      key={index}
+                      key={`${file.name}-${index}`}
                       className="flex items-center gap-3 p-3 bg-white border border-[#EEF1F6] rounded-lg"
                     >
                       <div className="shrink-0">
-                        <FileText className="w-5 h-5 text-[#667085]" />
+                        {isImageFile(file) ? (
+                          <ImagePreviewThumbnail file={file} />
+                        ) : (
+                          <FileText className="w-5 h-5 text-[#667085]" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-[#101928] font-medium truncate">
@@ -385,16 +451,17 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                   ))}
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
 
           <div className="pt-4">
             <Button
               type="submit"
               form="create-ticket-form"
-              className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white w-full h-[52px] text-base font-medium"
+              disabled={creatingTicket}
+              className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white w-full h-[52px] text-base font-medium disabled:opacity-70"
             >
-              Create Ticket
+              {creatingTicket ? "Creating…" : "Create Ticket"}
             </Button>
           </div>
         </form>

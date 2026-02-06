@@ -53,7 +53,7 @@ export type SupportTicketReply = {
   id: number;
   ticket_id: number;
   user_id?: number;
-  body: string;
+  message: string;
   is_staff?: boolean;
   created_at: string;
   updated_at?: string;
@@ -115,6 +115,30 @@ export type SupportStatistics = {
   response_rate_percentage: number;
 };
 
+/** TAT breakdown from GET .../support/tickets/statistics/resolution */
+export type ResolutionTatBreakdown = {
+  within_tat: number;
+  exceeded_tat: number;
+  within_tat_percentage: number;
+  exceeded_tat_percentage: number;
+  tat_hours: number;
+};
+
+/** Response from GET .../support/tickets/statistics/resolution?period=weekly|monthly|yearly */
+export type ResolutionStatistics = {
+  period: string;
+  response_rate_percentage: number;
+  tat_breakdown: ResolutionTatBreakdown;
+};
+
+export type ResolutionPeriod = "weekly" | "monthly" | "yearly";
+
+/** Response from GET .../support/tickets/statistics/categories?period= */
+export type CategoryStatistics = {
+  period: string;
+  by_category: Record<string, number>;
+};
+
 export type SupportState = {
   /** List from GET admin/support/tickets – only data.tickets and data.pagination are used; analytics in response is ignored */
   tickets: SupportTicketApi[];
@@ -132,10 +156,22 @@ export type SupportState = {
   loadingStatistics: boolean;
   statisticsError: string | null;
 
+  /** Resolution statistics from GET .../support/tickets/statistics/resolution?period= */
+  resolutionStatistics: ResolutionStatistics | null;
+  loadingResolutionStatistics: boolean;
+  resolutionStatisticsError: string | null;
+
+  /** Category statistics from GET .../support/tickets/statistics/categories?period= */
+  categoryStatistics: CategoryStatistics | null;
+  loadingCategoryStatistics: boolean;
+  categoryStatisticsError: string | null;
+
   fetchTickets: (page?: number, perPage?: number) => Promise<boolean>;
   fetchSingleTicket: (id: string | number) => Promise<boolean>;
   clearSingleTicket: () => void;
   fetchSupportStatistics: () => Promise<boolean>;
+  fetchResolutionStatistics: (period?: ResolutionPeriod) => Promise<boolean>;
+  fetchCategoryStatistics: (period?: ResolutionPeriod) => Promise<boolean>;
 
   /** PATCH admin/support/tickets/:id/priority */
   updatingPriority: boolean;
@@ -150,4 +186,31 @@ export type SupportState = {
     ticketId: string | number,
     status: string
   ) => Promise<boolean>;
+
+  /** POST admin/support/tickets/:id/reply */
+  addingReply: boolean;
+  addTicketReply: (
+    ticketId: string | number,
+    message: string
+  ) => Promise<boolean>;
+
+  /** POST admin/support/tickets (create ticket) */
+  creatingTicket: boolean;
+  createTicket: (payload: CreateTicketRequest) => Promise<CreateTicketResult>;
 };
+
+/** Body for POST admin/support/tickets */
+export type CreateTicketRequest = {
+  user_id: number;
+  category: string;
+  subject: string;
+  description: string;
+  assigned_to: number;
+  priority: string;
+  order_id?: string | null;
+  refund_id?: string | null;
+};
+
+export type CreateTicketResult =
+  | { ok: true; data: unknown }
+  | { ok: false; message: string };
