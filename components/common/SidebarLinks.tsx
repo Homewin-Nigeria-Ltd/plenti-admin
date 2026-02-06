@@ -67,17 +67,29 @@ type SidebarLinksProps = {
   collapsed?: boolean;
 };
 
-const SidebarLinks = React.memo(function SidebarLinks({
+export default function SidebarLinks({
   collapsed = false,
 }: SidebarLinksProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const linkBaseClass = cn(
-    "text-[16px] font-semibold h-13.75 flex items-center cursor-pointer",
-    collapsed
-      ? "justify-center px-2 mx-7 rounded-[4px] "
-      : "px-4 gap-3 mx-3 rounded-lg"
+  const linkBaseClass = React.useMemo(
+    () =>
+      cn(
+        "text-[16px] font-semibold h-13.75 flex items-center cursor-pointer",
+        collapsed
+          ? "justify-center px-2 mx-7 rounded-[4px] "
+          : "px-4 gap-3 mx-3 rounded-lg"
+      ),
+    [collapsed]
+  );
+
+  const handleNav = React.useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      const href = (e.currentTarget as HTMLElement).dataset.href;
+      if (href) router.push(href);
+    },
+    [router]
   );
 
   return (
@@ -92,7 +104,8 @@ const SidebarLinks = React.memo(function SidebarLinks({
               isActive ? "bg-primary text-white" : "text-[#98A2B3]",
               linkBaseClass
             )}
-            onClick={() => router.push(link.href)}
+            data-href={link.href}
+            onClick={handleNav}
             title={collapsed ? link.name : undefined}
           >
             <span className="shrink-0">
@@ -122,7 +135,8 @@ const SidebarLinks = React.memo(function SidebarLinks({
                   : "text-[#98A2B3]",
                 linkBaseClass
               )}
-              onClick={() => router.push("/customer")}
+              data-href="/customer"
+              onClick={handleNav}
               title={collapsed ? "Customer Support" : undefined}
             >
               <span className="shrink-0">
@@ -148,7 +162,8 @@ const SidebarLinks = React.memo(function SidebarLinks({
                   : "text-[#98A2B3]",
                 linkBaseClass
               )}
-              onClick={() => router.push("/configuration")}
+              data-href="/configuration"
+              onClick={handleNav}
               title={collapsed ? "Systems Configuration" : undefined}
             >
               <span className="shrink-0">
@@ -172,8 +187,4 @@ const SidebarLinks = React.memo(function SidebarLinks({
       })()}
     </ul>
   );
-});
-
-SidebarLinks.displayName = "SidebarLinks";
-
-export default SidebarLinks;
+}

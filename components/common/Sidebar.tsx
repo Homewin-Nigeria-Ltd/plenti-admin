@@ -25,19 +25,13 @@ import { cn } from "@/lib/utils";
 const SIDEBAR_WIDTH_EXPANDED = 340;
 const SIDEBAR_WIDTH_COLLAPSED = 135;
 
-const Sidebar = React.memo(function Sidebar() {
+export default function Sidebar() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(false);
-  const [footerMounted, setFooterMounted] = React.useState(false);
 
   // Only re-render when account changes (not when loadingAccount, etc.)
   const account = useAccountStore((state) => state.account);
-
-  React.useEffect(() => {
-    const t = requestAnimationFrame(() => setFooterMounted(true));
-    return () => cancelAnimationFrame(t);
-  }, []);
 
   const handleExpand = React.useCallback(() => setIsExpanded(true), []);
   const handleCollapse = React.useCallback(() => setIsExpanded(false), []);
@@ -77,7 +71,7 @@ const Sidebar = React.memo(function Sidebar() {
 
   return (
     <aside
-      className="h-screen max-h-screen flex flex-col justify-between bg-white md:sticky md:top-0 md:left-0 md:z-20 overflow-hidden sm:fixed sm:inset-0 transition-[width] duration-200 ease-in-out shrink-0"
+      className="h-screen max-h-screen flex flex-col justify-between bg-white md:sticky md:top-0 md:left-0 md:z-20 overflow-hidden sm:fixed sm:inset-0 transition-[width] duration-100 ease-in-out shrink-0"
       style={{
         width: `${
           isExpanded ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COLLAPSED
@@ -119,39 +113,37 @@ const Sidebar = React.memo(function Sidebar() {
 
       <div
         className={cn(
-          "border-t-[0.5px] border-gray-300 flex items-center pb-2 pt-4 shrink-0 min-h-[72px]",
+          "border-t-[0.5px] border-gray-300 flex items-center pb-2 pt-4 shrink-0",
           collapsed ? "flex-col gap-2 px-2" : "justify-between gap-5 px-4"
         )}
       >
-        {footerMounted ? (
-          <>
-            <div
-              className={cn(
-                "flex items-center min-w-0",
-                collapsed ? "justify-center" : "gap-3"
-              )}
-            >
-              <Avatar className={cn("shrink-0", collapsed ? "size-9" : "size-10")}>
-                <AvatarImage src={account?.avatar_url || ""} />
-                <AvatarFallback>{account?.name?.[0] || ""}</AvatarFallback>
-              </Avatar>
-              {!collapsed && (
-                <div className="min-w-0">
-                  <h5
-                    className={`text-gray-400 text-[16px] font-medium truncate ${dmSans.className}`}
-                  >
-                    {account?.name || ""}
-                  </h5>
-                  <p
-                    className={`${dmSans.className} font-normal text-gray-400 text-[16px] max-w-42.5 truncate`}
-                  >
-                    {account?.email || ""}
-                  </p>
-                </div>
-              )}
+        <div
+          className={cn(
+            "flex items-center min-w-0",
+            collapsed ? "justify-center" : "gap-3"
+          )}
+        >
+          <Avatar className={cn("shrink-0", collapsed ? "size-9" : "size-10")}>
+            <AvatarImage src={account?.avatar_url || ""} />
+            <AvatarFallback>{account?.name?.[0] || ""}</AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <div className="min-w-0">
+              <h5
+                className={`text-gray-400 text-[16px] font-medium truncate ${dmSans.className}`}
+              >
+                {account?.name || ""}
+              </h5>
+              <p
+                className={`${dmSans.className} font-normal text-gray-400 text-[16px] max-w-42.5 truncate`}
+              >
+                {account?.email || ""}
+              </p>
             </div>
+          )}
+        </div>
 
-            <AlertDialog>
+        <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
               type="button"
@@ -187,13 +179,7 @@ const Sidebar = React.memo(function Sidebar() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-          </>
-        ) : null}
       </div>
     </aside>
   );
-});
-
-Sidebar.displayName = "Sidebar";
-
-export default Sidebar;
+}
