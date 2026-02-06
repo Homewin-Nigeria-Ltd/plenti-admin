@@ -17,6 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSupportStore } from "@/store/useSupportStore";
+import type { ResolutionPeriod } from "@/types/SupportTypes";
 
 const DEFAULT_CHART_DATA = [
   { category: "Order", value: 0 },
@@ -25,22 +27,31 @@ const DEFAULT_CHART_DATA = [
   { category: "General", value: 0 },
 ];
 
+const PERIOD_OPTIONS: { value: ResolutionPeriod; label: string }[] = [
+  { value: "monthly", label: "Monthly" },
+  { value: "weekly", label: "Weekly" },
+  { value: "yearly", label: "Yearly" },
+];
+
 function formatCategoryLabel(key: string): string {
   return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
 }
 
-type TicketByCategoryProps = {
-  byCategory?: Record<string, number>;
-  loading?: boolean;
-};
+export default function TicketByCategory() {
+  const [period, setPeriod] = React.useState<ResolutionPeriod>("monthly");
 
-export default function TicketByCategory({
-  byCategory,
-  loading = false,
-}: TicketByCategoryProps) {
-  const [period, setPeriod] = React.useState("monthly");
+  const {
+    categoryStatistics,
+    loadingCategoryStatistics,
+    fetchCategoryStatistics,
+  } = useSupportStore();
+
+  React.useEffect(() => {
+    fetchCategoryStatistics(period);
+  }, [period, fetchCategoryStatistics]);
 
   const chartData = React.useMemo(() => {
+    const byCategory = categoryStatistics?.by_category;
     if (!byCategory || Object.keys(byCategory).length === 0) {
       return DEFAULT_CHART_DATA;
     }
@@ -50,7 +61,7 @@ export default function TicketByCategory({
         value,
       }))
       .sort((a, b) => b.value - a.value);
-  }, [byCategory]);
+  }, [categoryStatistics]);
 
   const maxValue = React.useMemo(() => {
     const max = Math.max(...chartData.map((d) => d.value), 1);
@@ -63,7 +74,7 @@ export default function TicketByCategory({
     return value.toString();
   };
 
-  if (loading) {
+  if (loadingCategoryStatistics) {
     return (
       <div className="bg-white rounded-xl border border-[#EEF1F6] p-6">
         <div className="h-6 bg-[#EEF1F6] rounded w-2/3 mb-4 animate-pulse" />
@@ -84,19 +95,30 @@ export default function TicketByCategory({
         <h3 className="text-[#0B1E66] text-lg font-semibold">
           Tickets by Category
         </h3>
-        <Select value={period} onValueChange={setPeriod}>
+        <Select
+          value={period}
+          onValueChange={(v) => setPeriod(v as ResolutionPeriod)}
+        >
           <SelectTrigger className="w-[120px] h-9 border-[#D0D5DD]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="yearly">Yearly</SelectItem>
+            {PERIOD_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
 
       <p className="text-[#667085] text-sm mb-6">
+        {categoryStatistics?.period ? (
+          <>
+            <strong>{categoryStatistics.period}</strong>
+            {" · "}
+          </>
+        ) : null}
         Distribution of support tickets by category.
       </p>
 

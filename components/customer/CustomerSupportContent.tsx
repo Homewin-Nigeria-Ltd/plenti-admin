@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import TicketStatCard from "./TicketStatCard";
-import TicketNotificationBanner from "./TicketNotificationBanner";
+// import TicketNotificationBanner from "./TicketNotificationBanner"; // commented out for now
 import TicketResolutionResponseRate from "./TicketResolutionResponseRate";
 import TicketByCategory from "./TicketByCategory";
 import MostRecentTickets from "./MostRecentTickets";
@@ -77,17 +77,18 @@ export default function CustomerSupportContent() {
   return (
     <div className="space-y-6">
       {/* Notification Banner and Create Ticket Button */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-end gap-4">
+        {/* Ticket notification banner commented out for now
         <div className="flex-1 w-full">
           <TicketNotificationBanner
             ticketNumber="FAB-23012024-00091"
             timeRemaining="expires in an hour"
             onView={() => {
-              // Handle view ticket
               console.log("View ticket");
             }}
           />
         </div>
+        */}
         <Button
           onClick={() => setIsCreateTicketModalOpen(true)}
           className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[48px] px-6"
@@ -131,14 +132,8 @@ export default function CustomerSupportContent() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TicketResolutionResponseRate
-          responseRatePercentage={statistics?.response_rate_percentage}
-          loading={loadingStatistics}
-        />
-        <TicketByCategory
-          byCategory={statistics?.by_category}
-          loading={loadingStatistics}
-        />
+        <TicketResolutionResponseRate />
+        <TicketByCategory />
       </div>
 
       {/* Most Recent Tickets Table */}

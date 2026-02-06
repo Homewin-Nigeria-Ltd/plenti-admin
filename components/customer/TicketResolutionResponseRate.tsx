@@ -9,32 +9,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSupportStore } from "@/store/useSupportStore";
+import type { ResolutionPeriod } from "@/types/SupportTypes";
 
 const COLORS = ["#0B1E66", "#E8EEFF"];
 
-type TicketResolutionResponseRateProps = {
-  responseRatePercentage?: number;
-  loading?: boolean;
-};
+const PERIOD_OPTIONS: { value: ResolutionPeriod; label: string }[] = [
+  { value: "monthly", label: "Monthly" },
+  { value: "weekly", label: "Weekly" },
+  { value: "yearly", label: "Yearly" },
+];
 
-export default function TicketResolutionResponseRate({
-  responseRatePercentage,
-  loading = false,
-}: TicketResolutionResponseRateProps) {
-  const [period, setPeriod] = React.useState("monthly");
+export default function TicketResolutionResponseRate() {
+  const [period, setPeriod] = React.useState<ResolutionPeriod>("monthly");
+
+  const {
+    resolutionStatistics,
+    loadingResolutionStatistics,
+    fetchResolutionStatistics,
+  } = useSupportStore();
+
+  React.useEffect(() => {
+    fetchResolutionStatistics(period);
+  }, [period, fetchResolutionStatistics]);
 
   const data = React.useMemo(() => {
-    const rate =
-      responseRatePercentage != null && Number.isFinite(responseRatePercentage)
-        ? Math.max(0, Math.min(100, responseRatePercentage))
-        : 50;
+    const tat = resolutionStatistics?.tat_breakdown;
+    if (tat != null) {
+      const within = Math.max(0, Math.min(100, tat.within_tat_percentage ?? 0));
+      const exceeded = Math.max(0, Math.min(100, tat.exceeded_tat_percentage ?? 0));
+      return [
+        { name: "Within TAT", value: within, color: COLORS[0] },
+        { name: "Exceeded TAT", value: exceeded, color: COLORS[1] },
+      ];
+    }
     return [
-      { name: "Within TAT", value: rate, color: COLORS[0] },
-      { name: "Exceeded TAT", value: 100 - rate, color: COLORS[1] },
+      { name: "Within TAT", value: 50, color: COLORS[0] },
+      { name: "Exceeded TAT", value: 50, color: COLORS[1] },
     ];
-  }, [responseRatePercentage]);
+  }, [resolutionStatistics]);
 
-  if (loading) {
+  if (loadingResolutionStatistics) {
     return (
       <div className="bg-white rounded-xl border border-[#EEF1F6] p-6">
         <div className="h-6 bg-[#EEF1F6] rounded w-2/3 mb-4 animate-pulse" />
@@ -50,23 +65,42 @@ export default function TicketResolutionResponseRate({
         <h3 className="text-[#0B1E66] text-lg font-semibold">
           Ticket Resolution Response Rate
         </h3>
-        <Select value={period} onValueChange={setPeriod}>
+        <Select
+          value={period}
+          onValueChange={(v) => setPeriod(v as ResolutionPeriod)}
+        >
           <SelectTrigger className="w-[120px] h-9 border-[#D0D5DD]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="yearly">Yearly</SelectItem>
+            {PERIOD_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
 
       <p className="text-[#667085] text-sm mb-6">
-        {responseRatePercentage != null &&
-        Number.isFinite(responseRatePercentage) ? (
+        {resolutionStatistics?.period != null && (
+          <span className="mr-2">
+            <strong>{resolutionStatistics.period}</strong>
+            {resolutionStatistics.tat_breakdown?.tat_hours != null && (
+              <span className="ml-1">
+                (TAT: {resolutionStatistics.tat_breakdown.tat_hours}h)
+              </span>
+            )}
+            {" · "}
+          </span>
+        )}
+        {resolutionStatistics?.response_rate_percentage != null &&
+        Number.isFinite(resolutionStatistics.response_rate_percentage) ? (
           <>
-            Response rate: <strong>{responseRatePercentage.toFixed(1)}%</strong>
+            Response rate:{" "}
+            <strong>
+              {resolutionStatistics.response_rate_percentage.toFixed(1)}%
+            </strong>
           </>
         ) : (
           "This section provides an analysis or insights into ticket resolution and response rate."

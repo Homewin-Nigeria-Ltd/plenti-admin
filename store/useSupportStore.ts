@@ -1,5 +1,10 @@
 import api from "@/lib/api";
 import type {
+  CategoryStatistics,
+  CreateTicketRequest,
+  CreateTicketResult,
+  ResolutionPeriod,
+  ResolutionStatistics,
   SupportState,
   SupportStatistics,
   SupportTicketApi,
@@ -34,10 +39,20 @@ export const useSupportStore = create<SupportState>((set, get) => ({
 
   updatingPriority: false,
   updatingStatus: false,
+  addingReply: false,
+  creatingTicket: false,
 
   statistics: null,
   loadingStatistics: false,
   statisticsError: null,
+
+  resolutionStatistics: null,
+  loadingResolutionStatistics: false,
+  resolutionStatisticsError: null,
+
+  categoryStatistics: null,
+  loadingCategoryStatistics: false,
+  categoryStatisticsError: null,
 
   fetchTickets: async (page = 1, perPage = 10) => {
     set({ loadingTickets: true, ticketsError: null });
@@ -112,7 +127,13 @@ export const useSupportStore = create<SupportState>((set, get) => ({
         current != null
           ? { ...current, ...data.data }
           : (data.data as SupportTicketDetail);
-      set({ singleTicket: updated });
+      const idNum = Number(id);
+      set({
+        singleTicket: updated,
+        tickets: get().tickets.map((t) =>
+          t.id === idNum ? { ...t, priority: data.data!.priority ?? t.priority } : t
+        ),
+      });
       return true;
     } catch (error: unknown) {
       console.error("Error updating ticket priority =>", error);
@@ -139,13 +160,73 @@ export const useSupportStore = create<SupportState>((set, get) => ({
         current != null
           ? { ...current, ...data.data }
           : (data.data as SupportTicketDetail);
-      set({ singleTicket: updated });
+      const idNum = Number(id);
+      set({
+        singleTicket: updated,
+        tickets: get().tickets.map((t) =>
+          t.id === idNum ? { ...t, status: (data.data!.status ?? t.status) as SupportTicketApi["status"] } : t
+        ),
+      });
       return true;
     } catch (error: unknown) {
       console.error("Error updating ticket status =>", error);
       return false;
     } finally {
       set({ updatingStatus: false });
+    }
+  },
+
+  addTicketReply: async (ticketId: string | number, message: string) => {
+    const id = String(ticketId);
+    set({ addingReply: true });
+    try {
+      const { data } = await api.post<{
+        status?: string;
+        message?: string;
+        data?: unknown;
+      }>(`/api/admin/support/tickets/${id}/reply`, { message });
+
+      if (data?.status !== "success") {
+        return false;
+      }
+      await get().fetchSingleTicket(id);
+      return true;
+    } catch (error: unknown) {
+      console.error("Error adding ticket reply =>", error);
+      return false;
+    } finally {
+      set({ addingReply: false });
+    }
+  },
+
+  createTicket: async (
+    payload: CreateTicketRequest
+  ): Promise<CreateTicketResult> => {
+    set({ creatingTicket: true });
+    try {
+      const { data } = await api.post<{
+        status?: string;
+        message?: string;
+        data?: unknown;
+      }>("/api/admin/support/tickets", payload);
+
+      if (data?.status !== "success") {
+        return {
+          ok: false,
+          message:
+            (typeof data?.message === "string" && data.message) ||
+            "Failed to create ticket",
+        };
+      }
+      await get().fetchTickets(1, 10);
+      return { ok: true, data: data?.data };
+    } catch (error: unknown) {
+      const message =
+        getApiErrorMessage(error) ?? "Failed to create ticket";
+      console.error("Error creating ticket =>", error);
+      return { ok: false, message };
+    } finally {
+      set({ creatingTicket: false });
     }
   },
 
@@ -168,6 +249,61 @@ export const useSupportStore = create<SupportState>((set, get) => ({
       return false;
     } finally {
       set({ loadingStatistics: false });
+    }
+  },
+
+  fetchResolutionStatistics: async (period: ResolutionPeriod = "monthly") => {
+    set({ loadingResolutionStatistics: true, resolutionStatisticsError: null });
+    try {
+      const { data } = await api.get<{
+        status?: string;
+        data?: ResolutionStatistics;
+      }>("/api/admin/support/tickets/statistics/resolution", {
+        params: { period },
+      });
+
+      const resolutionStatistics = data?.data ?? null;
+      set({ resolutionStatistics });
+      return true;
+    } catch (error: unknown) {
+      const message =
+        getApiErrorMessage(error) ??
+        "Failed to fetch resolution statistics";
+      console.error("Error fetching resolution statistics =>", error);
+      set({
+        resolutionStatisticsError: message,
+        resolutionStatistics: null,
+      });
+      return false;
+    } finally {
+      set({ loadingResolutionStatistics: false });
+    }
+  },
+
+  fetchCategoryStatistics: async (period: ResolutionPeriod = "monthly") => {
+    set({ loadingCategoryStatistics: true, categoryStatisticsError: null });
+    try {
+      const { data } = await api.get<{
+        status?: string;
+        data?: CategoryStatistics;
+      }>("/api/admin/support/tickets/statistics/categories", {
+        params: { period },
+      });
+
+      const categoryStatistics = data?.data ?? null;
+      set({ categoryStatistics });
+      return true;
+    } catch (error: unknown) {
+      const message =
+        getApiErrorMessage(error) ?? "Failed to fetch category statistics";
+      console.error("Error fetching category statistics =>", error);
+      set({
+        categoryStatisticsError: message,
+        categoryStatistics: null,
+      });
+      return false;
+    } finally {
+      set({ loadingCategoryStatistics: false });
     }
   },
 }));

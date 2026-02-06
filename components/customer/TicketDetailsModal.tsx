@@ -23,6 +23,7 @@ import type {
   SupportTicketDetail,
   TicketStatusApi,
 } from "@/types/SupportTypes";
+import { LeaveCommentModal } from "./LeaveCommentModal";
 
 type TicketDetailsModalProps = {
   isOpen: boolean;
@@ -133,6 +134,8 @@ export function TicketDetailsModal({
     updatingPriority,
     updateTicketStatus,
     updatingStatus,
+    addTicketReply,
+    addingReply,
   } = useSupportStore();
 
   React.useEffect(() => {
@@ -154,6 +157,7 @@ export function TicketDetailsModal({
     React.useState<string>("medium");
   const [displayStatus, setDisplayStatus] =
     React.useState<TicketStatusApi>("open");
+  const [isLeaveCommentOpen, setIsLeaveCommentOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (ticket) {
@@ -185,6 +189,23 @@ export function TicketDetailsModal({
       toast.error("Failed to update status");
     } else {
       toast.success("Status updated");
+    }
+  };
+
+  const handleOpenLeaveComment = () => setIsLeaveCommentOpen(true);
+  const handleCloseLeaveComment = () => setIsLeaveCommentOpen(false);
+  const handleSubmitComment = async (comment: string) => {
+    const id = ticket?.id ?? ticketId;
+    if (id == null) {
+      toast.error("Ticket not found");
+      return;
+    }
+    const ok = await addTicketReply(id, comment);
+    if (ok) {
+      toast.success("Comment added");
+      setIsLeaveCommentOpen(false);
+    } else {
+      toast.error("Failed to add comment");
     }
   };
 
@@ -393,7 +414,7 @@ export function TicketDetailsModal({
                 ) : (
                   <div className="space-y-4">
                     {replies.map((reply) => (
-                      <div key={reply.id} className="flex gap-3">
+                      <div key={reply.id} className="flex gap-3 items-start">
                         <Avatar className="size-10 shrink-0">
                           <AvatarImage
                             src={reply.user?.avatar_url ?? undefined}
@@ -406,8 +427,8 @@ export function TicketDetailsModal({
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-1">
-                          <p className="text-[#101928] text-sm leading-relaxed whitespace-pre-wrap">
-                            {reply.body}
+                          <p className="text-[#98A2B3] text-sm leading-relaxed whitespace-pre-wrap">
+                            {reply.message}
                           </p>
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-[#101928] text-sm font-medium">
@@ -428,19 +449,30 @@ export function TicketDetailsModal({
             </div>
 
             <DialogFooter className="flex items-center gap-4 pt-4 border-t border-[#EEF1F6]">
-              <Button
+              {/* <Button
                 variant="outline"
                 className="flex-1 border-[#1F3A78] text-[#1F3A78] hover:bg-[#E8EEFF] h-[48px]"
               >
                 Initiate Response
-              </Button>
-              <Button className="flex-1 bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[48px]">
+              </Button> */}
+              <Button
+                type="button"
+                onClick={handleOpenLeaveComment}
+                className="flex-1 bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[48px]"
+              >
                 Leave Comment
               </Button>
             </DialogFooter>
           </div>
         )}
       </DialogContent>
+
+      <LeaveCommentModal
+        isOpen={isLeaveCommentOpen}
+        onClose={handleCloseLeaveComment}
+        onSubmit={handleSubmitComment}
+        isSubmitting={addingReply}
+      />
     </Dialog>
   );
 }
