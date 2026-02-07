@@ -70,6 +70,20 @@ export type DashboardOverview = {
 
 export type TopProductsFilter = "day" | "week" | "month" | "year";
 
+export type RevenueChartData = {
+  label: string;
+  value: number;
+};
+
+export type RevenueStats = {
+  filter: TopProductsFilter;
+  total_revenue: number;
+  currency: string;
+  percentage_change: number;
+  trend: "up" | "down";
+  chart_data: RevenueChartData[];
+};
+
 export type DashboardState = {
   overview: DashboardOverview | null;
   loadingOverview: boolean;
@@ -81,7 +95,11 @@ export type DashboardState = {
   bestSellingCategories: BestSellingCategory[] | null;
   loadingBestSellingCategories: boolean;
 
+  revenueStats: RevenueStats | null;
+  loadingRevenueStats: boolean;
+
   fetchDashboardOverview: () => Promise<boolean>;
   fetchTopProducts: (filter: TopProductsFilter) => Promise<boolean>;
   fetchBestSellingCategories: (filter: TopProductsFilter) => Promise<boolean>;
+  fetchRevenueStats: (filter: TopProductsFilter) => Promise<boolean>;
 };
