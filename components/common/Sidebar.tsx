@@ -29,12 +29,17 @@ export default function Sidebar() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
   // Only re-render when account changes (not when loadingAccount, etc.)
   const account = useAccountStore((state) => state.account);
 
   const handleExpand = React.useCallback(() => setIsExpanded(true), []);
   const handleCollapse = React.useCallback(() => setIsExpanded(false), []);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   React.useEffect(() => {
     if (!account) {
@@ -143,42 +148,53 @@ export default function Sidebar() {
           )}
         </div>
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <button
-              type="button"
-              disabled={isLoggingOut}
-              aria-label="Log out"
-              className={cn(collapsed && "hidden")}
-            >
-              <LogOut
-                color="#D42620"
-                cursor={isLoggingOut ? "wait" : "pointer"}
-                className={isLoggingOut ? "opacity-50" : ""}
-              />
-            </button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirm logout</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to log out of Plenti Admin?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isLoggingOut} className="h-12.5">
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-[#D42620] hover:bg-[#D42620]/90 h-12.5"
+        {mounted ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
                 disabled={isLoggingOut}
-                onClick={logout}
+                aria-label="Log out"
+                className={cn(collapsed && "hidden")}
               >
-                {isLoggingOut ? "Logging out..." : "Log out"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <LogOut
+                  color="#D42620"
+                  cursor={isLoggingOut ? "wait" : "pointer"}
+                  className={isLoggingOut ? "opacity-50" : ""}
+                />
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirm logout</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to log out of Plenti Admin?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isLoggingOut} className="h-12.5">
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-[#D42620] hover:bg-[#D42620]/90 h-12.5"
+                  disabled={isLoggingOut}
+                  onClick={logout}
+                >
+                  {isLoggingOut ? "Logging out..." : "Log out"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <button
+            type="button"
+            disabled
+            aria-label="Log out"
+            className={cn(collapsed && "hidden")}
+          >
+            <LogOut color="#D42620" className="opacity-50" />
+          </button>
+        )}
       </div>
     </aside>
   );

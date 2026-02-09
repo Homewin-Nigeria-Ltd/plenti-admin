@@ -1,15 +1,23 @@
 import api from "@/lib/api";
 import { PAGE_SIZE } from "@/lib/constant";
 import { ORDERS_API } from "@/data/orders";
-import { Order, OrderState, OrdersListResponse } from "@/types/OrderTypes";
+import {
+  Order,
+  OrderState,
+  OrdersListResponse,
+  OrderStatistics,
+} from "@/types/OrderTypes";
 import { create } from "zustand";
 
 export const useOrderStore = create<OrderState>((set) => ({
   orders: [],
   singleOrder: null,
+  orderStats: null,
   loading: false,
   loadingSingle: false,
+  loadingStats: false,
   error: null,
+  statsError: null,
   currentPage: 1,
   lastPage: 1,
   perPage: PAGE_SIZE,
@@ -64,6 +72,24 @@ export const useOrderStore = create<OrderState>((set) => ({
       return false;
     } finally {
       set({ loadingSingle: false });
+    }
+  },
+
+  fetchOrderStats: async () => {
+    set({ loadingStats: true, statsError: null });
+    try {
+      const { data } = await api.get<{ data: OrderStatistics }>(
+        ORDERS_API.getStatistics,
+        { timeout: 8000 }
+      );
+      set({ orderStats: data.data ?? null });
+      return true;
+    } catch (error) {
+      console.error("Order statistics:", error);
+      set({ statsError: "Failed to fetch order statistics", orderStats: null });
+      return false;
+    } finally {
+      set({ loadingStats: false });
     }
   },
 

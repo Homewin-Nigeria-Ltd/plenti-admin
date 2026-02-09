@@ -1,12 +1,11 @@
 "use client";
 
 import * as React from "react";
-import api from "@/lib/api";
-import { ORDERS_API } from "@/data/orders";
 import type { OrderStatistics } from "@/types/OrderTypes";
 import OrderStatCard from "@/components/order/OrderStatCard";
 import OrderTableWrapper from "@/components/order/OrderTableWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOrderStore } from "@/store/useOrderStore";
 
 const STAT_CARDS: { key: keyof OrderStatistics; title: string }[] = [
   { key: "pending_orders", title: "Pending Orders" },
@@ -17,45 +16,27 @@ const STAT_CARDS: { key: keyof OrderStatistics; title: string }[] = [
 ];
 
 export default function OrderPage() {
-  const [stats, setStats] = React.useState<OrderStatistics | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const { orderStats, loadingStats, fetchOrderStats } = useOrderStore();
 
   React.useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await api.get<{ data: OrderStatistics }>(
-          ORDERS_API.getStatistics
-        );
-        if (!cancelled) setStats(data.data ?? null);
-      } catch (e) {
-        console.error("Order statistics:", e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    fetchOrderStats();
+  }, [fetchOrderStats]);
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-        {loading ? (
-          STAT_CARDS.map(({ title }) => (
-            <Skeleton key={title} className="h-[120px] rounded-xl" />
-          ))
-        ) : (
-          STAT_CARDS.map(({ key, title }) => (
-            <OrderStatCard
-              key={title}
-              title={title}
-              value={Number(stats?.[key] ?? 0)}
-              changePercent={0}
-            />
-          ))
-        )}
+        {loadingStats
+          ? STAT_CARDS.map(({ title }) => (
+              <Skeleton key={title} className="h-[120px] rounded-xl" />
+            ))
+          : STAT_CARDS.map(({ key, title }) => (
+              <OrderStatCard
+                key={title}
+                title={title}
+                value={Number(orderStats?.[key] ?? 0)}
+                changePercent={0}
+              />
+            ))}
       </div>
       <OrderTableWrapper />
     </div>

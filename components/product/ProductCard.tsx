@@ -1,21 +1,21 @@
 "use client";
 
-import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuTrigger,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Image from "next/image";
+import { Switch } from "@/components/ui/switch";
 import type { Product, ProductStatus } from "@/data/products";
-import { Ellipsis, ArrowRight } from "lucide-react";
-import { EditProductModal } from "./EditProductModal";
-import { DeleteProductModal } from "./DeleteProductModal";
-import { toast } from "sonner";
 import { useProductStore } from "@/store/useProductStore";
+import { Ellipsis } from "lucide-react";
+import Image from "next/image";
+import * as React from "react";
+import { toast } from "sonner";
+import { DeleteProductModal } from "./DeleteProductModal";
+import { EditProductModal } from "./EditProductModal";
 
 type ProductCardProps = {
   product: Product;
