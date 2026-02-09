@@ -71,7 +71,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="h-screen max-h-screen flex flex-col justify-between bg-white md:sticky md:top-0 md:left-0 md:z-20 overflow-hidden sm:fixed sm:inset-0 transition-[width] duration-100 ease-in-out shrink-0"
+      className="h-screen max-h-screen flex flex-col justify-between bg-white md:sticky md:top-0 md:left-0 md:z-20 overflow-hidden sm:fixed sm:inset-0 transition-[width] duration-50 ease-in-out shrink-0"
       style={{
         width: `${
           isExpanded ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COLLAPSED

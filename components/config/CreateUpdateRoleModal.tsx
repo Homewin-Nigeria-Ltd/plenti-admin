@@ -12,9 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRolesStore } from "@/store/useRolesStore";
-import type { PermissionItem } from "@/types/RoleTypes";
+import type { PermissionItem, Role } from "@/types/RoleTypes";
 
 /** Display type for role preview (used by RolePreviewModal) */
 export type Permission = {
@@ -23,10 +24,12 @@ export type Permission = {
   description: string;
 };
 
-type CreateRoleModalProps = {
+type CreateUpdateRoleModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (roleData: RoleData) => void;
+  /** When set, modal is in edit mode: prefill form and submit calls updateRole */
+  editRole?: Role | null;
 };
 
 type RoleData = {
@@ -40,28 +43,47 @@ function capitalizeModule(moduleKey: string): string {
   return moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1);
 }
 
-export function CreateRoleModal({
+export function CreateUpdateRoleModal({
   isOpen,
   onClose,
   onSuccess,
-}: CreateRoleModalProps) {
+  editRole = null,
+}: CreateUpdateRoleModalProps) {
   const {
     permissionsByModule,
     loadingPermissions,
     permissionsError,
     fetchPermissions,
+    createRole,
+    updateRole,
   } = useRolesStore();
   const [roleName, setRoleName] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [selectedPermissionIds, setSelectedPermissionIds] = React.useState<
     Set<number>
   >(new Set());
+  const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
       fetchPermissions();
     }
   }, [isOpen, fetchPermissions]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    if (editRole) {
+      setRoleName(editRole.name);
+      setDescription(editRole.description ?? "");
+      setSelectedPermissionIds(
+        new Set(editRole.permissions.map((p) => p.id))
+      );
+    } else {
+      setRoleName("");
+      setDescription("");
+      setSelectedPermissionIds(new Set());
+    }
+  }, [isOpen, editRole]);
 
   const handlePermissionToggle = (permissionId: number) => {
     setSelectedPermissionIds((prev) => {
@@ -91,7 +113,7 @@ export function CreateRoleModal({
     [permissionsByModule]
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const permissionIds = Array.from(selectedPermissionIds);
     const permissionsForPreview: Permission[] = moduleEntries.flatMap(
@@ -104,18 +126,51 @@ export function CreateRoleModal({
             description: p.description ?? p.module ?? "",
           }))
     );
-    if (onSuccess) {
-      onSuccess({
-        roleName,
-        description,
-        permissions: permissionsForPreview,
-        permissionIds,
+
+    if (editRole) {
+      setSubmitting(true);
+      const ok = await updateRole(editRole.id, {
+        name: roleName.trim(),
+        description: description.trim(),
+        permissions: permissionIds,
       });
+      setSubmitting(false);
+      if (ok) {
+        toast.success("Role updated successfully");
+        if (onSuccess) {
+          onSuccess({
+            roleName: roleName.trim(),
+            description: description.trim(),
+            permissions: permissionsForPreview,
+            permissionIds,
+          });
+        }
+        onClose();
+        setRoleName("");
+        setDescription("");
+        setSelectedPermissionIds(new Set());
+      } else {
+        toast.error("Failed to update role");
+      }
+      return;
     }
-    onClose();
-    setRoleName("");
-    setDescription("");
-    setSelectedPermissionIds(new Set());
+
+    setSubmitting(true);
+    const ok = await createRole({
+      name: roleName.trim(),
+      description: description.trim(),
+      permissions: permissionIds,
+    });
+    setSubmitting(false);
+    if (ok) {
+      toast.success("Role created successfully");
+      onClose();
+      setRoleName("");
+      setDescription("");
+      setSelectedPermissionIds(new Set());
+    } else {
+      toast.error("Failed to create role");
+    }
   };
 
   const handleClose = () => {
@@ -133,10 +188,12 @@ export function CreateRoleModal({
       >
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
           <DialogTitle className="text-xl sm:text-2xl font-semibold">
-            Create New Role
+            {editRole ? "Edit Role" : "Create New Role"}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-neutral-500">
-            Define a new role with specific permissions for your team.
+            {editRole
+              ? "Update this role's name, description, and permissions."
+              : "Define a new role with specific permissions for your team."}
           </DialogDescription>
           <button
             type="button"
@@ -299,9 +356,15 @@ export function CreateRoleModal({
             type="submit"
             form="create-role-form"
             className="btn btn-primary w-full"
-            disabled={loadingPermissions}
+            disabled={loadingPermissions || submitting}
           >
-            Create Role
+            {submitting
+              ? editRole
+                ? "Updating…"
+                : "Creating…"
+              : editRole
+                ? "Update Role"
+                : "Create Role"}
           </Button>
         </div>
       </DialogContent>

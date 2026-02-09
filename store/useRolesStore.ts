@@ -1,5 +1,10 @@
 import api from "@/lib/api";
-import type { PermissionsByModule, Role } from "@/types/RoleTypes";
+import type {
+  CreateRoleRequest,
+  PermissionsByModule,
+  Role,
+  UpdateRoleRequest,
+} from "@/types/RoleTypes";
 import { create } from "zustand";
 
 function getApiErrorMessage(err: unknown): string | null {
@@ -17,11 +22,13 @@ export const useRolesStore = create<{
   loadingRoles: boolean;
   rolesError: string | null;
   fetchRoles: () => Promise<boolean>;
+  createRole: (payload: CreateRoleRequest) => Promise<boolean>;
+  updateRole: (id: number, payload: UpdateRoleRequest) => Promise<boolean>;
   permissionsByModule: PermissionsByModule;
   loadingPermissions: boolean;
   permissionsError: string | null;
   fetchPermissions: () => Promise<boolean>;
-}>((set) => ({
+}>((set, get) => ({
   roles: [],
   loadingRoles: false,
   rolesError: null,
@@ -57,6 +64,58 @@ export const useRolesStore = create<{
       return false;
     } finally {
       set({ loadingRoles: false });
+    }
+  },
+
+  createRole: async (payload: CreateRoleRequest) => {
+    try {
+      const { data } = await api.post<{
+        status?: string;
+        message?: string;
+        data?: Role;
+      }>("/api/admin/roles", payload);
+
+      if (data?.status !== "success") {
+        return false;
+      }
+
+      const newRole = data?.data;
+      if (newRole) {
+        set({ roles: [...get().roles, newRole] });
+      } else {
+        await get().fetchRoles();
+      }
+      return true;
+    } catch (error: unknown) {
+      console.error("Error creating role =>", error);
+      return false;
+    }
+  },
+
+  updateRole: async (id: number, payload: UpdateRoleRequest) => {
+    try {
+      const { data } = await api.put<{
+        status?: string;
+        message?: string;
+        data?: Role;
+      }>(`/api/admin/roles/${id}`, payload);
+
+      if (data?.status !== "success") {
+        return false;
+      }
+
+      const updated = data?.data;
+      if (updated) {
+        set({
+          roles: get().roles.map((r) => (r.id === id ? updated : r)),
+        });
+      } else {
+        await get().fetchRoles();
+      }
+      return true;
+    } catch (error: unknown) {
+      console.error("Error updating role =>", error);
+      return false;
     }
   },
 

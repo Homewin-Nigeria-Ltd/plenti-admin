@@ -36,29 +36,29 @@ const configItems: ConfigItem[] = [
     icon: "/icons/bell.png",
     href: "/configuration/notifications",
   },
-  {
-    id: "integration",
-    title: "Integration Setting",
-    description:
-      "API settings for developers to integrate custom functionalities",
-    icon: "/icons/link.png",
-    href: "/configuration/integration",
-  },
-  {
-    id: "data-backup",
-    title: "Data & Backup",
-    description:
-      "Export your data for compliance, analysis, or migration purposes",
-    icon: "/icons/cloud.png",
-    href: "/configuration/data-backup",
-  },
-  {
-    id: "chatbot-configuration",
-    title: "Chatbot Configuration",
-    description: "Chatbot Keywords & Responses",
-    icon: "/icons/sms-tracking.png",
-    href: "/configuration/chatbot-configuration",
-  },
+  // {
+  //   id: "integration",
+  //   title: "Integration Setting",
+  //   description:
+  //     "API settings for developers to integrate custom functionalities",
+  //   icon: "/icons/link.png",
+  //   href: "/configuration/integration",
+  // },
+  // {
+  //   id: "data-backup",
+  //   title: "Data & Backup",
+  //   description:
+  //     "Export your data for compliance, analysis, or migration purposes",
+  //   icon: "/icons/cloud.png",
+  //   href: "/configuration/data-backup",
+  // },
+  // {
+  //   id: "chatbot-configuration",
+  //   title: "Chatbot Configuration",
+  //   description: "Chatbot Keywords & Responses",
+  //   icon: "/icons/sms-tracking.png",
+  //   href: "/configuration/chatbot-configuration",
+  // },
 ];
 
 export default function SystemConfigList() {

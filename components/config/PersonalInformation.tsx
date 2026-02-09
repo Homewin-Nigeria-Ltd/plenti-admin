@@ -12,7 +12,6 @@ import * as React from "react";
 //   SelectTrigger,
 //   SelectValue,
 // } from "@/components/ui/select";
-import { uploadImage } from "@/lib/upload";
 import { useAccountStore } from "@/store/useAccountStore";
 import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +30,8 @@ export default function PersonalInformation() {
     accountError,
     updateProfile,
     updatingProfile,
+    uploadAvatar,
+    uploadingAvatar,
   } = useAccountStore();
   const { first: initialFirst, last: initialLast } = React.useMemo(
     () =>
@@ -43,7 +44,6 @@ export default function PersonalInformation() {
   const [profileImageUrl, setProfileImageUrl] = React.useState<string | null>(
     null
   );
-  const [uploadingImage, setUploadingImage] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -64,17 +64,13 @@ export default function PersonalInformation() {
       if (file) toast.error("Please select a valid image (PNG, JPG).");
       return;
     }
-    setUploadingImage(true);
     if (fileInputRef.current) fileInputRef.current.value = "";
-    const result = await uploadImage(file, "profile");
-    setUploadingImage(false);
+    const result = await uploadAvatar(file);
     if (result.ok) {
-      setProfileImageUrl(result.url);
-      toast.success(
-        "Profile photo uploaded. Save changes to update your account."
-      );
+      setProfileImageUrl(result.avatar_url);
+      toast.success("Avatar uploaded successfully.");
     } else {
-      toast.error(result.error);
+      toast.error(result.message);
     }
   };
 
@@ -143,9 +139,16 @@ export default function PersonalInformation() {
               variant="outline"
               className="btn w-full text-[#0B1E66]"
               onClick={handleChangePhotoClick}
-              disabled={uploadingImage}
+              disabled={uploadingAvatar}
             >
-              <p>{avatarUrl ? "Change Photo" : "Upload Photo"}</p>
+              {uploadingAvatar ? (
+                <>
+                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  <p>Uploading…</p>
+                </>
+              ) : (
+                <p>{avatarUrl ? "Change Photo" : "Upload Photo"}</p>
+              )}
             </Button>
           </div>
           <div className="relative shrink-0 mx-auto sm:mx-0 w-fit">

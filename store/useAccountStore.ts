@@ -6,6 +6,10 @@ import type {
 } from "@/types/UserTypes";
 import { create } from "zustand";
 
+export type UploadAvatarResult =
+  | { ok: true; avatar_url: string }
+  | { ok: false; message: string };
+
 type AccountState = {
   account: AccountSettingsUser | null;
   loadingAccount: boolean;
@@ -14,9 +18,11 @@ type AccountState = {
   updateProfileError: string | null;
   updatingPassword: boolean;
   updatePasswordError: string | null;
+  uploadingAvatar: boolean;
   fetchAccountSettings: () => Promise<boolean>;
   updateProfile: (payload: UpdateProfileRequest) => Promise<boolean>;
   updatePassword: (payload: UpdatePasswordRequest) => Promise<boolean>;
+  uploadAvatar: (file: File) => Promise<UploadAvatarResult>;
 };
 
 function getApiErrorMessage(err: unknown): string | null {
@@ -37,6 +43,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   updateProfileError: null,
   updatingPassword: false,
   updatePasswordError: null,
+  uploadingAvatar: false,
 
   fetchAccountSettings: async () => {
     set({ loadingAccount: true, accountError: null });
@@ -127,6 +134,57 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       return false;
     } finally {
       set({ updatingPassword: false });
+    }
+  },
+
+  uploadAvatar: async (file: File): Promise<UploadAvatarResult> => {
+    set({ uploadingAvatar: true });
+    try {
+      const formData = new FormData();
+      formData.set("avatar", file);
+
+      const res = await fetch("/api/upload/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = (await res.json().catch(() => null)) as {
+        status?: string;
+        message?: string;
+        data?: { avatar_url?: string };
+        errors?: Record<string, string[]>;
+      } | null;
+
+      if (!res.ok) {
+        const message =
+          (typeof json?.message === "string" && json.message) ||
+          (json?.errors?.avatar?.[0]) ||
+          "Failed to upload avatar";
+        return { ok: false, message };
+      }
+
+      if (json?.status !== "success" || !json?.data?.avatar_url) {
+        return {
+          ok: false,
+          message:
+            (typeof json?.message === "string" && json.message) ||
+            "Failed to upload avatar",
+        };
+      }
+
+      const avatar_url = json.data.avatar_url;
+      const account = get().account;
+      if (account) {
+        set({ account: { ...account, avatar_url } });
+      }
+      return { ok: true, avatar_url };
+    } catch (error: unknown) {
+      const message =
+        getApiErrorMessage(error) ?? "Failed to upload avatar";
+      console.error("Error uploading avatar =>", error);
+      return { ok: false, message };
+    } finally {
+      set({ uploadingAvatar: false });
     }
   },
 }));
