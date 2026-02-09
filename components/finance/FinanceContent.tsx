@@ -1,12 +1,37 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { FinanceMetricsCard } from "@/components/finance/FinanceMetricsCard";
 import { FinanceTabs } from "@/components/finance/FinanceTabs";
-import { PaymentMethodDistribution } from "@/components/finance/PaymentMethodDistribution";
 import { FinanceTransactionTable } from "@/components/finance/PaymentMethodTicketsTable";
 import { RefundRequestTable } from "@/components/finance/RefundRequestTable";
-import { RevenueOverviewChart } from "@/components/finance/RevenueOverviewChart";
+
+const RevenueOverviewChart = dynamic(
+  () =>
+    import("@/components/finance/RevenueOverviewChart").then(
+      (mod) => mod.RevenueOverviewChart
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-75 bg-[#EEF1F6] rounded-xl animate-pulse" />
+    ),
+  }
+);
+
+const PaymentMethodDistribution = dynamic(
+  () =>
+    import("@/components/finance/PaymentMethodDistribution").then(
+      (mod) => mod.PaymentMethodDistribution
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-90 bg-[#EEF1F6] rounded-xl animate-pulse" />
+    ),
+  }
+);
 
 export function FinanceContent() {
   const [activeTab, setActiveTab] = React.useState<

@@ -1,11 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import BestSellingCategory from "@/components/dashboard/BestSellingCategory";
 import CartMetrics from "@/components/dashboard/CartMetrics";
-import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
 import MetricCard from "@/components/dashboard/MetricCard";
 import TopProducts from "@/components/dashboard/TopProducts";
-import { RevenueOverviewChart } from "@/components/finance/RevenueOverviewChart";
 import OrderTableWrapper from "@/components/order/OrderTableWrapper";
 import {
   getDisplayDate,
@@ -16,6 +15,29 @@ import { useDashboardStore } from "@/store/useDashboardStore";
 import type { TopProductsFilter } from "@/types/DashboardTypes";
 import * as React from "react";
 // import RecentOrdersTable from "@/components/dashboard/RecentOrdersTable";
+
+const DashboardStatCard = dynamic(
+  () => import("@/components/dashboard/DashboardStatCard"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-30 bg-[#EEF1F6] rounded-lg animate-pulse" />
+    ),
+  }
+);
+
+const RevenueOverviewChart = dynamic(
+  () =>
+    import("@/components/finance/RevenueOverviewChart").then(
+      (mod) => mod.RevenueOverviewChart
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-75 bg-[#EEF1F6] rounded-xl animate-pulse" />
+    ),
+  }
+);
 
 const DashboardPage = () => {
   const {
