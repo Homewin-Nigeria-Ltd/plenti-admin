@@ -38,7 +38,7 @@ const STOCK_STATUS_DISPLAY: Record<string, string> = {
 
 function formatStockStatus(s: string) {
   const mapped = STOCK_STATUS_DISPLAY[s];
-  return mapped != null ? mapped : (s || "In Stock");
+  return mapped != null ? mapped : s || "In Stock";
 }
 
 function getStatusBadgeClass(displayStatus: string) {
@@ -96,9 +96,11 @@ export default function InventoryTableWrapper({
       setSelectedWarehouse(String(warehouseId));
     }
   }, [warehouseId]);
-  const [itemToRestock, setItemToRestock] = React.useState<InventoryItemApi | null>(null);
+  const [itemToRestock, setItemToRestock] =
+    React.useState<InventoryItemApi | null>(null);
   const [isRestockModalOpen, setIsRestockModalOpen] = React.useState(false);
-  const [itemToDelete, setItemToDelete] = React.useState<InventoryItemApi | null>(null);
+  const [itemToDelete, setItemToDelete] =
+    React.useState<InventoryItemApi | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = React.useState(false);
   const deleteProduct = useProductStore((s) => s.deleteProduct);
@@ -108,14 +110,16 @@ export default function InventoryTableWrapper({
       toast.error(error);
       clearError();
     }
-  }, [error, clearError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   React.useEffect(() => {
     let cancelled = false;
     const searchTerm =
       typeof debouncedSearch === "string" ? debouncedSearch.trim() : "";
     const warehouseIdToUse =
-      warehouseId || (selectedWarehouse !== "all" ? Number(selectedWarehouse) : undefined);
+      warehouseId ||
+      (selectedWarehouse !== "all" ? Number(selectedWarehouse) : undefined);
     (async () => {
       try {
         await fetchInventory({
@@ -174,20 +178,14 @@ export default function InventoryTableWrapper({
               {item.stock}
             </span>
           ),
-          expiryDate: (
-            <span className="text-neutral-700 text-sm">N/A</span>
-          ),
+          expiryDate: <span className="text-neutral-700 text-sm">N/A</span>,
           status: (
             <span className={`badge ${getStatusBadgeClass(statusDisplay)}`}>
               {statusDisplay}
             </span>
           ),
-          batch: (
-            <span className="text-neutral-700 text-sm">—</span>
-          ),
-          supplier: (
-            <span className="text-neutral-700 text-sm">—</span>
-          ),
+          batch: <span className="text-neutral-700 text-sm">—</span>,
+          supplier: <span className="text-neutral-700 text-sm">—</span>,
           actions: (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -228,7 +226,7 @@ export default function InventoryTableWrapper({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 justify-between">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:flex-1 sm:max-w-md">
-          <div className="border border-neutral-300 rounded-[8px] h-[53px] flex items-center gap-2 p-2 px-4 w-full sm:max-w-[240px]">
+          <div className="border border-neutral-300 rounded-xl h-13.25 flex items-center gap-2 p-2 px-4 w-full sm:max-w-60">
             <Search className="size-5 text-neutral-500 shrink-0" />
             <Input
               className="w-full placeholder:text-primary-700 border-0 outline-none focus-visible:ring-0 shadow-none h-auto p-0 bg-transparent min-w-0"
@@ -242,7 +240,7 @@ export default function InventoryTableWrapper({
               value={selectedWarehouse}
               onValueChange={setSelectedWarehouse}
             >
-              <SelectTrigger className="form-control flex-1 sm:max-w-[200px]">
+              <SelectTrigger className="form-control flex-1 sm:max-w-50">
                 <SelectValue placeholder="All Warehouse" />
               </SelectTrigger>
               <SelectContent>
@@ -286,7 +284,10 @@ export default function InventoryTableWrapper({
             total={totalItems}
             onPageChange={(nextPage) => {
               const warehouseIdToUse =
-                warehouseId || (selectedWarehouse !== "all" ? Number(selectedWarehouse) : undefined);
+                warehouseId ||
+                (selectedWarehouse !== "all"
+                  ? Number(selectedWarehouse)
+                  : undefined);
               fetchInventory({
                 page: nextPage,
                 search: debouncedSearch,
@@ -295,7 +296,7 @@ export default function InventoryTableWrapper({
             }}
           />
         ) : !hasRequested || loading ? (
-          <div className="min-w-[720px]">
+          <div className="min-w-180">
             <div className="grid grid-cols-7 gap-4 px-4 py-3 border-b border-neutral-100">
               {Array.from({ length: 7 }).map((_, i) => (
                 <Skeleton key={i} className="h-4 w-24" />
@@ -347,10 +348,13 @@ export default function InventoryTableWrapper({
         onSuccess={() => {
           fetchInventory({
             page: currentPage,
-            search: typeof debouncedSearch === "string" ? debouncedSearch.trim() : "",
+            search:
+              typeof debouncedSearch === "string" ? debouncedSearch.trim() : "",
             warehouse_id:
               warehouseId ||
-              (selectedWarehouse !== "all" ? Number(selectedWarehouse) : undefined),
+              (selectedWarehouse !== "all"
+                ? Number(selectedWarehouse)
+                : undefined),
           });
         }}
       />
@@ -368,10 +372,15 @@ export default function InventoryTableWrapper({
             toast.success("Product deleted successfully");
             fetchInventory({
               page: currentPage,
-              search: typeof debouncedSearch === "string" ? debouncedSearch.trim() : "",
+              search:
+                typeof debouncedSearch === "string"
+                  ? debouncedSearch.trim()
+                  : "",
               warehouse_id:
                 warehouseId ||
-                (selectedWarehouse !== "all" ? Number(selectedWarehouse) : undefined),
+                (selectedWarehouse !== "all"
+                  ? Number(selectedWarehouse)
+                  : undefined),
             });
           } else {
             toast.error("Failed to delete product");
@@ -386,7 +395,10 @@ export default function InventoryTableWrapper({
           onSuccess={() => {
             fetchInventory({
               page: currentPage,
-              search: typeof debouncedSearch === "string" ? debouncedSearch.trim() : "",
+              search:
+                typeof debouncedSearch === "string"
+                  ? debouncedSearch.trim()
+                  : "",
               warehouse_id: Number(warehouseId),
             });
           }}

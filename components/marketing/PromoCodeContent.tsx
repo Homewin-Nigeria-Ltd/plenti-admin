@@ -42,7 +42,8 @@ export default function PromoCodeContent() {
       fetchMarketingPromoCodes(searchQuery.trim() || undefined);
     }, 300);
     return () => clearTimeout(t);
-  }, [searchQuery, fetchMarketingPromoCodes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {

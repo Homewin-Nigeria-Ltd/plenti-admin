@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   Select,
   SelectContent,
@@ -9,8 +10,17 @@ import {
 } from "@/components/ui/select";
 import Image from "next/image";
 import * as React from "react";
-import { PaymentMethodChart } from "./PaymentMethodChart";
 import { useFinanceStore } from "@/store/useFinanceStore";
+
+const PaymentMethodChart = dynamic(
+  () => import("./PaymentMethodChart").then((mod) => mod.PaymentMethodChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-[200px] h-[200px] bg-[#EEF1F6] rounded-full animate-pulse" />
+    ),
+  }
+);
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-NG", {

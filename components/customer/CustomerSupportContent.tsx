@@ -1,15 +1,31 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import TicketStatCard from "./TicketStatCard";
 // import TicketNotificationBanner from "./TicketNotificationBanner"; // commented out for now
-import TicketResolutionResponseRate from "./TicketResolutionResponseRate";
-import TicketByCategory from "./TicketByCategory";
 import MostRecentTickets from "./MostRecentTickets";
 import { CreateTicketModal } from "./CreateTicketModal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useSupportStore } from "@/store/useSupportStore";
+
+const TicketResolutionResponseRate = dynamic(
+  () => import("./TicketResolutionResponseRate"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[360px] bg-[#EEF1F6] rounded-xl animate-pulse" />
+    ),
+  }
+);
+
+const TicketByCategory = dynamic(() => import("./TicketByCategory"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[360px] bg-[#EEF1F6] rounded-xl animate-pulse" />
+  ),
+});
 
 export default function CustomerSupportContent() {
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] =
@@ -24,7 +40,8 @@ export default function CustomerSupportContent() {
 
   React.useEffect(() => {
     fetchSupportStatistics();
-  }, [fetchSupportStatistics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stats = React.useMemo(() => {
     if (!statistics) return null;

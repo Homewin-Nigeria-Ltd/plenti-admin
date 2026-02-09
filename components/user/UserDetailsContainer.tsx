@@ -1,9 +1,16 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useUserStore } from "@/store/useUserStore";
-import ViewUser from "@/components/user/ViewUser";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const ViewUser = dynamic(() => import("@/components/user/ViewUser"), {
+  ssr: false,
+  loading: () => (
+    <div className="text-sm text-neutral-500">Loading user details...</div>
+  ),
+});
 
 export default function UserDetailsContainer({ userId }: { userId: string }) {
   const id = Number(userId);

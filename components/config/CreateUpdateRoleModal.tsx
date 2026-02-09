@@ -75,9 +75,7 @@ export function CreateUpdateRoleModal({
     if (editRole) {
       setRoleName(editRole.name);
       setDescription(editRole.description ?? "");
-      setSelectedPermissionIds(
-        new Set(editRole.permissions.map((p) => p.id))
-      );
+      setSelectedPermissionIds(new Set(editRole.permissions.map((p) => p.id)));
     } else {
       setRoleName("");
       setDescription("");
@@ -183,7 +181,7 @@ export function CreateUpdateRoleModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
-        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[557px]! sm:w-[557px]! sm:max-w-[557px]!"
+        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-139.25! sm:w-139.25! sm:max-w-139.25!"
         showCloseButton={false}
       >
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
@@ -199,7 +197,7 @@ export function CreateUpdateRoleModal({
             type="button"
             onClick={handleClose}
             aria-label="Close dialog"
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full"
           >
             <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
@@ -239,7 +237,7 @@ export function CreateUpdateRoleModal({
               placeholder="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="form-control w-full h-auto! min-h-[100px] resize-none"
+              className="form-control w-full h-auto! min-h-25 resize-none"
               required
             />
           </div>
@@ -249,7 +247,7 @@ export function CreateUpdateRoleModal({
               Permissions
             </h3>
             {loadingPermissions ? (
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+              <div className="space-y-4 max-h-100 overflow-y-auto pr-2">
                 {[1, 2, 3].map((moduleIdx) => (
                   <div key={moduleIdx} className="space-y-2">
                     <div className="flex items-center gap-3 py-1">
@@ -280,7 +278,7 @@ export function CreateUpdateRoleModal({
                 No permissions available
               </p>
             ) : (
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+              <div className="space-y-4 max-h-100 overflow-y-auto pr-2">
                 {moduleEntries.map(([moduleKey, perms]) => {
                   const allSelected = perms.every((p) =>
                     selectedPermissionIds.has(p.id)
@@ -363,8 +361,8 @@ export function CreateUpdateRoleModal({
                 ? "Updating…"
                 : "Creating…"
               : editRole
-                ? "Update Role"
-                : "Create Role"}
+              ? "Update Role"
+              : "Create Role"}
           </Button>
         </div>
       </DialogContent>

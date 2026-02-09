@@ -1,21 +1,43 @@
 "use client";
 
-import * as React from "react";
-import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
-import RevenueOverview from "@/components/dashboard/RevenueOverview";
-import MetricCard from "@/components/dashboard/MetricCard";
-import TopProducts from "@/components/dashboard/TopProducts";
+import dynamic from "next/dynamic";
 import BestSellingCategory from "@/components/dashboard/BestSellingCategory";
 import CartMetrics from "@/components/dashboard/CartMetrics";
+import MetricCard from "@/components/dashboard/MetricCard";
+import TopProducts from "@/components/dashboard/TopProducts";
 import OrderTableWrapper from "@/components/order/OrderTableWrapper";
-import { useDashboardStore } from "@/store/useDashboardStore";
 import {
-  mapOverviewToStatCards,
-  mapOverviewToMetricCards,
   getDisplayDate,
+  mapOverviewToMetricCards,
+  mapOverviewToStatCards,
 } from "@/lib/mappers/dashboard";
+import { useDashboardStore } from "@/store/useDashboardStore";
 import type { TopProductsFilter } from "@/types/DashboardTypes";
+import * as React from "react";
 // import RecentOrdersTable from "@/components/dashboard/RecentOrdersTable";
+
+const DashboardStatCard = dynamic(
+  () => import("@/components/dashboard/DashboardStatCard"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-30 bg-[#EEF1F6] rounded-lg animate-pulse" />
+    ),
+  }
+);
+
+const RevenueOverviewChart = dynamic(
+  () =>
+    import("@/components/finance/RevenueOverviewChart").then(
+      (mod) => mod.RevenueOverviewChart
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-75 bg-[#EEF1F6] rounded-xl animate-pulse" />
+    ),
+  }
+);
 
 const DashboardPage = () => {
   const {
@@ -38,15 +60,18 @@ const DashboardPage = () => {
 
   React.useEffect(() => {
     fetchDashboardOverview();
-  }, [fetchDashboardOverview]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   React.useEffect(() => {
     fetchTopProducts(topProductsFilter);
-  }, [fetchTopProducts, topProductsFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topProductsFilter]);
 
   React.useEffect(() => {
     fetchBestSellingCategories(bestSellingFilter);
-  }, [fetchBestSellingCategories, bestSellingFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bestSellingFilter]);
 
   const stats = React.useMemo(
     () => mapOverviewToStatCards(overview),
@@ -102,7 +127,7 @@ const DashboardPage = () => {
         ))}
       </div>
 
-      <RevenueOverview />
+      <RevenueOverviewChart />
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {metricCards?.map((m) => (

@@ -14,7 +14,8 @@ import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
 import CartMetrics from "@/components/dashboard/CartMetrics";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Calendar, MapPin, Search } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { AdminUser, UserStats } from "@/types/UserTypes";
 
 type ViewUserProps = {
@@ -102,6 +103,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 export default function ViewUser({ user, stats }: ViewUserProps) {
+  const router = useRouter();
   const [orderSearch, setOrderSearch] = React.useState("");
   const [ordersPage, setOrdersPage] = React.useState(1);
 
@@ -195,7 +197,17 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <h1 className="text-lg font-semibold text-[#101928]">Single User</h1>
+      <button
+        type="button"
+        onClick={() => router.back()}
+        className="inline-flex items-center gap-2 text-sm text-[#101928] hover:text-[#0B1E66]"
+      >
+        <ArrowLeft className="size-4" />
+        Back
+      </button>
+      <div className="flex items-center gap-3">
+        <h1 className="text-lg font-semibold text-[#101928]">Single User</h1>
+      </div>
 
       {/* Metric cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

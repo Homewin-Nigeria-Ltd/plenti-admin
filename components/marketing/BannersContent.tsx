@@ -28,7 +28,8 @@ export default function BannersContent() {
       fetchMarketingBanners(1, searchQuery.trim() || undefined);
     }, 300);
     return () => clearTimeout(t);
-  }, [searchQuery, fetchMarketingBanners]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   const columns = [
     { key: "createdDate", label: "Created Date" },

@@ -1,50 +1,59 @@
 "use client";
 
 import * as React from "react";
-import { FinanceTabs } from "@/components/finance/FinanceTabs";
+import dynamic from "next/dynamic";
 import { FinanceMetricsCard } from "@/components/finance/FinanceMetricsCard";
-import { RevenueOverviewChart } from "@/components/finance/RevenueOverviewChart";
-import { PaymentMethodDistribution } from "@/components/finance/PaymentMethodDistribution";
-import { NewRefundRequestButton } from "@/components/finance/NewRefundRequestButton";
+import { FinanceTabs } from "@/components/finance/FinanceTabs";
+import { FinanceTransactionTable } from "@/components/finance/PaymentMethodTicketsTable";
 import { RefundRequestTable } from "@/components/finance/RefundRequestTable";
-import { useFinanceStore } from "@/store/useFinanceStore";
 
-type TabKey = "overview" | "transaction" | "refund";
+const RevenueOverviewChart = dynamic(
+  () =>
+    import("@/components/finance/RevenueOverviewChart").then(
+      (mod) => mod.RevenueOverviewChart
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-75 bg-[#EEF1F6] rounded-xl animate-pulse" />
+    ),
+  }
+);
+
+const PaymentMethodDistribution = dynamic(
+  () =>
+    import("@/components/finance/PaymentMethodDistribution").then(
+      (mod) => mod.PaymentMethodDistribution
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-90 bg-[#EEF1F6] rounded-xl animate-pulse" />
+    ),
+  }
+);
 
 export function FinanceContent() {
-  const [activeTab, setActiveTab] = React.useState<TabKey>("overview");
-  const { fetchFinanceOverview } = useFinanceStore();
-
-  React.useEffect(() => {
-    if (activeTab === "overview") {
-      fetchFinanceOverview();
-    }
-  }, [activeTab, fetchFinanceOverview]);
+  const [activeTab, setActiveTab] = React.useState<
+    "overview" | "transaction" | "refund"
+  >("overview");
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <FinanceTabs value={activeTab} onValueChange={setActiveTab} />
-        {activeTab === "refund" && <NewRefundRequestButton />}
-      </div>
+      <FinanceTabs value={activeTab} onValueChange={setActiveTab} />
 
       {activeTab === "overview" && (
-        <>
+        <div className="space-y-6">
           <FinanceMetricsCard />
           <RevenueOverviewChart />
           <PaymentMethodDistribution />
-        </>
-      )}
-
-      {activeTab === "refund" && <RefundRequestTable />}
-
-      {activeTab === "transaction" && (
-        <div className="bg-white rounded-[12px] border border-[#EEF1F6] p-6">
-          <p className="text-[#667085] text-sm">
-            Transaction content coming soon
-          </p>
+          <FinanceTransactionTable />
         </div>
       )}
+
+      {activeTab === "transaction" && <FinanceTransactionTable />}
+
+      {activeTab === "refund" && <RefundRequestTable />}
     </div>
   );
 }

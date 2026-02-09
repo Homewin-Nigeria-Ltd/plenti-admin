@@ -68,7 +68,8 @@ export default function MostRecentTickets() {
 
   React.useEffect(() => {
     fetchTickets(1, 10);
-  }, [fetchTickets]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const columns = [
     { key: "createdDate", label: "Created Date" },

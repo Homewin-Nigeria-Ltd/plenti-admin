@@ -1,10 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  mockRecentStock,
-  mockStockLevel,
-} from "@/data/inventory";
+import { mockRecentStock, mockStockLevel } from "@/data/inventory";
 import WarehouseCard from "./WarehouseCard";
 import StockLevelCard from "./StockLevelCard";
 import RecentlyStockCard from "./RecentlyStockCard";
@@ -66,8 +63,7 @@ export default function InventoryManagement() {
     loadingWarehouses,
     fetchWarehouses,
   } = useInventoryStore();
-  const { stockLevel, recentStocks, loadingStatistics } =
-    useStatisticsMapped();
+  const { stockLevel, recentStocks, loadingStatistics } = useStatisticsMapped();
 
   const [hasFetchedWarehouses, setHasFetchedWarehouses] = React.useState(false);
 
@@ -113,7 +109,7 @@ export default function InventoryManagement() {
         <div className="overflow-x-auto">
           <div className="flex gap-4" style={{ width: "500px" }}>
             {Array.from({ length: 4 }).map((_, idx) => (
-              <div key={idx} className="min-w-[280px] sm:min-w-[300px] shrink-0">
+              <div key={idx} className="min-w-70 sm:min-w-75 shrink-0">
                 <div className="bg-white rounded-xl border border-[#EAECF0] p-4 sm:p-5 shadow-xs">
                   <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
                     <Skeleton className="h-4 w-32" />
@@ -135,7 +131,7 @@ export default function InventoryManagement() {
         <div className="overflow-x-auto">
           <div className="flex gap-4" style={{ width: "500px" }}>
             {mappedWarehouses.map((warehouse) => (
-              <div key={warehouse.id} className="min-w-[280px] sm:min-w-[300px] shrink-0">
+              <div key={warehouse.id} className="min-w-70 sm:min-w-75 shrink-0">
                 <WarehouseCard warehouse={warehouse} />
               </div>
             ))}
