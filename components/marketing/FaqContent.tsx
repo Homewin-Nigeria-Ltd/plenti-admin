@@ -47,7 +47,8 @@ export default function FaqContent() {
       fetchFaqs(searchQuery.trim() || undefined);
     }, 300);
     return () => clearTimeout(t);
-  }, [searchQuery, fetchFaqs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   const handleRowClick = (
     row: Record<string, React.ReactNode> & { id: number }

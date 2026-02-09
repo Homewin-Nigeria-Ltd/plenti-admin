@@ -24,7 +24,8 @@ export default function CustomerSupportContent() {
 
   React.useEffect(() => {
     fetchSupportStatistics();
-  }, [fetchSupportStatistics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stats = React.useMemo(() => {
     if (!statistics) return null;

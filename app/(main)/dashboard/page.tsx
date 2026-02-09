@@ -1,20 +1,20 @@
 "use client";
 
-import * as React from "react";
-import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
-import RevenueOverview from "@/components/dashboard/RevenueOverview";
-import MetricCard from "@/components/dashboard/MetricCard";
-import TopProducts from "@/components/dashboard/TopProducts";
 import BestSellingCategory from "@/components/dashboard/BestSellingCategory";
 import CartMetrics from "@/components/dashboard/CartMetrics";
+import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
+import MetricCard from "@/components/dashboard/MetricCard";
+import TopProducts from "@/components/dashboard/TopProducts";
+import { RevenueOverviewChart } from "@/components/finance/RevenueOverviewChart";
 import OrderTableWrapper from "@/components/order/OrderTableWrapper";
-import { useDashboardStore } from "@/store/useDashboardStore";
 import {
-  mapOverviewToStatCards,
-  mapOverviewToMetricCards,
   getDisplayDate,
+  mapOverviewToMetricCards,
+  mapOverviewToStatCards,
 } from "@/lib/mappers/dashboard";
+import { useDashboardStore } from "@/store/useDashboardStore";
 import type { TopProductsFilter } from "@/types/DashboardTypes";
+import * as React from "react";
 // import RecentOrdersTable from "@/components/dashboard/RecentOrdersTable";
 
 const DashboardPage = () => {
@@ -38,15 +38,18 @@ const DashboardPage = () => {
 
   React.useEffect(() => {
     fetchDashboardOverview();
-  }, [fetchDashboardOverview]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   React.useEffect(() => {
     fetchTopProducts(topProductsFilter);
-  }, [fetchTopProducts, topProductsFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topProductsFilter]);
 
   React.useEffect(() => {
     fetchBestSellingCategories(bestSellingFilter);
-  }, [fetchBestSellingCategories, bestSellingFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bestSellingFilter]);
 
   const stats = React.useMemo(
     () => mapOverviewToStatCards(overview),
@@ -102,7 +105,7 @@ const DashboardPage = () => {
         ))}
       </div>
 
-      <RevenueOverview />
+      <RevenueOverviewChart />
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {metricCards?.map((m) => (

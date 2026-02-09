@@ -37,7 +37,7 @@ const STOCK_STATUS_DISPLAY: Record<string, string> = {
 
 function formatStockStatus(s: string) {
   const mapped = STOCK_STATUS_DISPLAY[s];
-  return mapped != null ? mapped : (s || "In Stock");
+  return mapped != null ? mapped : s || "In Stock";
 }
 
 function getStatusBadgeClass(displayStatus: string) {
@@ -79,9 +79,11 @@ export default function InventoryTableWrapper({
   const [debouncedSearch] = useDebounce(searchQuery, 400);
   const [selectedWarehouse, setSelectedWarehouse] = React.useState("all");
   const [hasRequested, setHasRequested] = React.useState(false);
-  const [selectedItem, setSelectedItem] = React.useState<InventoryItemApi | null>(null);
+  const [selectedItem, setSelectedItem] =
+    React.useState<InventoryItemApi | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
-  const [itemToDelete, setItemToDelete] = React.useState<InventoryItemApi | null>(null);
+  const [itemToDelete, setItemToDelete] =
+    React.useState<InventoryItemApi | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -89,7 +91,8 @@ export default function InventoryTableWrapper({
       toast.error(error);
       clearError();
     }
-  }, [error, clearError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -105,7 +108,8 @@ export default function InventoryTableWrapper({
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, fetchInventory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
   const columns = [
     { key: "product", label: "Product" },
@@ -145,28 +149,20 @@ export default function InventoryTableWrapper({
               </div>
             </div>
           ),
-          warehouse: (
-            <span className="text-neutral-700 text-sm">—</span>
-          ),
+          warehouse: <span className="text-neutral-700 text-sm">—</span>,
           quantity: (
             <span className="text-neutral-700 text-sm font-medium">
               {item.stock}
             </span>
           ),
-          expiryDate: (
-            <span className="text-neutral-700 text-sm">N/A</span>
-          ),
+          expiryDate: <span className="text-neutral-700 text-sm">N/A</span>,
           status: (
             <span className={`badge ${getStatusBadgeClass(statusDisplay)}`}>
               {statusDisplay}
             </span>
           ),
-          batch: (
-            <span className="text-neutral-700 text-sm">—</span>
-          ),
-          supplier: (
-            <span className="text-neutral-700 text-sm">—</span>
-          ),
+          batch: <span className="text-neutral-700 text-sm">—</span>,
+          supplier: <span className="text-neutral-700 text-sm">—</span>,
           actions: (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -312,7 +308,8 @@ export default function InventoryTableWrapper({
         }}
         item={itemToDelete}
         onConfirm={() => {
-          if (itemToDelete) console.log("Delete inventory item:", itemToDelete.id);
+          if (itemToDelete)
+            console.log("Delete inventory item:", itemToDelete.id);
         }}
       />
     </div>

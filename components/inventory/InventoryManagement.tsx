@@ -74,7 +74,8 @@ export default function InventoryManagement() {
 
   React.useEffect(() => {
     fetchInventoryStatistics();
-  }, [fetchInventoryStatistics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-6">

@@ -23,7 +23,7 @@ export function FinanceMetricsCard() {
   const summary = overview?.summary;
 
   return (
-    <div className="rounded-[12px] bg-[#0B1E66] text-white p-6">
+    <div className="rounded-2xl bg-[#0B1E66] text-white p-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap">
         <div className="space-y-2 pr-2">
           <p className="text-white text-[14px]">Total Revenue</p>

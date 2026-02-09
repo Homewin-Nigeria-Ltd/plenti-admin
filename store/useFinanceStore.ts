@@ -70,14 +70,14 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     }
   },
 
-  fetchFinanceOverview: async (page = 1) => {
+  fetchFinanceOverview: async (filter: "month" | "week" | "year" = "month") => {
     set({ loadingOverview: true, overviewError: null });
     try {
       const { data } = await api.get<{
         status?: string;
         data?: Record<string, unknown>;
-      }>("/api/admin/finance/overview", {
-        params: { page },
+      }>("/api/admin/revenue-stats", {
+        params: { filter },
       });
 
       if (data?.status !== "success" || !data?.data) {
@@ -86,42 +86,27 @@ export const useFinanceStore = create<FinanceState>((set) => ({
       }
 
       const apiData = data.data;
-      const chartsData = (apiData.charts || {}) as Record<string, unknown>;
-      const transactions = (apiData.transactions || {}) as Record<
-        string,
-        unknown
-      >;
+      const chartData = Array.isArray(apiData.chart_data)
+        ? apiData.chart_data
+        : [];
 
       const overview: FinanceOverview = {
-        summary: (apiData.summary || {}) as FinanceOverview["summary"],
-        charts: {
-          revenue_trend: Array.isArray(chartsData.revenue_trend)
-            ? (chartsData.revenue_trend as FinanceOverview["charts"]["revenue_trend"])
-            : [],
-          payment_distribution: Array.isArray(chartsData.payment_distribution)
-            ? (chartsData.payment_distribution as FinanceOverview["charts"]["payment_distribution"])
-            : [],
+        summary: {
+          total_revenue:
+            typeof apiData.total_revenue === "number"
+              ? apiData.total_revenue.toString()
+              : "0",
+          pending_refunds: 0,
+          total_transactions: 0,
+          average_order_value: 0,
         },
-        transactions: Array.isArray(transactions.data)
-          ? (transactions.data as FinanceOverview["transactions"])
-          : [],
-        transactionPagination:
-          transactions && isRecord(transactions)
-            ? ({
-                current_page: transactions.current_page,
-                first_page_url: transactions.first_page_url,
-                from: transactions.from,
-                last_page: transactions.last_page,
-                last_page_url: transactions.last_page_url,
-                links: transactions.links,
-                next_page_url: transactions.next_page_url,
-                path: transactions.path,
-                per_page: transactions.per_page,
-                prev_page_url: transactions.prev_page_url,
-                to: transactions.to,
-                total: transactions.total,
-              } as TransactionPagination)
-            : null,
+        charts: {
+          revenue_trend:
+            (chartData as FinanceOverview["charts"]["revenue_trend"]) || [],
+          payment_distribution: [],
+        },
+        transactions: [],
+        transactionPagination: null,
       };
 
       set({ overview });

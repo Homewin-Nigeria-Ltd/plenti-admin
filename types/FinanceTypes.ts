@@ -48,8 +48,8 @@ export type FinanceSummary = {
 
 /** Revenue trend data point */
 export type RevenueTrend = {
-  total: string;
-  month: string;
+  label: string;
+  value: number;
 };
 
 /** Payment method distribution */
@@ -128,5 +128,7 @@ export type FinanceState = {
   overviewError: string | null;
 
   fetchRefunds: (page?: number, pageSize?: number) => Promise<boolean>;
-  fetchFinanceOverview: (page?: number) => Promise<boolean>;
+  fetchFinanceOverview: (
+    filter?: "month" | "week" | "year"
+  ) => Promise<boolean>;
 };
