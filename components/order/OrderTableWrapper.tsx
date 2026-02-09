@@ -1,14 +1,21 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import DataTable from "@/components/common/DataTable";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { OrderDetailsModal } from "./OrderDetailsModal";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useDebounce } from "use-debounce";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const OrderDetailsModal = dynamic(
+  () => import("./OrderDetailsModal").then((mod) => mod.OrderDetailsModal),
+  {
+    ssr: false,
+  }
+);
 
 function formatOrderDate(iso: string) {
   try {
@@ -45,7 +52,8 @@ export default function OrderTableWrapper() {
 
   React.useEffect(() => {
     let cancelled = false;
-    const searchTerm = typeof debouncedSearch === "string" ? debouncedSearch.trim() : "";
+    const searchTerm =
+      typeof debouncedSearch === "string" ? debouncedSearch.trim() : "";
     (async () => {
       await fetchOrders({ page: 1, search: searchTerm });
       if (!cancelled) setHasRequested(true);
@@ -100,7 +108,10 @@ export default function OrderTableWrapper() {
   const tableRows = React.useMemo(
     () =>
       orders.map((order) => {
-        const qty = (order.items ?? []).reduce((acc, i) => acc + (i.quantity ?? 0), 0);
+        const qty = (order.items ?? []).reduce(
+          (acc, i) => acc + (i.quantity ?? 0),
+          0
+        );
         const name = order.user?.name ?? "—";
         return {
           date: (

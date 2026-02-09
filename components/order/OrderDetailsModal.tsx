@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   Dialog,
   DialogContent,
@@ -16,14 +17,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AssignRiderModal } from "./AssignRiderModal";
 import * as React from "react";
 import { toast } from "sonner";
-import { DeleteOrderConfirm } from "./DeleteOrderConfirm";
 import { useOrderStore } from "@/store/useOrderStore";
 import { ORDERS_API } from "@/data/orders";
 import Image from "next/image";
 import api from "@/lib/api";
+
+const AssignRiderModal = dynamic(
+  () => import("./AssignRiderModal").then((mod) => mod.AssignRiderModal),
+  {
+    ssr: false,
+  }
+);
+
+const DeleteOrderConfirm = dynamic(
+  () => import("./DeleteOrderConfirm").then((mod) => mod.DeleteOrderConfirm),
+  {
+    ssr: false,
+  }
+);
 
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat("en-NG", {
@@ -141,21 +154,21 @@ export function OrderDetailsModal({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="border-0 rounded-[12px] p-2 min-w-[220px]">
-                  <DropdownMenuItem
-                    className="text-[#0B1E66] text-[14px] font-medium place-self-center"
-                    onSelect={markAsInTransit}
-                    disabled={isMarkingInTransit}
-                  >
-                    {isMarkingInTransit ? "Marking..." : "Mark As In Transit"}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-[#667085] text-[14px] place-self-center"
-                    onSelect={issueRefund}
-                    disabled={isIssuingRefund}
-                  >
-                    {isIssuingRefund ? "Issuing..." : "Issue Refund"}
-                  </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-[#0B1E66] text-[14px] font-medium place-self-center"
+                      onSelect={markAsInTransit}
+                      disabled={isMarkingInTransit}
+                    >
+                      {isMarkingInTransit ? "Marking..." : "Mark As In Transit"}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-[#667085] text-[14px] place-self-center"
+                      onSelect={issueRefund}
+                      disabled={isIssuingRefund}
+                    >
+                      {isIssuingRefund ? "Issuing..." : "Issue Refund"}
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
 
                     <DropdownMenuItem

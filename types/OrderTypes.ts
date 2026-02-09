@@ -14,7 +14,12 @@ export type OrderItem = {
   quantity: number;
   price: string;
   product_name: string;
-  product?: { id: number; name: string; image_url?: string; description?: string };
+  product?: {
+    id: number;
+    name: string;
+    image_url?: string;
+    description?: string;
+  };
 };
 
 export type OrderUser = {
@@ -68,17 +73,24 @@ export type OrdersListResponse = {
 export type OrderState = {
   orders: Order[];
   singleOrder: Order | null;
+  orderStats: OrderStatistics | null;
   loading: boolean;
   loadingSingle: boolean;
+  loadingStats: boolean;
   error: string | null;
+  statsError: string | null;
   currentPage: number;
   lastPage: number;
   perPage: number;
   totalItems: number;
   lastQuery: { page: number; search: string };
 
-  fetchOrders: (params?: { page?: number; search?: string }) => Promise<boolean>;
+  fetchOrders: (params?: {
+    page?: number;
+    search?: string;
+  }) => Promise<boolean>;
   fetchSingleOrders: (id: number) => Promise<boolean>;
+  fetchOrderStats: () => Promise<boolean>;
   setSingleOrder: () => void;
 };
 
