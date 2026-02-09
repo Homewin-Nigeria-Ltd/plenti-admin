@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import type { Warehouse } from "@/types/InventoryTypes";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +10,7 @@ type WarehouseCardProps = {
 };
 
 export default function WarehouseCard({ warehouse }: WarehouseCardProps) {
+  const router = useRouter();
   const getFillBadgeClass = (percentage: number) => {
     if (percentage >= 70) {
       return "bg-primary text-white";
@@ -21,8 +23,15 @@ export default function WarehouseCard({ warehouse }: WarehouseCardProps) {
 
   const showFillBadge = warehouse.product_count == null;
 
+  const handleClick = () => {
+    router.push(`/inventory/warehouse/${warehouse.id}`);
+  };
+
   return (
-    <div className="bg-white rounded-xl border border-[#EAECF0] p-4 sm:p-5 shadow-xs">
+    <div
+      onClick={handleClick}
+      className="bg-white rounded-xl border border-[#EAECF0] p-4 sm:p-5 shadow-xs cursor-pointer hover:shadow-md transition-shadow"
+    >
       <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
         <h3 className="text-primary-700 font-semibold text-xs sm:text-sm truncate flex-1">
           {warehouse.name}

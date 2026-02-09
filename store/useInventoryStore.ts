@@ -5,6 +5,8 @@ import type {
   InventoryListResponse,
   InventoryState,
   InventoryStatistics,
+  WarehouseApi,
+  WarehousesResponse,
 } from "@/types/InventoryTypes";
 import { create } from "zustand";
 
@@ -23,6 +25,10 @@ export type InventoryStoreState = InventoryState & {
   loadingStatistics: boolean;
   statisticsError: string | null;
   fetchInventoryStatistics: () => Promise<boolean>;
+  warehouses: WarehouseApi[];
+  loadingWarehouses: boolean;
+  warehousesError: string | null;
+  fetchWarehouses: () => Promise<boolean>;
 };
 
 export const useInventoryStore = create<InventoryStoreState>((set) => ({
@@ -37,10 +43,14 @@ export const useInventoryStore = create<InventoryStoreState>((set) => ({
   statistics: null,
   loadingStatistics: false,
   statisticsError: null,
+  warehouses: [],
+  loadingWarehouses: false,
+  warehousesError: null,
 
   fetchInventory: async (params) => {
     const page = params?.page ?? 1;
     const search = params?.search?.trim() ?? "";
+    const warehouseId = params?.warehouse_id;
     set({ loading: true, error: null, lastQuery: { page, search } });
 
     try {
@@ -49,6 +59,9 @@ export const useInventoryStore = create<InventoryStoreState>((set) => ({
         search,
         per_page: PAGE_SIZE,
       };
+      if (warehouseId != null) {
+        query.warehouse_id = warehouseId;
+      }
       const { data } = await api.get<InventoryListResponse>(
         INVENTORY_API.getInventory,
         { params: query }
@@ -107,6 +120,35 @@ export const useInventoryStore = create<InventoryStoreState>((set) => ({
       return false;
     } finally {
       set({ loadingStatistics: false });
+    }
+  },
+
+  fetchWarehouses: async () => {
+    set({ loadingWarehouses: true, warehousesError: null });
+    try {
+      const { data } = await api.get<WarehousesResponse>(
+        INVENTORY_API.getWarehouses
+      );
+
+      if (data?.status === "success" && Array.isArray(data?.data)) {
+        set({ warehouses: data.data });
+        return true;
+      } else {
+        const message =
+          typeof data?.message === "string"
+            ? data.message
+            : "Failed to load warehouses";
+        set({ warehousesError: message });
+        return false;
+      }
+    } catch (err) {
+      const message =
+        getApiErrorMessage(err) ?? "Failed to load warehouses";
+      console.error("Error fetching warehouses =>", err);
+      set({ warehousesError: message, warehouses: [] });
+      return false;
+    } finally {
+      set({ loadingWarehouses: false });
     }
   },
 }));
