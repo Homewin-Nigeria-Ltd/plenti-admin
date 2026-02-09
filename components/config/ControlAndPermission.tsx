@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useRolesStore } from "@/store/useRolesStore";
 import type { Role } from "@/types/RoleTypes";
-import { CreateRoleModal, type Permission } from "./CreateRoleModal";
+import { CreateUpdateRoleModal, type Permission } from "./CreateUpdateRoleModal";
 import { RolePreviewModal } from "./RolePreviewModal";
 
 type RoleData = {
@@ -32,6 +32,7 @@ export default function ControlAndPermission() {
     null
   );
   const [selectedRole, setSelectedRole] = React.useState<Role | null>(null);
+  const [editingRole, setEditingRole] = React.useState<Role | null>(null);
 
   React.useEffect(() => {
     fetchRoles();
@@ -40,6 +41,7 @@ export default function ControlAndPermission() {
   const handleRoleCreated = (roleData: RoleData) => {
     setPreviewRoleData(roleData);
     setSelectedRole(null);
+    setEditingRole(null);
     setIsPreviewModalOpen(true);
   };
 
@@ -59,11 +61,27 @@ export default function ControlAndPermission() {
     setSelectedRole(null);
   };
 
+  const openCreateModal = () => {
+    setEditingRole(null);
+    setIsCreateModalOpen(true);
+  };
+
+  const openEditModal = (role: Role) => {
+    closePreview();
+    setEditingRole(role);
+    setIsCreateModalOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    setIsCreateModalOpen(false);
+    setEditingRole(null);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-end">
         <Button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={openCreateModal}
           className="btn btn-primary w-full sm:w-auto"
         >
           <Plus className="size-4 mr-2" />
@@ -121,10 +139,11 @@ export default function ControlAndPermission() {
         </div>
       )}
 
-      <CreateRoleModal
+      <CreateUpdateRoleModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={closeCreateModal}
         onSuccess={handleRoleCreated}
+        editRole={editingRole}
       />
 
       {previewRoleData && (
@@ -135,10 +154,7 @@ export default function ControlAndPermission() {
           description={previewRoleData.description}
           permissions={previewRoleData.permissions}
           userCount={0}
-          onEdit={() => {
-            closePreview();
-            setIsCreateModalOpen(true);
-          }}
+          onEdit={() => selectedRole && openEditModal(selectedRole)}
         />
       )}
     </div>

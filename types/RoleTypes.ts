@@ -34,6 +34,20 @@ export type Role = {
   permissions: RolePermission[];
 };
 
+/** Body for POST {{base_url}}/api/admin/roles */
+export type CreateRoleRequest = {
+  name: string;
+  description: string;
+  permissions: number[];
+};
+
+/** Body for PUT {{base_url}}/api/admin/roles/:id */
+export type UpdateRoleRequest = {
+  name: string;
+  description: string;
+  permissions: number[];
+};
+
 export type RolesState = {
   roles: Role[];
   loadingRoles: boolean;

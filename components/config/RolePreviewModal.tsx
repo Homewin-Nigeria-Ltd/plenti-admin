@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { User, X } from "lucide-react";
-import type { Permission } from "./CreateRoleModal";
+import type { Permission } from "./CreateUpdateRoleModal";
 
 type RolePreviewModalProps = {
   isOpen: boolean;
@@ -92,11 +92,13 @@ export function RolePreviewModal({
                 User with this role ({userCount})
               </span>
             </div>
+            {/* View User commented out
             <button
               onClick={handleViewUsers}
               className="text-xs sm:text-sm text-primary hover:underline font-medium">
               View User
             </button>
+            */}
           </div>
         </div>
 
