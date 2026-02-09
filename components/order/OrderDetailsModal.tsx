@@ -23,6 +23,7 @@ import { DeleteOrderConfirm } from "./DeleteOrderConfirm";
 import { useOrderStore } from "@/store/useOrderStore";
 import { ORDERS_API } from "@/data/orders";
 import Image from "next/image";
+import api from "@/lib/api";
 
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat("en-NG", {
@@ -50,15 +51,57 @@ export function OrderDetailsModal({
   const [assignOpen, setAssignOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isMarkingInTransit, setIsMarkingInTransit] = React.useState(false);
+  const [isIssuingRefund, setIsIssuingRefund] = React.useState(false);
 
   React.useEffect(() => {
     if (!selectedId) return;
     fetchSingleOrders(selectedId);
   }, [fetchSingleOrders, selectedId]);
 
-  function markAsInTransit() {
-    toast.info("Order has been updated to in transit");
-  }
+  const markAsInTransit = async () => {
+    if (!selectedId) return;
+    setIsMarkingInTransit(true);
+    try {
+      const { data } = await api.post<{ status?: string; message?: string }>(
+        `${ORDERS_API.markInTransit}/${selectedId}/mark-in-transit`
+      );
+
+      if (data?.status === "success") {
+        toast.success("Order marked as in transit");
+        await fetchSingleOrders(selectedId);
+      } else {
+        toast.error(data?.message || "Failed to mark order as in transit");
+      }
+    } catch (error) {
+      console.error("Error marking order as in transit =>", error);
+      toast.error("Failed to mark order as in transit");
+    } finally {
+      setIsMarkingInTransit(false);
+    }
+  };
+
+  const issueRefund = async () => {
+    if (!selectedId) return;
+    setIsIssuingRefund(true);
+    try {
+      const { data } = await api.post<{ status?: string; message?: string }>(
+        `${ORDERS_API.issueRefund}/${selectedId}/issue-refund`
+      );
+
+      if (data?.status === "success") {
+        toast.success("Refund issued successfully");
+        await fetchSingleOrders(selectedId);
+      } else {
+        toast.error(data?.message || "Failed to issue refund");
+      }
+    } catch (error) {
+      console.error("Error issuing refund =>", error);
+      toast.error("Failed to issue refund");
+    } finally {
+      setIsIssuingRefund(false);
+    }
+  };
 
   const items = singleOrder?.items ?? [];
 
@@ -98,16 +141,21 @@ export function OrderDetailsModal({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="border-0 rounded-[12px] p-2 min-w-[220px]">
-                    <DropdownMenuItem
-                      className="text-[#0B1E66] text-[14px] font-medium place-self-center"
-                      onSelect={markAsInTransit}
-                    >
-                      Mark As In Transit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-[#667085] text-[14px] place-self-center">
-                      Issue Refund
-                    </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-[#0B1E66] text-[14px] font-medium place-self-center"
+                    onSelect={markAsInTransit}
+                    disabled={isMarkingInTransit}
+                  >
+                    {isMarkingInTransit ? "Marking..." : "Mark As In Transit"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-[#667085] text-[14px] place-self-center"
+                    onSelect={issueRefund}
+                    disabled={isIssuingRefund}
+                  >
+                    {isIssuingRefund ? "Issuing..." : "Issue Refund"}
+                  </DropdownMenuItem>
                     <DropdownMenuSeparator />
 
                     <DropdownMenuItem

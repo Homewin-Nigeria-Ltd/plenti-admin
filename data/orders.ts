@@ -3,6 +3,10 @@ export const ORDERS_API = {
   getOrder: "/api/admin/orders",
   deleteOrder: "/api/admin/orders",
   getStatistics: "/api/admin/orders/statistics",
+  markInTransit: "/api/admin/orders",
+  issueRefund: "/api/admin/orders",
+  assignRider: "/api/admin/orders",
+  getRiders: "/api/admin/riders",
 } as const;
 
 /*

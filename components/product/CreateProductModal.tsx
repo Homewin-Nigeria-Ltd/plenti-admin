@@ -22,6 +22,7 @@ import {
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useProductStore } from "@/store/useProductStore";
+import { useInventoryStore } from "@/store/useInventoryStore";
 import { useFilePreview } from "@/lib/useFilePreview";
 import { uploadImage } from "@/lib/upload";
 
@@ -41,6 +42,7 @@ export function CreateProductModal({
     createProduct,
     creatingProduct,
   } = useProductStore();
+  const { warehouses, fetchWarehouses } = useInventoryStore();
 
   const [productName, setProductName] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -48,6 +50,7 @@ export function CreateProductModal({
   const [subCategoryId, setSubCategoryId] = React.useState<number | null>(null);
   const [amount, setAmount] = React.useState("");
   const [initialStock, setInitialStock] = React.useState("");
+  const [selectedWarehouseId, setSelectedWarehouseId] = React.useState<number | null>(null);
   const [minBulkQuantity, setMinBulkQuantity] = React.useState("");
   const [bulkPrice, setBulkPrice] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -59,7 +62,8 @@ export function CreateProductModal({
   React.useEffect(() => {
     if (!isOpen) return;
     fetchCategories();
-  }, [isOpen, fetchCategories]);
+    fetchWarehouses();
+  }, [isOpen, fetchCategories, fetchWarehouses]);
 
   const handleFileSelect = (file: File) => {
     if (file.type.startsWith("image/")) {
@@ -126,6 +130,11 @@ export function CreateProductModal({
       return;
     }
 
+    if (!selectedWarehouseId) {
+      toast.error("Please select a warehouse");
+      return;
+    }
+
     setUploadingImage(true);
     const uploadResult = await uploadImage(selectedFile, "product");
     setUploadingImage(false);
@@ -145,6 +154,12 @@ export function CreateProductModal({
       image_urls: [uploadResult.url],
       min_bulk_quantity: minBulk,
       bulk_price: bulk,
+      warehouses: [
+        {
+          warehouse_id: selectedWarehouseId,
+          quantity: stock,
+        },
+      ],
     });
 
     if (!ok) {
@@ -159,6 +174,7 @@ export function CreateProductModal({
     setSubCategoryId(null);
     setAmount("");
     setInitialStock("");
+    setSelectedWarehouseId(null);
     setMinBulkQuantity("");
     setBulkPrice("");
     setSelectedFile(null);
@@ -309,6 +325,28 @@ export function CreateProductModal({
                 className="form-control"
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="warehouse">Warehouse</Label>
+              <Select
+                value={selectedWarehouseId == null ? "" : String(selectedWarehouseId)}
+                onValueChange={(value) => {
+                  const parsed = Number(value);
+                  setSelectedWarehouseId(Number.isFinite(parsed) ? parsed : null);
+                }}
+              >
+                <SelectTrigger id="warehouse" className="form-control w-full!">
+                  <SelectValue placeholder="Select Warehouse" />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses.map((w) => (
+                    <SelectItem key={w.id} value={String(w.id)}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

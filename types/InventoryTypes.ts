@@ -51,6 +51,12 @@ export type StockLevel = {
   lowStockItems: number;
 };
 
+export type InventoryItemWarehouse = {
+  id: number;
+  name: string;
+  quantity: number;
+};
+
 export type InventoryItemApi = {
   id: number;
   name: string;
@@ -61,6 +67,7 @@ export type InventoryItemApi = {
   stock_status: string;
   inventory_value: string;
   category?: { id: number; name: string; slug: string } | null;
+  warehouses_list?: InventoryItemWarehouse[];
 };
 
 export type InventoryListResponse = {
@@ -89,6 +96,7 @@ export type InventoryState = {
   fetchInventory: (params?: {
     page?: number;
     search?: string;
+    warehouse_id?: number | string;
   }) => Promise<boolean>;
   clearError: () => void;
 };
@@ -157,4 +165,33 @@ export type InventoryStatistics = {
   low_stock_alerts: InventoryStatisticsLowStockAlert[];
   warehouse_breakdown: InventoryStatisticsWarehouse[];
   top_stock_by_value: InventoryStatisticsTopStock[];
+};
+
+export type WarehouseApi = {
+  id: number;
+  name: string;
+  manager: string;
+  location: string;
+  description: string;
+  is_active: boolean;
+  total_products: number;
+  total_units: number;
+  total_worth: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type WarehousesResponse = {
+  status: string;
+  code: number;
+  message: string;
+  data: WarehouseApi[];
+  timestamp: string;
+};
+
+export type CreateWarehouseRequest = {
+  name: string;
+  manager: string;
+  location: string;
+  description: string;
 };

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  mockWarehouses,
   mockRecentStock,
   mockStockLevel,
 } from "@/data/inventory";
@@ -11,7 +10,11 @@ import StockLevelCard from "./StockLevelCard";
 import RecentlyStockCard from "./RecentlyStockCard";
 import InventoryTableWrapper from "./InventoryTableWrapper";
 import { AddNewStockModal } from "./AddNewStockModal";
+import { AddWarehouseModal } from "./AddWarehouseModal";
 import { useInventoryStore } from "@/store/useInventoryStore";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus } from "lucide-react";
 import type {
   Warehouse,
   StockLevel,
@@ -22,19 +25,6 @@ const PLACEHOLDER_PRODUCT_IMAGE = "https://ui-avatars.com/api/?name=P&size=56";
 
 function useStatisticsMapped() {
   const { statistics, loadingStatistics } = useInventoryStore();
-
-  const warehouses: Warehouse[] = React.useMemo(() => {
-    if (!statistics?.warehouse_breakdown?.length) return mockWarehouses;
-    return statistics.warehouse_breakdown.map((w) => ({
-      id: w.warehouse_name.replace(/\s+/g, "-"),
-      name: w.warehouse_name,
-      units: Number(w.total_stock) || 0,
-      fillPercentage: 0,
-      manager: "",
-      product_count: w.product_count,
-      stock_value: w.stock_value,
-    }));
-  }, [statistics]);
 
   const stockLevel: StockLevel = React.useMemo(() => {
     if (!statistics?.stock_level_breakdown) return mockStockLevel;
@@ -63,40 +53,107 @@ function useStatisticsMapped() {
     }));
   }, [statistics]);
 
-  return { warehouses, stockLevel, recentStocks, loadingStatistics };
+  return { stockLevel, recentStocks, loadingStatistics };
 }
 
 export default function InventoryManagement() {
   const [isAddStockModalOpen, setIsAddStockModalOpen] = React.useState(false);
-  const { fetchInventoryStatistics } = useInventoryStore();
-  const { warehouses, stockLevel, recentStocks, loadingStatistics } =
+  const [isAddWarehouseModalOpen, setIsAddWarehouseModalOpen] =
+    React.useState(false);
+  const {
+    fetchInventoryStatistics,
+    warehouses,
+    loadingWarehouses,
+    fetchWarehouses,
+  } = useInventoryStore();
+  const { stockLevel, recentStocks, loadingStatistics } =
     useStatisticsMapped();
+
+  const [hasFetchedWarehouses, setHasFetchedWarehouses] = React.useState(false);
 
   React.useEffect(() => {
     fetchInventoryStatistics();
-  }, [fetchInventoryStatistics]);
+    const loadWarehouses = async () => {
+      await fetchWarehouses();
+      setHasFetchedWarehouses(true);
+    };
+    loadWarehouses();
+  }, [fetchInventoryStatistics, fetchWarehouses]);
+
+  const mappedWarehouses: Warehouse[] = React.useMemo(() => {
+    return warehouses.map((w) => ({
+      id: String(w.id),
+      name: w.name,
+      units: w.total_units,
+      fillPercentage: 0,
+      manager: w.manager,
+      product_count: w.total_products,
+      stock_value: String(w.total_worth),
+    }));
+  }, [warehouses]);
+
+  const handleWarehouseSuccess = () => {
+    fetchWarehouses();
+  };
 
   return (
     <div className="space-y-6">
-      {loadingStatistics ? (
-        <div className="bg-white rounded-xl border border-[#EAECF0] p-8 shadow-xs flex items-center justify-center min-h-[240px]">
-          <p className="text-neutral-500 text-sm">
-            Loading inventory statistics…
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {warehouses.map((warehouse) => (
-              <WarehouseCard key={warehouse.id} warehouse={warehouse} />
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-[#101928]">Warehouses</h2>
+        <Button
+          onClick={() => setIsAddWarehouseModalOpen(true)}
+          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white"
+        >
+          <Plus className="size-4 mr-2" />
+          Add Warehouse
+        </Button>
+      </div>
+
+      {loadingWarehouses || !hasFetchedWarehouses ? (
+        <div className="overflow-x-auto">
+          <div className="flex gap-4" style={{ width: "500px" }}>
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="min-w-[280px] sm:min-w-[300px] shrink-0">
+                <div className="bg-white rounded-xl border border-[#EAECF0] p-4 sm:p-5 shadow-xs">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                  <div className="mb-2 sm:mb-3">
+                    <Skeleton className="h-8 w-24 mb-1" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                  <div>
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-
-          <div className="grid grid-col-1 md:grid-cols-2 gap-4">
-            <StockLevelCard stockLevel={stockLevel} />
-            <RecentlyStockCard recentStocks={recentStocks.slice(0, 4)} />
+        </div>
+      ) : warehouses.length > 0 ? (
+        <div className="overflow-x-auto">
+          <div className="flex gap-4" style={{ width: "500px" }}>
+            {mappedWarehouses.map((warehouse) => (
+              <div key={warehouse.id} className="min-w-[280px] sm:min-w-[300px] shrink-0">
+                <WarehouseCard warehouse={warehouse} />
+              </div>
+            ))}
           </div>
-        </>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-[#EAECF0] p-8 shadow-xs">
+          <p className="text-neutral-500 text-sm text-center">
+            No warehouses found. Click &quot;Add Warehouse&quot; to create one.
+          </p>
+        </div>
+      )}
+
+      {!loadingStatistics && (
+        <div className="grid grid-col-1 md:grid-cols-2 gap-4">
+          <StockLevelCard stockLevel={stockLevel} />
+          <RecentlyStockCard recentStocks={recentStocks.slice(0, 4)} />
+        </div>
       )}
 
       <div className="space-y-4">
@@ -108,6 +165,12 @@ export default function InventoryManagement() {
       <AddNewStockModal
         isOpen={isAddStockModalOpen}
         onClose={() => setIsAddStockModalOpen(false)}
+      />
+
+      <AddWarehouseModal
+        isOpen={isAddWarehouseModalOpen}
+        onClose={() => setIsAddWarehouseModalOpen(false)}
+        onSuccess={handleWarehouseSuccess}
       />
     </div>
   );
