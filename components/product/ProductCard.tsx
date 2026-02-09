@@ -169,12 +169,12 @@ export default function ProductCard({
         </div>
 
         {/* Bottom CTA Section */}
-        <div className="pt-2 border-t border-neutral-100 flex items-center justify-between gap-2">
-          <button className="flex items-center gap-1 sm:gap-2 text-primary font-medium text-xs sm:text-sm hover:underline shrink-0">
+        <div className="pt-2 border-t border-neutral-100 flex items-center justify-end gap-2">
+          {/* <button className="flex items-center gap-1 sm:gap-2 text-primary font-medium text-xs sm:text-sm hover:underline shrink-0">
             <span className="hidden sm:inline">View Product</span>
             <span className="sm:hidden">View</span>
             <ArrowRight className="size-3 sm:size-4" />
-          </button>
+          </button> */}
           <Switch
             checked={isActive}
             disabled={isToggling}

@@ -38,8 +38,7 @@ export function CreatePromoCodeModal({
   isOpen,
   onClose,
 }: CreatePromoCodeModalProps) {
-  const { createPromoCode, creatingPromoCode, updateFaqError } =
-    useMarketingStore();
+  const { createPromoCode, creatingPromoCode } = useMarketingStore();
   const [discountCode, setDiscountCode] = React.useState("");
   const [discountType, setDiscountType] = React.useState<PromoCodeType | "">(
     ""
@@ -149,7 +148,7 @@ export function CreatePromoCodeModal({
         <form
           id="create-promo-code-form"
           onSubmit={handleSubmit}
-          className="space-y-6"
+          className="space-y-6 max-h-[60vh] overflow-y-auto pr-1"
         >
           <div className="space-y-2">
             <Label
@@ -164,7 +163,7 @@ export function CreatePromoCodeModal({
                 placeholder="e.g DISCOUNT 123"
                 value={discountCode}
                 onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                className="focus-visible:ring-0 h-[48px] pr-10"
+                className="focus-visible:ring-0 h-12 pr-10"
                 required
               />
               {discountCode && (
@@ -193,7 +192,7 @@ export function CreatePromoCodeModal({
             >
               <SelectTrigger
                 id="discountType"
-                className="w-full focus-visible:ring-0 h-[48px]"
+                className="w-full focus-visible:ring-0 h-12"
               >
                 <SelectValue placeholder="Select discount type" />
               </SelectTrigger>
@@ -220,7 +219,7 @@ export function CreatePromoCodeModal({
               placeholder="e.g. 5000"
               value={minOrderAmount}
               onChange={(e) => setMinOrderAmount(e.target.value)}
-              className="focus-visible:ring-0 h-[48px]"
+              className="focus-visible:ring-0 h-12"
               min="0"
               step="1"
             />
@@ -236,7 +235,7 @@ export function CreatePromoCodeModal({
               placeholder="Input usage Limit"
               value={usageLimit}
               onChange={(e) => setUsageLimit(e.target.value)}
-              className="focus-visible:ring-0 h-[48px]"
+              className="focus-visible:ring-0 h-12"
               required
               min="1"
             />
@@ -252,7 +251,7 @@ export function CreatePromoCodeModal({
               placeholder="Input value"
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              className="focus-visible:ring-0 h-[48px]"
+              className="focus-visible:ring-0 h-12"
               required
               min="0"
               step={discountType === "percentage" ? "1" : "0.01"}
@@ -270,7 +269,7 @@ export function CreatePromoCodeModal({
                 placeholder="Input expiry date"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className="focus-visible:ring-0 h-[48px] pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                className="focus-visible:ring-0 h-12 pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 required
                 min={new Date().toISOString().split("T")[0]}
               />
@@ -291,18 +290,18 @@ export function CreatePromoCodeModal({
               onCheckedChange={setIsActive}
             />
           </div>
-
-          <div className="pt-4">
-            <Button
-              type="submit"
-              form="create-promo-code-form"
-              className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white w-full h-[52px] text-base font-medium"
-              disabled={creatingPromoCode}
-            >
-              {creatingPromoCode ? "Creating…" : "Create Discount"}
-            </Button>
-          </div>
         </form>
+
+        <div className="pt-4">
+          <Button
+            type="submit"
+            form="create-promo-code-form"
+            className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white w-full h-[52px] text-base font-medium"
+            disabled={creatingPromoCode}
+          >
+            {creatingPromoCode ? "Creating…" : "Create Discount"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
