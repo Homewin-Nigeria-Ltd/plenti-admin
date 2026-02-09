@@ -11,13 +11,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import type { InventoryItemApi } from "@/types/InventoryTypes";
-import { toast } from "sonner";
 
 type DeleteInventoryModalProps = {
   isOpen: boolean;
   onClose: () => void;
   item: InventoryItemApi | null;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 };
 
 export function DeleteInventoryModal({
@@ -26,10 +25,15 @@ export function DeleteInventoryModal({
   item,
   onConfirm,
 }: DeleteInventoryModalProps) {
-  const handleDelete = () => {
-    onConfirm();
-    toast.error("Inventory item deleted successfully");
-    onClose();
+  const [deleting, setDeleting] = React.useState(false);
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await onConfirm();
+      onClose();
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -60,8 +64,9 @@ export function DeleteInventoryModal({
               type="button"
               variant="outline"
               onClick={handleDelete}
+              disabled={!item || deleting}
               className="btn btn-outline flex-1 order-2 sm:order-1">
-              Delete Item
+              {deleting ? "Deleting…" : "Delete Item"}
             </Button>
             <Button
               type="button"

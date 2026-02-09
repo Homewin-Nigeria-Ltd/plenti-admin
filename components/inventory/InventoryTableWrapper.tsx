@@ -17,16 +17,17 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Ellipsis } from "lucide-react";
+import { Search, Plus, Ellipsis, ArrowRightLeft } from "lucide-react";
 import { useInventoryStore } from "@/store/useInventoryStore";
+import { useProductStore } from "@/store/useProductStore";
 import { useDebounce } from "use-debounce";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import type { InventoryItemApi } from "@/types/InventoryTypes";
-import { mockWarehouses } from "@/data/inventory";
-import { EditInventoryModal } from "./EditInventoryModal";
 import { DeleteInventoryModal } from "./DeleteInventoryModal";
+import { TransferStockModal } from "./TransferStockModal";
+import { RestockModal } from "./RestockModal";
 
 const STOCK_STATUS_DISPLAY: Record<string, string> = {
   low_stock: "Low Stock",
@@ -56,12 +57,12 @@ function getStatusBadgeClass(displayStatus: string) {
 
 type InventoryTableWrapperProps = {
   onAddStockClick: () => void;
+  warehouseId?: string | number;
 };
-
-const WAREHOUSES = mockWarehouses.map((wh) => wh.id);
 
 export default function InventoryTableWrapper({
   onAddStockClick,
+  warehouseId,
 }: InventoryTableWrapperProps) {
   const {
     items,
@@ -73,18 +74,36 @@ export default function InventoryTableWrapper({
     perPage,
     totalItems,
     fetchInventory,
+    warehouses,
+    fetchWarehouses,
   } = useInventoryStore();
+
+  React.useEffect(() => {
+    if (!warehouseId && warehouses.length === 0) {
+      fetchWarehouses();
+    }
+  }, [warehouseId, warehouses.length, fetchWarehouses]);
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [debouncedSearch] = useDebounce(searchQuery, 400);
-  const [selectedWarehouse, setSelectedWarehouse] = React.useState("all");
+  const [selectedWarehouse, setSelectedWarehouse] = React.useState(
+    warehouseId ? String(warehouseId) : "all"
+  );
   const [hasRequested, setHasRequested] = React.useState(false);
-  const [selectedItem, setSelectedItem] =
+
+  React.useEffect(() => {
+    if (warehouseId) {
+      setSelectedWarehouse(String(warehouseId));
+    }
+  }, [warehouseId]);
+  const [itemToRestock, setItemToRestock] =
     React.useState<InventoryItemApi | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isRestockModalOpen, setIsRestockModalOpen] = React.useState(false);
   const [itemToDelete, setItemToDelete] =
     React.useState<InventoryItemApi | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = React.useState(false);
+  const deleteProduct = useProductStore((s) => s.deleteProduct);
 
   React.useEffect(() => {
     if (error) {
@@ -98,9 +117,16 @@ export default function InventoryTableWrapper({
     let cancelled = false;
     const searchTerm =
       typeof debouncedSearch === "string" ? debouncedSearch.trim() : "";
+    const warehouseIdToUse =
+      warehouseId ||
+      (selectedWarehouse !== "all" ? Number(selectedWarehouse) : undefined);
     (async () => {
       try {
-        await fetchInventory({ page: 1, search: searchTerm });
+        await fetchInventory({
+          page: 1,
+          search: searchTerm,
+          warehouse_id: warehouseIdToUse,
+        });
       } finally {
         if (!cancelled) setHasRequested(true);
       }
@@ -108,12 +134,10 @@ export default function InventoryTableWrapper({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch]);
+  }, [debouncedSearch, selectedWarehouse, warehouseId, fetchInventory]);
 
   const columns = [
     { key: "product", label: "Product" },
-    { key: "warehouse", label: "Warehouse" },
     { key: "quantity", label: "Quantity" },
     { key: "expiryDate", label: "Expiry Date" },
     { key: "status", label: "Status" },
@@ -149,7 +173,6 @@ export default function InventoryTableWrapper({
               </div>
             </div>
           ),
-          warehouse: <span className="text-neutral-700 text-sm">—</span>,
           quantity: (
             <span className="text-neutral-700 text-sm font-medium">
               {item.stock}
@@ -173,11 +196,11 @@ export default function InventoryTableWrapper({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={() => {
-                    setSelectedItem(item);
-                    setIsEditModalOpen(true);
+                    setItemToRestock(item);
+                    setIsRestockModalOpen(true);
                   }}
                 >
-                  Edit
+                  Restock
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-danger-500"
@@ -196,43 +219,58 @@ export default function InventoryTableWrapper({
     [items]
   );
 
+  const isWarehouseDetailView =
+    warehouseId != null && String(warehouseId).trim() !== "";
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-[80%]">
-          <div className="border border-neutral-300 rounded-[8px] h-[53px] flex items-center gap-2 p-2 px-4 flex-1">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 justify-between">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:flex-1 sm:max-w-md">
+          <div className="border border-neutral-300 rounded-xl h-13.25 flex items-center gap-2 p-2 px-4 w-full sm:max-w-60">
             <Search className="size-5 text-neutral-500 shrink-0" />
             <Input
-              className="w-full placeholder:text-primary-700 border-0 outline-none focus-visible:ring-0 shadow-none h-auto p-0 bg-transparent"
+              className="w-full placeholder:text-primary-700 border-0 outline-none focus-visible:ring-0 shadow-none h-auto p-0 bg-transparent min-w-0"
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Select
-            value={selectedWarehouse}
-            onValueChange={setSelectedWarehouse}
-          >
-            <SelectTrigger className="form-control flex-1">
-              <SelectValue placeholder="All Warehouse" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Warehouse</SelectItem>
-              {WAREHOUSES.map((wh) => (
-                <SelectItem key={wh} value={wh}>
-                  {wh}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!isWarehouseDetailView && (
+            <Select
+              value={selectedWarehouse}
+              onValueChange={setSelectedWarehouse}
+            >
+              <SelectTrigger className="form-control flex-1 sm:max-w-50">
+                <SelectValue placeholder="All Warehouse" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Warehouse</SelectItem>
+                {warehouses.map((wh) => (
+                  <SelectItem key={wh.id} value={String(wh.id)}>
+                    {wh.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
-        <Button
-          onClick={onAddStockClick}
-          className="btn btn-primary w-full sm:w-[20%] shrink-0"
-        >
-          <Plus className="size-4 mr-2" />
-          Add New Stock
-        </Button>
+        {isWarehouseDetailView ? (
+          <Button
+            onClick={() => setIsTransferModalOpen(true)}
+            className="btn btn-primary w-full sm:w-auto shrink-0"
+          >
+            <ArrowRightLeft className="size-4 mr-2" />
+            Transfer Stock
+          </Button>
+        ) : (
+          <Button
+            onClick={onAddStockClick}
+            className="btn btn-primary w-full sm:w-auto shrink-0"
+          >
+            <Plus className="size-4 mr-2" />
+            Add New Stock
+          </Button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-[#EEF1F6] shadow-xs">
@@ -244,21 +282,30 @@ export default function InventoryTableWrapper({
             pageCount={lastPage}
             pageSize={perPage}
             total={totalItems}
-            onPageChange={(nextPage) =>
-              fetchInventory({ page: nextPage, search: debouncedSearch })
-            }
+            onPageChange={(nextPage) => {
+              const warehouseIdToUse =
+                warehouseId ||
+                (selectedWarehouse !== "all"
+                  ? Number(selectedWarehouse)
+                  : undefined);
+              fetchInventory({
+                page: nextPage,
+                search: debouncedSearch,
+                warehouse_id: warehouseIdToUse,
+              });
+            }}
           />
         ) : !hasRequested || loading ? (
-          <div className="min-w-[720px]">
-            <div className="grid grid-cols-8 gap-4 px-4 py-3 border-b border-neutral-100">
-              {Array.from({ length: 8 }).map((_, i) => (
+          <div className="min-w-180">
+            <div className="grid grid-cols-7 gap-4 px-4 py-3 border-b border-neutral-100">
+              {Array.from({ length: 7 }).map((_, i) => (
                 <Skeleton key={i} className="h-4 w-24" />
               ))}
             </div>
             {Array.from({ length: Math.max(6, perPage) }).map((_, rowIdx) => (
               <div
                 key={rowIdx}
-                className="grid grid-cols-8 gap-4 px-4 py-4 border-b border-neutral-100"
+                className="grid grid-cols-7 gap-4 px-4 py-4 border-b border-neutral-100"
               >
                 <div className="flex items-center gap-3">
                   <Skeleton className="size-10 rounded-lg shrink-0" />
@@ -291,14 +338,25 @@ export default function InventoryTableWrapper({
         )}
       </div>
 
-      <EditInventoryModal
-        isOpen={isEditModalOpen}
+      <RestockModal
+        isOpen={isRestockModalOpen}
         onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedItem(null);
+          setIsRestockModalOpen(false);
+          setItemToRestock(null);
         }}
-        item={selectedItem}
-        warehouses={WAREHOUSES}
+        item={itemToRestock}
+        onSuccess={() => {
+          fetchInventory({
+            page: currentPage,
+            search:
+              typeof debouncedSearch === "string" ? debouncedSearch.trim() : "",
+            warehouse_id:
+              warehouseId ||
+              (selectedWarehouse !== "all"
+                ? Number(selectedWarehouse)
+                : undefined),
+          });
+        }}
       />
       <DeleteInventoryModal
         isOpen={isDeleteModalOpen}
@@ -307,11 +365,45 @@ export default function InventoryTableWrapper({
           setItemToDelete(null);
         }}
         item={itemToDelete}
-        onConfirm={() => {
-          if (itemToDelete)
-            console.log("Delete inventory item:", itemToDelete.id);
+        onConfirm={async () => {
+          if (!itemToDelete) return;
+          const ok = await deleteProduct(itemToDelete.id);
+          if (ok) {
+            toast.success("Product deleted successfully");
+            fetchInventory({
+              page: currentPage,
+              search:
+                typeof debouncedSearch === "string"
+                  ? debouncedSearch.trim()
+                  : "",
+              warehouse_id:
+                warehouseId ||
+                (selectedWarehouse !== "all"
+                  ? Number(selectedWarehouse)
+                  : undefined),
+            });
+          } else {
+            toast.error("Failed to delete product");
+          }
         }}
       />
+      {isWarehouseDetailView && (
+        <TransferStockModal
+          isOpen={isTransferModalOpen}
+          onClose={() => setIsTransferModalOpen(false)}
+          fromWarehouseId={Number(warehouseId)}
+          onSuccess={() => {
+            fetchInventory({
+              page: currentPage,
+              search:
+                typeof debouncedSearch === "string"
+                  ? debouncedSearch.trim()
+                  : "",
+              warehouse_id: Number(warehouseId),
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

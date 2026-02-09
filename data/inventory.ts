@@ -7,6 +7,10 @@ import type {
 export const INVENTORY_API = {
   getInventory: "/api/admin/inventory",
   getStatistics: "/api/admin/inventory/statistics",
+  getWarehouses: "/api/admin/warehouses",
+  createWarehouse: "/api/admin/warehouses",
+  adjustStock: "/api/admin/inventory", // Base path for adjust-stock
+  transfer: "/api/admin/inventory/transfer",
 } as const;
 
 export const mockWarehouses: Warehouse[] = [

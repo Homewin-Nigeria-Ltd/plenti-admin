@@ -3,6 +3,7 @@ import type {
   BestSellingCategory as BestSellingCategoryItem,
   DashboardOverview,
   DashboardState,
+  RevenueStats,
   TopProductsFilter,
 } from "@/types/DashboardTypes";
 import { create } from "zustand";
@@ -67,6 +68,9 @@ export const useDashboardStore = create<DashboardState>((set) => ({
 
   bestSellingCategories: null,
   loadingBestSellingCategories: false,
+
+  revenueStats: null,
+  loadingRevenueStats: false,
 
   fetchDashboardOverview: async () => {
     set({ loadingOverview: true, overviewError: null });
@@ -140,6 +144,30 @@ export const useDashboardStore = create<DashboardState>((set) => ({
       return false;
     } finally {
       set({ loadingBestSellingCategories: false });
+    }
+  },
+
+  fetchRevenueStats: async (filter: TopProductsFilter) => {
+    set({ loadingRevenueStats: true });
+    try {
+      const { data } = await api.get<{
+        status?: string;
+        data?: RevenueStats;
+      }>("/api/admin/revenue-stats", { params: { filter } });
+
+      if (data?.status !== "success" || !data?.data) {
+        set({ revenueStats: null });
+        return false;
+      }
+
+      set({ revenueStats: data.data });
+      return true;
+    } catch (error) {
+      console.error("Error fetching revenue stats =>", error);
+      set({ revenueStats: null });
+      return false;
+    } finally {
+      set({ loadingRevenueStats: false });
     }
   },
 }));

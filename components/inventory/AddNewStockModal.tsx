@@ -10,23 +10,67 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { X, CalendarIcon } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { X, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "@/lib/utils";
+import { useProductStore } from "@/store/useProductStore";
+import { useInventoryStore } from "@/store/useInventoryStore";
+import api from "@/lib/api";
+import { INVENTORY_API } from "@/data/inventory";
+
+function getApiErrorMessage(err: unknown): string | null {
+  if (typeof err !== "object" || err === null) return null;
+  const response = (err as { response?: unknown }).response;
+  if (typeof response !== "object" || response === null) return null;
+  const data = (response as { data?: unknown }).data;
+  if (typeof data !== "object" || data === null) return null;
+  const message = (data as { message?: unknown }).message;
+  return typeof message === "string" ? message : null;
+}
+
+const addStockFormSchema = z
+  .object({
+    product: z.object({ value: z.string(), label: z.string() }).nullable(),
+    warehouse: z.object({ value: z.string(), label: z.string() }).nullable(),
+    quantity: z
+      .number()
+      .int("Quantity must be a whole number")
+      .min(1, "Quantity must be at least 1"),
+  })
+  .refine((data) => data.product != null && data.product.value.length > 0, {
+    message: "Please select a product",
+    path: ["product"],
+  })
+  .refine((data) => data.warehouse != null && data.warehouse.value.length > 0, {
+    message: "Please select a warehouse",
+    path: ["warehouse"],
+  });
+
+type AddStockFormValues = z.infer<typeof addStockFormSchema>;
 
 type AddNewStockModalProps = {
   isOpen: boolean;
@@ -34,32 +78,66 @@ type AddNewStockModalProps = {
 };
 
 export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
-  const [productName, setProductName] = React.useState("");
-  const [supplierName, setSupplierName] = React.useState("");
-  const [warehouse, setWarehouse] = React.useState("");
-  const [quantity, setQuantity] = React.useState("");
-  const [expiryDate, setExpiryDate] = React.useState<Date | undefined>(
-    undefined
-  );
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
+  const { products, loadingProducts, fetchProducts } = useProductStore();
+  const { warehouses, loadingWarehouses, fetchWarehouses, fetchInventory } =
+    useInventoryStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log({
-      productName,
-      supplierName,
-      warehouse,
-      quantity,
-      expiryDate: expiryDate ? expiryDate.toISOString().split("T")[0] : "",
-    });
-    toast.success("Product added successfully");
-    onClose();
-    setProductName("");
-    setSupplierName("");
-    setWarehouse("");
-    setQuantity("");
-    setExpiryDate(undefined);
+  const form = useForm<AddStockFormValues>({
+    resolver: zodResolver(addStockFormSchema),
+    defaultValues: {
+      product: null,
+      warehouse: null,
+      quantity: 1,
+    },
+  });
+
+  React.useEffect(() => {
+    if (isOpen) {
+      fetchProducts({ page: 1, categoryId: null, search: "" });
+      fetchWarehouses();
+    } else {
+      form.reset({
+        product: null,
+        warehouse: null,
+        quantity: 1,
+      });
+    }
+  }, [isOpen, fetchProducts, fetchWarehouses, form]);
+
+  const onSubmit = async (values: AddStockFormValues) => {
+    const product = values.product;
+    const warehouse = values.warehouse;
+    if (!product?.value || !warehouse?.value) return;
+
+    try {
+      const { data } = await api.patch<{
+        status?: string;
+        message?: string;
+      }>(`${INVENTORY_API.adjustStock}/${product.value}/adjust-stock`, {
+        warehouse_id: Number.parseInt(warehouse.value, 10),
+        quantity: values.quantity,
+      });
+
+      if (data?.status === "success") {
+        toast.success("Stock adjusted successfully");
+        fetchInventory({ page: 1, search: "" });
+        form.reset({ product: null, warehouse: null, quantity: 1 });
+        onClose();
+      } else {
+        const message =
+          typeof data?.message === "string" ? data.message : "Failed to adjust stock";
+        toast.error(message);
+      }
+    } catch (error) {
+      const message = getApiErrorMessage(error) ?? "Failed to adjust stock";
+      console.error("Error adjusting stock =>", error);
+      toast.error(message);
+    }
   };
+
+  const isSubmitting = form.formState.isSubmitting;
+  const [productOpen, setProductOpen] = React.useState(false);
+  const [warehouseOpen, setWarehouseOpen] = React.useState(false);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -78,118 +156,214 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full"
+            disabled={isSubmitting}
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
         </DialogHeader>
 
-        <form
-          id="add-product-form"
-          onSubmit={handleSubmit}
-          className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
-        >
-          <div className="space-y-2">
-            <Label htmlFor="productName">Product Name</Label>
-            <Input
-              id="productName"
-              placeholder="Mr. Chef Salt"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              className="form-control"
-              required
+        <Form {...form}>
+          <form
+            id="add-product-form"
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
+          >
+            <FormField
+              control={form.control}
+              name="product"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Product</FormLabel>
+                  <Popover open={productOpen} onOpenChange={setProductOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={productOpen}
+                            disabled={loadingProducts}
+                            className={cn(
+                              "form-control w-full justify-between font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value
+                              ? products.find(
+                                  (p) => String(p.id) === field.value?.value
+                                )?.name
+                              : loadingProducts
+                                ? "Loading products..."
+                                : "Select product..."}
+                            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-(--radix-popover-trigger-width)" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search product..." className="h-9" />
+                          <CommandList>
+                            <CommandEmpty>
+                              {loadingProducts
+                                ? "Loading products..."
+                                : "No product found."}
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {products.map((p) => (
+                                <CommandItem
+                                  key={p.id}
+                                  value={p.name}
+                                  onSelect={() => {
+                                    const id = String(p.id);
+                                    const next =
+                                      field.value?.value === id
+                                        ? null
+                                        : { value: id, label: p.name };
+                                    field.onChange(next);
+                                    setProductOpen(false);
+                                  }}
+                                >
+                                  {p.name}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto",
+                                      field.value?.value === String(p.id)
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="supplierName">Supplier Name</Label>
-            <Input
-              id="supplierName"
-              placeholder="Nigerian Rice Mills Ltd"
-              value={supplierName}
-              onChange={(e) => setSupplierName(e.target.value)}
-              className="form-control"
-              required
+            <FormField
+              control={form.control}
+              name="warehouse"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Warehouse</FormLabel>
+                  <Popover open={warehouseOpen} onOpenChange={setWarehouseOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={warehouseOpen}
+                            disabled={loadingWarehouses}
+                            className={cn(
+                              "form-control w-full justify-between font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value
+                              ? warehouses.find(
+                                  (wh) => String(wh.id) === field.value?.value
+                                )?.name
+                              : loadingWarehouses
+                                ? "Loading warehouses..."
+                                : "Select warehouse..."}
+                            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-(--radix-popover-trigger-width)" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search warehouse..." className="h-9" />
+                          <CommandList>
+                            <CommandEmpty>
+                              {loadingWarehouses
+                                ? "Loading warehouses..."
+                                : "No warehouse found."}
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {warehouses.map((wh) => (
+                                <CommandItem
+                                  key={wh.id}
+                                  value={wh.name}
+                                  onSelect={() => {
+                                    const id = String(wh.id);
+                                    const next =
+                                      field.value?.value === id
+                                        ? null
+                                        : { value: id, label: wh.name };
+                                    field.onChange(next);
+                                    setWarehouseOpen(false);
+                                  }}
+                                >
+                                  {wh.name}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto",
+                                      field.value?.value === String(wh.id)
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="warehouse">Warehouse</Label>
-            <Select value={warehouse} onValueChange={setWarehouse}>
-              <SelectTrigger id="warehouse" className="form-control w-full!">
-                <SelectValue placeholder="Abuja North" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="wh001">North Warehouse</SelectItem>
-                <SelectItem value="wh002">South Warehouse</SelectItem>
-                <SelectItem value="wh003">East Warehouse</SelectItem>
-                <SelectItem value="wh004">West Warehouse</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantity</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="50"
+                      min={1}
+                      className="form-control"
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.valueAsNumber;
+                        field.onChange(Number.isFinite(v) ? v : 0);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                placeholder="100"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="form-control"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="expiryDate">Expiry Date</Label>
-              <Popover
-                open={isDatePickerOpen}
-                onOpenChange={setIsDatePickerOpen}
+            <div className="pt-4">
+              <Button
+                type="submit"
+                className="btn btn-primary w-full"
+                disabled={
+                  isSubmitting || loadingProducts || loadingWarehouses
+                }
               >
-                <PopoverTrigger asChild>
-                  <Button
-                    id="expiryDate"
-                    variant="outline"
-                    className={cn(
-                      "form-control w-full justify-start text-left font-normal",
-                      !expiryDate && "text-neutral-500"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {expiryDate ? (
-                      expiryDate.toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={expiryDate}
-                    onSelect={(date) => {
-                      setExpiryDate(date);
-                      setIsDatePickerOpen(false);
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adjusting Stock...
+                  </>
+                ) : (
+                  "Adjust Stock"
+                )}
+              </Button>
             </div>
-          </div>
-
-          <div className="pt-4">
-            <Button type="submit" className="btn btn-primary w-full">
-              Add Product
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

@@ -28,6 +28,10 @@ export type CreateProductRequest = {
   image_urls: string[];
   min_bulk_quantity: number;
   bulk_price: number;
+  warehouses?: Array<{
+    warehouse_id: number;
+    quantity: number;
+  }>;
 };
 
 export type CreateProductResponse = {
