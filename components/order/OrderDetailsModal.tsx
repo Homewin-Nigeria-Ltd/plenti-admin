@@ -188,6 +188,8 @@ export function OrderDetailsModal({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* Close Button  */}
                 <button
                   type="button"
                   onClick={onClose}

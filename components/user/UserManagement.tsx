@@ -168,7 +168,7 @@ export default function UserManagement() {
       </div>
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-        <div className="border border-neutral-100 rounded-[8px] h-[50px] flex items-center gap-1 p-2 px-4 shadow-sm flex-1 max-w-full sm:max-w-md">
+        <div className="border border-neutral-100 rounded-xl h-[50px] flex items-center gap-1 p-2 px-4 shadow-sm flex-1 max-w-full sm:max-w-md">
           <Search className="size-5 text-neutral-500 shrink-0" />
           <Input
             className="w-full placeholder:text-primary-700 border-0 outline-none focus-visible:ring-0 shadow-none"
@@ -200,7 +200,12 @@ export default function UserManagement() {
               }
               onRowClick={(_, idx) => {
                 const id = users[idx]?.id;
-                if (id) router.push(`/user/${id}`);
+                if (!id) return;
+                if (activeTab === "admin") {
+                  router.push(`/user/admin/${id}`);
+                } else {
+                  router.push(`/user/${id}`);
+                }
               }}
             />
           ) : !hasRequested || loadingUsers ? (

@@ -156,7 +156,7 @@ export default function OrderTableWrapper() {
 
   return (
     <div className="space-y-6">
-      <div className="border border-[#F0F2F5] rounded-[8px] h-[48px] flex items-center gap-2 p-2 px-4 shadow-sm bg-white">
+      <div className="border border-[#F0F2F5] rounded-xl h-12 flex items-center gap-2 p-2 px-4 shadow-sm bg-white">
         <Search className="size-5 text-neutral-500 shrink-0" />
         <Input
           className="w-full placeholder:text-[#253B4B] border-0 outline-none focus-visible:ring-0 shadow-none h-auto"
@@ -229,8 +229,8 @@ export default function OrderTableWrapper() {
         selectedId={selectedId}
         isOpen={open}
         onClose={() => {
-          setSingleOrder();
           setOpen(false);
+          setSingleOrder();
           setSelectedId(null);
         }}
       />

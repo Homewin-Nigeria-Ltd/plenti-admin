@@ -2,11 +2,12 @@ import api from "@/lib/api";
 import { create } from "zustand";
 import type {
   AdminSingleUserResponse,
+  AdminDetailsResponse,
   AdminUsersResponse,
   ApiValidationError,
   CreateUserRequest,
   CreateUserResponse,
-  CreateUserResult,
+  // CreateUserResult,
   UserState,
 } from "@/types/UserTypes";
 import { AxiosError } from "axios";
@@ -24,6 +25,9 @@ export const useUserStore = create<UserState>((set, get) => ({
   lastQuery: { page: 1, search: "", role: "customer" },
   singleUser: null,
   singleUserStats: null,
+  adminDetails: null,
+  loadingAdminDetails: false,
+  adminDetailsError: null,
 
   fetchUsers: async (params) => {
     const page = params?.page ?? 1;
@@ -45,7 +49,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         currentPage: data.meta?.current_page ?? 1,
         lastPage: data.meta?.last_page ?? 1,
         perPage: data.meta?.per_page ?? 15,
-        totalItems: data.meta?.total ?? (data.data?.length ?? 0),
+        totalItems: data.meta?.total ?? data.data?.length ?? 0,
       });
 
       return true;
@@ -61,7 +65,9 @@ export const useUserStore = create<UserState>((set, get) => ({
   fetchSingleUser: async (id) => {
     set({ loadingSingleUser: true, error: null });
     try {
-      const { data } = await api.get<AdminSingleUserResponse>(`/api/admin/users/${id}`);
+      const { data } = await api.get<AdminSingleUserResponse>(
+        `/api/admin/users/${id}`
+      );
       set({
         singleUser: data.data ?? null,
         singleUserStats: data.stats ?? null,
@@ -76,14 +82,39 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
+  fetchAdminDetails: async (id) => {
+    set({ loadingAdminDetails: true, adminDetailsError: null });
+    try {
+      const { data } = await api.get<AdminDetailsResponse>(
+        `/api/admin/users/${id}/admin-details`
+      );
+      set({ adminDetails: data.data ?? null });
+      return true;
+    } catch (error) {
+      console.error("Error fetching admin details =>", error);
+      set({ adminDetailsError: "Failed to fetch admin details" });
+      return false;
+    } finally {
+      set({ loadingAdminDetails: false });
+    }
+  },
+
   clearSingleUser: () => {
-    set({ singleUser: null, singleUserStats: null });
+    set({
+      singleUser: null,
+      singleUserStats: null,
+      adminDetails: null,
+      adminDetailsError: null,
+    });
   },
 
   createUser: async (payload: CreateUserRequest) => {
     set({ creatingUser: true, error: null });
     try {
-      const { data } = await api.post<CreateUserResponse>("/api/admin/users", payload);
+      const { data } = await api.post<CreateUserResponse>(
+        "/api/admin/users",
+        payload
+      );
 
       // Refresh list using last query (show newest on page 1 typically).
       // Keep role/search, reset to page 1 so newly created user is visible.
@@ -97,13 +128,17 @@ export const useUserStore = create<UserState>((set, get) => ({
     } catch (error) {
       console.error("Error creating user =>", error);
       if (error instanceof AxiosError) {
-        const apiData = error.response?.data as Partial<ApiValidationError> | undefined;
+        const apiData = error.response?.data as
+          | Partial<ApiValidationError>
+          | undefined;
         const message =
           typeof apiData?.message === "string"
             ? apiData.message
             : "Failed to create user";
         const errors =
-          apiData?.errors && typeof apiData.errors === "object" ? apiData.errors : undefined;
+          apiData?.errors && typeof apiData.errors === "object"
+            ? apiData.errors
+            : undefined;
 
         set({ error: message });
         return { ok: false, message, errors };
@@ -116,4 +151,3 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 }));
-

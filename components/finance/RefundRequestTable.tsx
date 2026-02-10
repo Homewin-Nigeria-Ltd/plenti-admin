@@ -155,8 +155,6 @@ export function RefundRequestTable() {
   const isOpeningRejectModal = React.useRef(false);
   const pageSize = 6;
 
-  console.log("Refunds data in refunds components =>", refunds);
-
   // FETCH ALL REFUNDS ON MOUNT
   // React.useEffect(() => {
   //   // FETCH ONLY WHEN THERE ARE NOT REFUNDS
