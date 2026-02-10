@@ -211,7 +211,7 @@ export function TicketDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-[800px]" showCloseButton={false}>
+      <DialogContent className="md:min-w-[700px]" showCloseButton={false}>
         <DialogHeader className="relative pb-4">
           {loadingSingleTicket ? (
             <>
@@ -458,7 +458,7 @@ export function TicketDetailsModal({
               <Button
                 type="button"
                 onClick={handleOpenLeaveComment}
-                className="flex-1 bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[48px]"
+                className="flex-1 bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-12"
               >
                 Leave Comment
               </Button>

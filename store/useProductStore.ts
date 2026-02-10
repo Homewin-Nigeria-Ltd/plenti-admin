@@ -70,8 +70,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const categories = Array.isArray(data?.data) ? data.data : [];
       const options = flattenCategoryOptions(categories);
 
-      console.log("Categories:", categories);
-
       set((state) => {
         const optionsMap = new Map<number, { id: number; name: string }>(
           state.categoryOptions.map((c) => [c.id, c])

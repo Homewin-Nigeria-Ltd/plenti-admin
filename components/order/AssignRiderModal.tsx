@@ -112,12 +112,13 @@ export function AssignRiderModal({
             Select a delivery agent for the order
           </DialogDescription>
 
-          <div className="flex items-center gap-[8px] absolute top-2 right-6">
+          <div className="flex items-center gap-2 absolute top-2 right-6">
             <button
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+              className="flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+            >
               <X color="#0B1E66" size={20} cursor="pointer" />
             </button>
           </div>
@@ -141,8 +142,9 @@ export function AssignRiderModal({
                 </SelectTrigger>
                 <SelectContent
                   position="popper"
-                  className="rounded-[12px] border-0 shadow-lg focus-visible:ring-0 translate-y-12"
-                  side="bottom">
+                  className="rounded-2xl border-0 shadow-lg focus-visible:ring-0 translate-y-12"
+                  side="bottom"
+                >
                   {riders.length === 0 ? (
                     <div className="px-2 py-4 text-sm text-[#667085] text-center">
                       No riders available
@@ -182,7 +184,8 @@ export function AssignRiderModal({
                     (singleOrder?.payment_status ?? "").toLowerCase() === "paid"
                       ? "bg-green-100 text-green-700"
                       : "bg-amber-100 text-amber-700"
-                  }`}>
+                  }`}
+                >
                   <span
                     className={`size-2 rounded-full ${
                       (singleOrder?.payment_status ?? "").toLowerCase() ===
@@ -235,7 +238,8 @@ export function AssignRiderModal({
             type="button"
             onClick={assignRider}
             disabled={!selectedRiderId || isAssigning || loadingRiders}
-            className="w-full h-[52px] rounded-[8px] bg-[#0B1E66] hover:bg-[#0B1E66] disabled:opacity-50">
+            className="w-full h-[52px] rounded-xl bg-[#0B1E66] hover:bg-[#0B1E66] disabled:opacity-50"
+          >
             {isAssigning ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="size-4 animate-spin" />

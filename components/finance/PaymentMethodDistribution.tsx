@@ -58,7 +58,7 @@ export function PaymentMethodDistribution() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {/* Payment Method Distribution Card */}
-      <div className="bg-white rounded-[12px] border border-[#E4E7EC] p-6">
+      <div className="bg-white rounded-2xl border border-[#E4E7EC] p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-[#98A2B3] text-[16px] font-medium">
@@ -132,8 +132,8 @@ export function PaymentMethodDistribution() {
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-2 gap-4">
         {/* Total Revenue Card */}
-        <div className="bg-white rounded-[12px] border border-[#E4E7EC] p-2">
-          <div className="bg-[#E8EEFF] rounded-[8px] p-5 h-full flex flex-col justify-between">
+        <div className="bg-white rounded-2xl border border-[#E4E7EC] p-2">
+          <div className="bg-[#E8EEFF] rounded-xl p-5 h-full flex flex-col justify-between">
             <p className="text-[#98A2B3] text-[14px] mb-2">Total Revenue</p>
             <p className="text-[#0B1E66] text-[30px] font-semibold mb-2">
               {overview?.summary?.total_revenue
@@ -145,8 +145,8 @@ export function PaymentMethodDistribution() {
         </div>
 
         {/* Completed Refunds Card */}
-        <div className="bg-white rounded-[12px] border border-[#E4E7EC] p-2">
-          <div className="bg-[#E8EEFF] rounded-[8px] p-5 h-full flex flex-col justify-between">
+        <div className="bg-white rounded-2xl border border-[#E4E7EC] p-2">
+          <div className="bg-[#E8EEFF] rounded-xl p-5 h-full flex flex-col justify-between">
             <p className="text-[#98A2B3] text-[14px] mb-2">Pending Refunds</p>
             <p className="text-[#0B1E66] text-[30px] font-semibold mb-2">
               {overview?.summary?.pending_refunds || 0}
@@ -156,8 +156,8 @@ export function PaymentMethodDistribution() {
         </div>
 
         {/* Total Transactions Card */}
-        <div className="bg-white rounded-[12px] border border-[#E4E7EC] p-2">
-          <div className="bg-[#E8EEFF] rounded-[8px] p-5 h-full flex flex-col justify-between">
+        <div className="bg-white rounded-2xl border border-[#E4E7EC] p-2">
+          <div className="bg-[#E8EEFF] rounded-xl p-5 h-full flex flex-col justify-between">
             <p className="text-[#98A2B3] text-[14px] mb-2">
               Total Transactions
             </p>
@@ -173,8 +173,8 @@ export function PaymentMethodDistribution() {
         </div>
 
         {/* Average Order Value Card */}
-        <div className="bg-white rounded-[12px] border border-[#E4E7EC] p-2">
-          <div className="bg-[#E8EEFF] rounded-[8px] p-5 h-full flex flex-col justify-between">
+        <div className="bg-white rounded-2xl border border-[#E4E7EC] p-2">
+          <div className="bg-[#E8EEFF] rounded-xl p-5 h-full flex flex-col justify-between">
             <p className="text-[#98A2B3] text-[14px] mb-2">Avg Order Value</p>
             <p className="text-[#0B1E66] text-[30px] font-semibold mb-2">
               {overview?.summary?.average_order_value

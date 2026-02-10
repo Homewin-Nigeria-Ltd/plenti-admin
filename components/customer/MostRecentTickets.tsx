@@ -1,11 +1,10 @@
 "use client";
 
-import * as React from "react";
 import DataTable from "@/components/common/DataTable";
-import { Button } from "@/components/ui/button";
-import { TicketDetailsModal } from "./TicketDetailsModal";
 import { useSupportStore } from "@/store/useSupportStore";
 import type { SupportTicketApi, TicketStatusApi } from "@/types/SupportTypes";
+import * as React from "react";
+import { TicketDetailsModal } from "./TicketDetailsModal";
 
 function formatDate(iso: string) {
   try {

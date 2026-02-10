@@ -18,7 +18,10 @@ type AddIntegrationModalProps = {
   onClose: () => void;
 };
 
-export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProps) {
+export function AddIntegrationModal({
+  isOpen,
+  onClose,
+}: AddIntegrationModalProps) {
   const [secretKey, setSecretKey] = React.useState("");
   const [publicKey, setPublicKey] = React.useState("");
   const [showSecretKey, setShowSecretKey] = React.useState(false);
@@ -37,7 +40,10 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full" showCloseButton={false}>
+      <DialogContent
+        className="max-w-md p-4 sm:p-6 w-[95vw] sm:w-full"
+        showCloseButton={false}
+      >
         <DialogHeader className="relative">
           <DialogTitle className="text-xl sm:text-2xl font-semibold">
             API Keys & Credentials
@@ -49,14 +55,22 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="absolute top-0 right-0 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            className="absolute top-0 right-0 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+          >
             <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
         </DialogHeader>
 
-        <form id="add-integration-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+        <form
+          id="add-integration-form"
+          onSubmit={handleSubmit}
+          className="space-y-4 sm:space-y-6 mt-4 sm:mt-6"
+        >
           <div className="space-y-2">
-            <Label htmlFor="secretKey" className="text-sm font-medium text-primary-700">
+            <Label
+              htmlFor="secretKey"
+              className="text-sm font-medium text-primary-700"
+            >
               Secret Key
             </Label>
             <div className="relative">
@@ -67,13 +81,14 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
                 placeholder="Enter Secret Key"
-                className="form-control !pl-[48px] !pr-12"
+                className="form-control pl-12! pr-12!"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowSecretKey(!showSecretKey)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10">
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10"
+              >
                 {showSecretKey ? (
                   <EyeOff className="size-5" />
                 ) : (
@@ -84,7 +99,10 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="publicKey" className="text-sm font-medium text-primary-700">
+            <Label
+              htmlFor="publicKey"
+              className="text-sm font-medium text-primary-700"
+            >
               Public Key
             </Label>
             <div className="relative">
@@ -95,13 +113,14 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
                 value={publicKey}
                 onChange={(e) => setPublicKey(e.target.value)}
                 placeholder="Enter Public Key"
-                className="form-control !pl-[48px] !pr-12"
+                className="form-control pl-12! pr-12!"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPublicKey(!showPublicKey)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10">
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 z-10"
+              >
                 {showPublicKey ? (
                   <EyeOff className="size-5" />
                 ) : (
@@ -112,7 +131,11 @@ export function AddIntegrationModal({ isOpen, onClose }: AddIntegrationModalProp
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" form="add-integration-form" className="btn btn-primary w-full sm:w-auto">
+            <Button
+              type="submit"
+              form="add-integration-form"
+              className="btn btn-primary w-full sm:w-auto"
+            >
               Add New Provider
             </Button>
           </div>

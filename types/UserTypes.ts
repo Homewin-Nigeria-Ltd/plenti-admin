@@ -103,6 +103,11 @@ export type AdminSingleUserResponse = {
   stats: UserStats;
 };
 
+export type AdminDetailsResponse = {
+  status: string;
+  data: AdminUser;
+};
+
 export type CreateUserRequest = {
   first_name: string;
   last_name: string;
@@ -143,6 +148,9 @@ export type UserState = {
   lastQuery: { page: number; search: string; role: "admin" | "customer" };
   singleUser: AdminUser | null;
   singleUserStats: UserStats | null;
+  adminDetails: AdminUser | null;
+  loadingAdminDetails: boolean;
+  adminDetailsError: string | null;
 
   fetchUsers: (params?: {
     page?: number;
@@ -151,6 +159,7 @@ export type UserState = {
   }) => Promise<boolean>;
 
   fetchSingleUser: (id: number) => Promise<boolean>;
+  fetchAdminDetails: (id: number) => Promise<boolean>;
   clearSingleUser: () => void;
 
   createUser: (payload: CreateUserRequest) => Promise<CreateUserResult>;

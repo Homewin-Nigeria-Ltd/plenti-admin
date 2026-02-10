@@ -142,18 +142,18 @@ export function OrderDetailsModal({
                 Complete order information and actions
               </DialogDescription>
 
-              <div className="flex items-center gap-[8px] absolute top-6 right-6">
+              <div className="flex items-center gap-2 absolute top-6 right-6">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
                       aria-label="More actions"
-                      className="border-[0.2px] border-[#98A2B3] rounded-[4px] size-[24px] flex items-center justify-center cursor-pointer"
+                      className="border-[0.2px] border-[#98A2B3] rounded-lg size-6 flex items-center justify-center cursor-pointer"
                     >
                       <Ellipsis color="#0B1E66" size={18} />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="border-0 rounded-[12px] p-2 min-w-[220px]">
+                  <DropdownMenuContent className="border-0 rounded-2xl p-2 min-w-[220px]">
                     <DropdownMenuItem
                       className="text-[#0B1E66] text-[14px] font-medium place-self-center"
                       onSelect={markAsInTransit}
@@ -188,6 +188,8 @@ export function OrderDetailsModal({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* Close Button  */}
                 <button
                   type="button"
                   onClick={onClose}
@@ -343,7 +345,7 @@ export function OrderDetailsModal({
 
                 <Button
                   variant="outline"
-                  className="w-full h-[52px] rounded-[8px] border-primary text-primary hover:bg-primary hover:text-white cursor-pointer"
+                  className="w-full h-[52px] rounded-xl border-primary text-primary hover:bg-primary hover:text-white cursor-pointer"
                 >
                   View Order Timeline
                 </Button>

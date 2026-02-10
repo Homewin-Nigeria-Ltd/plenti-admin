@@ -141,8 +141,7 @@ type RefundFilter =
   | "awaiting-processing";
 
 export function RefundRequestTable() {
-  const { fetchRefunds, refunds, loadingRefunds, refundPagination } =
-    useFinanceStore();
+  const { refunds, loadingRefunds, refundPagination } = useFinanceStore();
 
   // LOCAL STATES
   const [filter, setFilter] = React.useState<RefundFilter>("all");
@@ -155,8 +154,6 @@ export function RefundRequestTable() {
   const isOpeningConfirmModal = React.useRef(false);
   const isOpeningRejectModal = React.useRef(false);
   const pageSize = 6;
-
-  console.log("Refunds data in refunds components =>", refunds);
 
   // FETCH ALL REFUNDS ON MOUNT
   // React.useEffect(() => {
@@ -316,7 +313,7 @@ export function RefundRequestTable() {
   return (
     <div className="space-y-6">
       {/* Search Bar */}
-      <div className="border border-[#F0F2F5] rounded-[8px] h-[38px] flex items-center gap-1 p-1 px-4 shadow-sm">
+      <div className="border border-[#F0F2F5] rounded-xl h-[38px] flex items-center gap-1 p-1 px-4 shadow-sm">
         <Image src={"/icons/search.png"} alt="Search" width={20} height={20} />
         <Input
           className="w-full placeholder:text-[#253B4B] border-0 outline-none focus-visible:ring-0 shadow-none"

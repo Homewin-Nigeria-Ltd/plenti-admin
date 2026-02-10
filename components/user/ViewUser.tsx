@@ -137,7 +137,7 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
       },
       {
         title: "Net Profit",
-        value: `${netProfit}%`,
+        value: `${netProfit}`,
         changePercent: 1.9,
         increased: true,
         trendData: mockTrendUp,
@@ -283,12 +283,12 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
               <h3 className="text-[#0B1E66] text-lg font-semibold">Revenue</h3>
               <span className="size-2 rounded-full bg-[#0B1E66]" />
             </div>
-            <a
+            {/* <a
               href="#"
               className="text-sm font-medium text-[#0B1E66] hover:underline"
             >
               View Details →
-            </a>
+            </a> */}
           </div>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">

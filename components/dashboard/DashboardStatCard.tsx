@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Line, LineChart, ResponsiveContainer } from "recharts";
+// import { Line, LineChart, ResponsiveContainer } from "recharts";
 
 type DashboardStatCardProps = {
   title: string;
@@ -17,7 +17,7 @@ export default function DashboardStatCard({
   value,
   changePercent,
   increased = true,
-  trendData,
+  // trendData,
   className,
 }: DashboardStatCardProps) {
   const formattedValue =
@@ -26,27 +26,27 @@ export default function DashboardStatCard({
       : value;
 
   // Determine color based on change direction
-  const getColor = () => {
-    if (increased) {
-      // Green for positive changes
-      return "#10B981"; // green-500
-    } else {
-      // Red for negative changes
-      return "#EF4444"; // red-500
-    }
-  };
+  // const getColor = () => {
+  //   if (increased) {
+  //     // Green for positive changes
+  //     return "#10B981"; // green-500
+  //   } else {
+  //     // Red for negative changes
+  //     return "#EF4444"; // red-500
+  //   }
+  // };
 
   // For conversion rate or net profit, use orange
   const titleLower = title.toLowerCase();
   const isOrange =
     titleLower.includes("conversion") || titleLower.includes("net profit");
-  const color = isOrange ? "#F97316" : getColor(); // orange-500 for conversion / net profit
+  // const color = isOrange ? "#F97316" : getColor(); // orange-500 for conversion / net profit
 
   // Prepare chart data
-  const chartData = trendData.map((val, index) => ({
-    value: val,
-    index,
-  }));
+  // const chartData = trendData.map((val, index) => ({
+  //   value: val,
+  //   index,
+  // }));
 
   return (
     <div
@@ -69,14 +69,14 @@ export default function DashboardStatCard({
               increased && !isOrange
                 ? "text-[#10B981]"
                 : !increased
-                  ? "text-[#EF4444]"
-                  : "text-[#F97316]"
+                ? "text-[#EF4444]"
+                : "text-[#F97316]"
             )}
           >
             {increased ? "+" : "-"} {Math.abs(changePercent)}%
           </span>
 
-          <div className="w-[80px] h-[50px] shrink-0">
+          {/* <div className="w-20 h-[50px] shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}
@@ -107,7 +107,7 @@ export default function DashboardStatCard({
                 />
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

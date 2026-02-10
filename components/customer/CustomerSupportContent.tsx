@@ -108,7 +108,7 @@ export default function CustomerSupportContent() {
         */}
         <Button
           onClick={() => setIsCreateTicketModalOpen(true)}
-          className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[48px] px-6"
+          className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-12 px-6"
         >
           <Plus className="w-5 h-5" />
           Create Ticket

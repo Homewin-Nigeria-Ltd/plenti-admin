@@ -43,16 +43,11 @@ const STOCK_STATUS_DISPLAY: Record<string, string> = {
   medium_stock: "Medium Stock",
 };
 
-const statuses = [
-  "High Stock",
-  "Medium Stock",
-  "Low Stock",
-  "In Stock",
-];
+const statuses = ["High Stock", "Medium Stock", "Low Stock", "In Stock"];
 
 function formatStockStatus(s: string) {
   const mapped = STOCK_STATUS_DISPLAY[s];
-  return mapped != null ? mapped : (s || "In Stock");
+  return mapped != null ? mapped : s || "In Stock";
 }
 
 export function EditInventoryModal({
@@ -63,7 +58,9 @@ export function EditInventoryModal({
 }: EditInventoryModalProps) {
   const [warehouse, setWarehouse] = React.useState("");
   const [quantity, setQuantity] = React.useState("");
-  const [expiryDate, setExpiryDate] = React.useState<Date | undefined>(undefined);
+  const [expiryDate, setExpiryDate] = React.useState<Date | undefined>(
+    undefined
+  );
   const [status, setStatus] = React.useState("");
   const [batch, setBatch] = React.useState("");
   const [supplier, setSupplier] = React.useState("");
@@ -100,8 +97,9 @@ export function EditInventoryModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="max-h-[90vh] flex flex-col p-0 w-[95vw] !max-w-[557px] sm:!w-[557px] sm:!max-w-[557px]"
-        showCloseButton={false}>
+        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[557px]! sm:w-[557px]! sm:max-w-[557px]!"
+        showCloseButton={false}
+      >
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100 relative">
           <DialogTitle className="text-2xl font-semibold">
             Edit Inventory Item
@@ -113,7 +111,8 @@ export function EditInventoryModal({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="absolute top-6 right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full">
+            className="absolute top-6 right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+          >
             <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
         </DialogHeader>
@@ -121,7 +120,8 @@ export function EditInventoryModal({
         <form
           id="edit-inventory-form"
           onSubmit={handleSubmit}
-          className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          className="flex-1 overflow-y-auto px-6 py-4 space-y-6"
+        >
           <div className="space-y-2">
             <Label htmlFor="edit-productName">Product Name</Label>
             <Input
@@ -136,7 +136,10 @@ export function EditInventoryModal({
             <div className="space-y-2">
               <Label htmlFor="edit-warehouse">Warehouse</Label>
               <Select value={warehouse} onValueChange={setWarehouse}>
-                <SelectTrigger id="edit-warehouse" className="form-control !w-full">
+                <SelectTrigger
+                  id="edit-warehouse"
+                  className="form-control w-full!"
+                >
                   <SelectValue placeholder="Select Warehouse" />
                 </SelectTrigger>
                 <SelectContent>
@@ -166,7 +169,10 @@ export function EditInventoryModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-expiryDate">Expiry Date</Label>
-              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+              <Popover
+                open={isDatePickerOpen}
+                onOpenChange={setIsDatePickerOpen}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     id="edit-expiryDate"
@@ -174,7 +180,8 @@ export function EditInventoryModal({
                     className={cn(
                       "form-control w-full justify-start text-left font-normal",
                       !expiryDate && "text-neutral-500"
-                    )}>
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {expiryDate ? (
                       expiryDate.toLocaleDateString("en-US", {
@@ -204,7 +211,10 @@ export function EditInventoryModal({
             <div className="space-y-2">
               <Label htmlFor="edit-status">Status</Label>
               <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger id="edit-status" className="form-control !w-full">
+                <SelectTrigger
+                  id="edit-status"
+                  className="form-control w-full!"
+                >
                   <SelectValue placeholder="Select Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -249,7 +259,8 @@ export function EditInventoryModal({
           <Button
             type="submit"
             form="edit-inventory-form"
-            className="btn btn-primary w-full">
+            className="btn btn-primary w-full"
+          >
             Update Inventory Item
           </Button>
         </div>
