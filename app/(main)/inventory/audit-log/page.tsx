@@ -27,8 +27,6 @@ const MOCK_ENTRIES = [
 export default function AuditLogPage() {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-[#101928]">Audit Log</h2>
-
       <div className="space-y-4">
         {MOCK_ENTRIES.map((entry) => (
           <div

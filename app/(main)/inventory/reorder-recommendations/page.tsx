@@ -29,8 +29,6 @@ const MOCK_RECOMMENDATIONS = [
 export default function ReorderRecommendationsPage() {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-[#101928]">Reorder Recommendations</h2>
-
       <div className="space-y-3">
         {MOCK_RECOMMENDATIONS.map((r) => (
           <div
