@@ -56,7 +56,8 @@ function getStatusBadgeClass(displayStatus: string) {
 }
 
 type InventoryTableWrapperProps = {
-  onAddStockClick: () => void;
+
+  onAddStockClick: (warehouseId?: string | number) => void;
   warehouseId?: string | number;
 };
 
@@ -264,7 +265,14 @@ export default function InventoryTableWrapper({
           </Button>
         ) : (
           <Button
-            onClick={onAddStockClick}
+            onClick={() =>
+              onAddStockClick(
+                warehouseId ??
+                  (selectedWarehouse !== "all"
+                    ? selectedWarehouse
+                    : undefined)
+              )
+            }
             className="btn btn-primary w-full sm:w-auto shrink-0"
           >
             <Plus className="size-4 mr-2" />
@@ -357,6 +365,13 @@ export default function InventoryTableWrapper({
                 : undefined),
           });
         }}
+        warehouseId={
+          isWarehouseDetailView
+            ? warehouseId
+            : selectedWarehouse !== "all"
+              ? selectedWarehouse
+              : undefined
+        }
       />
       <DeleteInventoryModal
         isOpen={isDeleteModalOpen}

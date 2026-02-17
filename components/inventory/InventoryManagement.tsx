@@ -55,6 +55,9 @@ function useStatisticsMapped() {
 
 export default function InventoryManagement() {
   const [isAddStockModalOpen, setIsAddStockModalOpen] = React.useState(false);
+  const [addStockWarehouseId, setAddStockWarehouseId] = React.useState<
+    string | number | undefined
+  >(undefined);
   const [isAddWarehouseModalOpen, setIsAddWarehouseModalOpen] =
     React.useState(false);
   const {
@@ -94,16 +97,16 @@ export default function InventoryManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-[#101928]">Warehouses</h2>
-        <Button
-          onClick={() => setIsAddWarehouseModalOpen(true)}
-          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white"
-        >
-          <Plus className="size-4 mr-2" />
-          Add Warehouse
-        </Button>
-      </div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-[#101928]">Warehouses</h2>
+            <Button
+              onClick={() => setIsAddWarehouseModalOpen(true)}
+              className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white"
+            >
+              <Plus className="size-4 mr-2" />
+              Add Warehouse
+            </Button>
+          </div>
 
       {loadingWarehouses || !hasFetchedWarehouses ? (
         <div className="overflow-x-auto">
@@ -154,13 +157,20 @@ export default function InventoryManagement() {
 
       <div className="space-y-4">
         <InventoryTableWrapper
-          onAddStockClick={() => setIsAddStockModalOpen(true)}
+          onAddStockClick={(warehouseId) => {
+            setAddStockWarehouseId(warehouseId);
+            setIsAddStockModalOpen(true);
+          }}
         />
       </div>
 
       <AddNewStockModal
         isOpen={isAddStockModalOpen}
-        onClose={() => setIsAddStockModalOpen(false)}
+        onClose={() => {
+          setIsAddStockModalOpen(false);
+          setAddStockWarehouseId(undefined);
+        }}
+        warehouseId={addStockWarehouseId}
       />
 
       <AddWarehouseModal

@@ -52,7 +52,7 @@ function getApiErrorMessage(err: unknown): string | null {
   return typeof message === "string" ? message : null;
 }
 
-const addStockFormSchema = z
+const addStockFormSchemaWithWarehouse = z
   .object({
     product: z.object({ value: z.string(), label: z.string() }).nullable(),
     warehouse: z.object({ value: z.string(), label: z.string() }).nullable(),
@@ -70,72 +70,116 @@ const addStockFormSchema = z
     path: ["warehouse"],
   });
 
-type AddStockFormValues = z.infer<typeof addStockFormSchema>;
+const addStockFormSchemaQuantityOnly = z
+  .object({
+    product: z.object({ value: z.string(), label: z.string() }).nullable(),
+    quantity: z
+      .number()
+      .int("Quantity must be a whole number")
+      .min(1, "Quantity must be at least 1"),
+  })
+  .refine((data) => data.product != null && data.product.value.length > 0, {
+    message: "Please select a product",
+    path: ["product"],
+  });
+
+type AddStockFormValuesWithWarehouse = z.infer<typeof addStockFormSchemaWithWarehouse>;
+type AddStockFormValuesQuantityOnly = z.infer<typeof addStockFormSchemaQuantityOnly>;
 
 type AddNewStockModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  /** When set (e.g. warehouse detail or single warehouse selected), warehouse is from context and only product + quantity are shown */
+  warehouseId?: string | number;
 };
 
-export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
+export function AddNewStockModal({
+  isOpen,
+  onClose,
+  warehouseId: warehouseIdProp,
+}: AddNewStockModalProps) {
   const { products, loadingProducts, fetchProducts } = useProductStore();
   const { warehouses, loadingWarehouses, fetchWarehouses, fetchInventory } =
     useInventoryStore();
 
-  const form = useForm<AddStockFormValues>({
-    resolver: zodResolver(addStockFormSchema),
-    defaultValues: {
-      product: null,
-      warehouse: null,
-      quantity: 1,
-    },
+  const hasWarehouseContext =
+    warehouseIdProp != null && String(warehouseIdProp).trim() !== "";
+
+  const formWithWarehouse = useForm<AddStockFormValuesWithWarehouse>({
+    resolver: zodResolver(addStockFormSchemaWithWarehouse),
+    defaultValues: { product: null, warehouse: null, quantity: 1 },
+  });
+
+  const formQuantityOnly = useForm<AddStockFormValuesQuantityOnly>({
+    resolver: zodResolver(addStockFormSchemaQuantityOnly),
+    defaultValues: { product: null, quantity: 1 },
   });
 
   React.useEffect(() => {
     if (isOpen) {
       fetchProducts({ page: 1, categoryId: null, search: "" });
-      fetchWarehouses();
+      if (!hasWarehouseContext) fetchWarehouses();
     } else {
-      form.reset({
-        product: null,
-        warehouse: null,
-        quantity: 1,
-      });
+      formWithWarehouse.reset({ product: null, warehouse: null, quantity: 1 });
+      formQuantityOnly.reset({ product: null, quantity: 1 });
     }
-  }, [isOpen, fetchProducts, fetchWarehouses, form]);
+  }, [isOpen, hasWarehouseContext, fetchProducts, fetchWarehouses, formWithWarehouse, formQuantityOnly]);
 
-  const onSubmit = async (values: AddStockFormValues) => {
-    const product = values.product;
-    const warehouse = values.warehouse;
-    if (!product?.value || !warehouse?.value) return;
+  const submitPayload = (
+    values: AddStockFormValuesWithWarehouse | AddStockFormValuesQuantityOnly
+  ) => {
+    const productId = values.product?.value;
+    if (!productId) return;
+    const quantity = values.quantity;
+    const warehouse_id = hasWarehouseContext
+      ? Number(warehouseIdProp)
+      : Number.parseInt(
+          (values as AddStockFormValuesWithWarehouse).warehouse?.value ?? "0",
+          10
+        );
+    return { productId, warehouse_id, quantity };
+  };
+
+  const onSubmit = async (
+    values: AddStockFormValuesWithWarehouse | AddStockFormValuesQuantityOnly
+  ) => {
+    const payload = submitPayload(values);
+    if (!payload) return;
 
     try {
       const { data } = await api.patch<{
         status?: string;
         message?: string;
-      }>(`${INVENTORY_API.adjustStock}/${product.value}/adjust-stock`, {
-        warehouse_id: Number.parseInt(warehouse.value, 10),
-        quantity: values.quantity,
+      }>(`${INVENTORY_API.adjustStock}/${payload.productId}/adjust-stock`, {
+        product_id: Number(payload.productId),
+        warehouse_id: payload.warehouse_id,
+        quantity: payload.quantity,
       });
 
       if (data?.status === "success") {
         toast.success("Stock adjusted successfully");
         fetchInventory({ page: 1, search: "" });
-        form.reset({ product: null, warehouse: null, quantity: 1 });
+        formWithWarehouse.reset({ product: null, warehouse: null, quantity: 1 });
+        formQuantityOnly.reset({ product: null, quantity: 1 });
         onClose();
       } else {
         const message =
-          typeof data?.message === "string" ? data.message : "Failed to adjust stock";
+          typeof data?.message === "string"
+            ? data.message
+            : "Failed to adjust stock";
         toast.error(message);
       }
     } catch (error) {
-      const message = getApiErrorMessage(error) ?? "Failed to adjust stock";
+      const message =
+        getApiErrorMessage(error) ?? "Failed to adjust stock";
       console.error("Error adjusting stock =>", error);
       toast.error(message);
     }
   };
 
-  const isSubmitting = form.formState.isSubmitting;
+  const isSubmitting =
+    formWithWarehouse.formState.isSubmitting ||
+    formQuantityOnly.formState.isSubmitting;
   const [productOpen, setProductOpen] = React.useState(false);
   const [warehouseOpen, setWarehouseOpen] = React.useState(false);
 
@@ -163,19 +207,22 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
           </button>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="add-product-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
-          >
-            <FormField
-              control={form.control}
-              name="product"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product</FormLabel>
-                  <Popover open={productOpen} onOpenChange={setProductOpen}>
+        {hasWarehouseContext ? (
+          <Form {...formQuantityOnly}>
+            <form
+              id="add-product-form"
+              onSubmit={formQuantityOnly.handleSubmit((values) =>
+                onSubmit(values)
+              )}
+              className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
+            >
+              <FormField
+                control={formQuantityOnly.control}
+                name="product"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product</FormLabel>
+                    <Popover open={productOpen} onOpenChange={setProductOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -199,9 +246,15 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-(--radix-popover-trigger-width)" align="start">
+                      <PopoverContent
+                        className="w-(--radix-popover-trigger-width)"
+                        align="start"
+                      >
                         <Command>
-                          <CommandInput placeholder="Search product..." className="h-9" />
+                          <CommandInput
+                            placeholder="Search product..."
+                            className="h-9"
+                          />
                           <CommandList>
                             <CommandEmpty>
                               {loadingProducts
@@ -215,11 +268,11 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
                                   value={p.name}
                                   onSelect={() => {
                                     const id = String(p.id);
-                                    const next =
+                                    field.onChange(
                                       field.value?.value === id
                                         ? null
-                                        : { value: id, label: p.name };
-                                    field.onChange(next);
+                                        : { value: id, label: p.name }
+                                    );
                                     setProductOpen(false);
                                   }}
                                 >
@@ -239,18 +292,151 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                  <FormMessage />
-                </FormItem>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={formQuantityOnly.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="50"
+                        min={1}
+                        className="form-control"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const v = e.target.valueAsNumber;
+                          field.onChange(Number.isFinite(v) ? v : 0);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  className="btn btn-primary w-full"
+                  disabled={isSubmitting || loadingProducts}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adjusting Stock...
+                    </>
+                  ) : (
+                    "Adjust Stock"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        ) : (
+          <Form {...formWithWarehouse}>
+            <form
+              id="add-product-form"
+              onSubmit={formWithWarehouse.handleSubmit((values) =>
+                onSubmit(values)
               )}
-            />
-
-            <FormField
-              control={form.control}
-              name="warehouse"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Warehouse</FormLabel>
-                  <Popover open={warehouseOpen} onOpenChange={setWarehouseOpen}>
+              className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
+            >
+              <FormField
+                control={formWithWarehouse.control}
+                name="product"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product</FormLabel>
+                    <Popover open={productOpen} onOpenChange={setProductOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={productOpen}
+                            disabled={loadingProducts}
+                            className={cn(
+                              "form-control w-full justify-between font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value
+                              ? products.find(
+                                  (p) => String(p.id) === field.value?.value
+                                )?.name
+                              : loadingProducts
+                                ? "Loading products..."
+                                : "Select product..."}
+                            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-(--radix-popover-trigger-width)"
+                        align="start"
+                      >
+                        <Command>
+                          <CommandInput
+                            placeholder="Search product..."
+                            className="h-9"
+                          />
+                          <CommandList>
+                            <CommandEmpty>
+                              {loadingProducts
+                                ? "Loading products..."
+                                : "No product found."}
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {products.map((p) => (
+                                <CommandItem
+                                  key={p.id}
+                                  value={p.name}
+                                  onSelect={() => {
+                                    const id = String(p.id);
+                                    field.onChange(
+                                      field.value?.value === id
+                                        ? null
+                                        : { value: id, label: p.name }
+                                    );
+                                    setProductOpen(false);
+                                  }}
+                                >
+                                  {p.name}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto",
+                                      field.value?.value === String(p.id)
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={formWithWarehouse.control}
+                name="warehouse"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Warehouse</FormLabel>
+                    <Popover
+                      open={warehouseOpen}
+                      onOpenChange={setWarehouseOpen}
+                    >
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -265,7 +451,8 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
                           >
                             {field.value
                               ? warehouses.find(
-                                  (wh) => String(wh.id) === field.value?.value
+                                  (wh) =>
+                                    String(wh.id) === field.value?.value
                                 )?.name
                               : loadingWarehouses
                                 ? "Loading warehouses..."
@@ -274,9 +461,15 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-(--radix-popover-trigger-width)" align="start">
+                      <PopoverContent
+                        className="w-(--radix-popover-trigger-width)"
+                        align="start"
+                      >
                         <Command>
-                          <CommandInput placeholder="Search warehouse..." className="h-9" />
+                          <CommandInput
+                            placeholder="Search warehouse..."
+                            className="h-9"
+                          />
                           <CommandList>
                             <CommandEmpty>
                               {loadingWarehouses
@@ -290,11 +483,11 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
                                   value={wh.name}
                                   onSelect={() => {
                                     const id = String(wh.id);
-                                    const next =
+                                    field.onChange(
                                       field.value?.value === id
                                         ? null
-                                        : { value: id, label: wh.name };
-                                    field.onChange(next);
+                                        : { value: id, label: wh.name }
+                                    );
                                     setWarehouseOpen(false);
                                   }}
                                 >
@@ -314,56 +507,57 @@ export function AddNewStockModal({ isOpen, onClose }: AddNewStockModalProps) {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantity</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="50"
-                      min={1}
-                      className="form-control"
-                      {...field}
-                      value={field.value ?? ""}
-                      onChange={(e) => {
-                        const v = e.target.valueAsNumber;
-                        field.onChange(Number.isFinite(v) ? v : 0);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="pt-4">
-              <Button
-                type="submit"
-                className="btn btn-primary w-full"
-                disabled={
-                  isSubmitting || loadingProducts || loadingWarehouses
-                }
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Adjusting Stock...
-                  </>
-                ) : (
-                  "Adjust Stock"
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+              />
+              <FormField
+                control={formWithWarehouse.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="50"
+                        min={1}
+                        className="form-control"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const v = e.target.valueAsNumber;
+                          field.onChange(Number.isFinite(v) ? v : 0);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  className="btn btn-primary w-full"
+                  disabled={
+                    isSubmitting ||
+                    loadingProducts ||
+                    loadingWarehouses
+                  }
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adjusting Stock...
+                    </>
+                  ) : (
+                    "Adjust Stock"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );
