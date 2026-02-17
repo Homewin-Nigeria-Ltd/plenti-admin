@@ -1,4 +1,4 @@
-import { InventoryTabNav } from "@/components/inventory/InventoryTabNav";
+import { InventoryLayoutClient } from "@/components/inventory/InventoryLayoutClient";
 
 export default function InventoryLayout({
   children,
@@ -7,7 +7,7 @@ export default function InventoryLayout({
 }>) {
   return (
     <div className="space-y-6">
-      <InventoryTabNav />
+      <InventoryLayoutClient />
       {children}
     </div>
   );

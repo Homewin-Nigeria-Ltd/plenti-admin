@@ -32,8 +32,6 @@ const MOCK_ALERTS = [
 export default function StockAlertsPage() {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-[#101928]">Stock Alerts</h2>
-
       <div className="space-y-3">
         {MOCK_ALERTS.map((a) => (
           <div

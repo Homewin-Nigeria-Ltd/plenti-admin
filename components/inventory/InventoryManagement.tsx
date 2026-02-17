@@ -97,8 +97,7 @@ export default function InventoryManagement() {
 
   return (
     <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-[#101928]">Warehouses</h2>
+          <div className="flex items-center justify-end">
             <Button
               onClick={() => setIsAddWarehouseModalOpen(true)}
               className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white"

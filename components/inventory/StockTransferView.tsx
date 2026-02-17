@@ -1,9 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button } from "@/components/ui/button";
-import { ArrowRightLeft, Plus } from "lucide-react";
-import { NewStockTransferModal } from "./NewStockTransferModal";
+import { ArrowRightLeft } from "lucide-react";
 
 const MOCK_TRANSFERS = [
   {
@@ -36,22 +34,8 @@ const MOCK_TRANSFERS = [
 ];
 
 export function StockTransferView() {
-  const [isNewTransferModalOpen, setIsNewTransferModalOpen] =
-    React.useState(false);
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-[#101928]">Stock Transfer</h2>
-        <Button
-          onClick={() => setIsNewTransferModalOpen(true)}
-          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white"
-        >
-          <Plus className="size-4 mr-2" />
-          New Transfer
-        </Button>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {MOCK_TRANSFERS.map((t) => (
           <div
@@ -84,14 +68,6 @@ export function StockTransferView() {
           </div>
         ))}
       </div>
-
-      <NewStockTransferModal
-        isOpen={isNewTransferModalOpen}
-        onClose={() => setIsNewTransferModalOpen(false)}
-        onSuccess={() => {
-          // Optionally refetch transfer list when API supports it
-        }}
-      />
     </div>
   );
 }
