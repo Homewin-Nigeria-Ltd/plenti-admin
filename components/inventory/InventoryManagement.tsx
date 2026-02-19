@@ -1,22 +1,19 @@
 "use client";
 
-import * as React from "react";
-import { mockRecentStock, mockStockLevel } from "@/data/inventory";
-import WarehouseCard from "./WarehouseCard";
-import StockLevelCard from "./StockLevelCard";
-import RecentlyStockCard from "./RecentlyStockCard";
-import InventoryTableWrapper from "./InventoryTableWrapper";
-import { AddNewStockModal } from "./AddNewStockModal";
-import { AddWarehouseModal } from "./AddWarehouseModal";
-import { useInventoryStore } from "@/store/useInventoryStore";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus } from "lucide-react";
+import { mockRecentStock, mockStockLevel } from "@/data/inventory";
+import { useInventoryStore } from "@/store/useInventoryStore";
 import type {
-  Warehouse,
-  StockLevel,
   RecentStock,
+  StockLevel,
+  Warehouse,
 } from "@/types/InventoryTypes";
+import * as React from "react";
+import { AddNewStockModal } from "./AddNewStockModal";
+import InventoryTableWrapper from "./InventoryTableWrapper";
+import RecentlyStockCard from "./RecentlyStockCard";
+import StockLevelCard from "./StockLevelCard";
+import WarehouseCard from "./WarehouseCard";
 
 const PLACEHOLDER_PRODUCT_IMAGE = "https://ui-avatars.com/api/?name=P&size=56";
 
@@ -58,8 +55,7 @@ export default function InventoryManagement() {
   const [addStockWarehouseId, setAddStockWarehouseId] = React.useState<
     string | number | undefined
   >(undefined);
-  const [isAddWarehouseModalOpen, setIsAddWarehouseModalOpen] =
-    React.useState(false);
+
   const {
     fetchInventoryStatistics,
     warehouses,
@@ -91,13 +87,9 @@ export default function InventoryManagement() {
     }));
   }, [warehouses]);
 
-  const handleWarehouseSuccess = () => {
-    fetchWarehouses();
-  };
-
   return (
     <div className="space-y-6">
-          <div className="flex items-center justify-end">
+      {/* <div className="flex items-center justify-end">
             <Button
               onClick={() => setIsAddWarehouseModalOpen(true)}
               className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white"
@@ -105,7 +97,7 @@ export default function InventoryManagement() {
               <Plus className="size-4 mr-2" />
               Add Warehouse
             </Button>
-          </div>
+          </div> */}
 
       {loadingWarehouses || !hasFetchedWarehouses ? (
         <div className="overflow-x-auto">
@@ -130,7 +122,7 @@ export default function InventoryManagement() {
           </div>
         </div>
       ) : warehouses.length > 0 ? (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pb-5">
           <div className="flex gap-4" style={{ width: "500px" }}>
             {mappedWarehouses.map((warehouse) => (
               <div key={warehouse.id} className="min-w-70 sm:min-w-75 shrink-0">
@@ -170,12 +162,6 @@ export default function InventoryManagement() {
           setAddStockWarehouseId(undefined);
         }}
         warehouseId={addStockWarehouseId}
-      />
-
-      <AddWarehouseModal
-        isOpen={isAddWarehouseModalOpen}
-        onClose={() => setIsAddWarehouseModalOpen(false)}
-        onSuccess={handleWarehouseSuccess}
       />
     </div>
   );

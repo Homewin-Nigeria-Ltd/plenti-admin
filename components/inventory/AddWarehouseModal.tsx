@@ -79,7 +79,7 @@ export function AddWarehouseModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent
-        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[557px] sm:w-[557px] sm:max-w-[557px]"
+        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-139.25 sm:w-139.25 sm:max-w-139.25"
         showCloseButton={false}
       >
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
@@ -94,7 +94,7 @@ export function AddWarehouseModal({
             onClick={handleClose}
             aria-label="Close dialog"
             disabled={isSubmitting}
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full disabled:opacity-50"
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full disabled:opacity-50"
           >
             <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
@@ -151,7 +151,7 @@ export function AddWarehouseModal({
               placeholder="Main distribution center"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="form-control w-full min-h-[100px] resize-none"
+              className="form-control w-full min-h-25 resize-none"
               required
               disabled={isSubmitting}
             />

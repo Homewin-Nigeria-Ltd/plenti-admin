@@ -10,16 +10,24 @@ import type { LowStockAlertsResponse } from "@/types/InventoryTypes";
 import { useTransfersStore } from "@/store/useTransfersStore";
 import { InventoryTabNav } from "./InventoryTabNav";
 import { NewStockTransferModal } from "./NewStockTransferModal";
+import { AddWarehouseModal } from "./AddWarehouseModal";
+import { useInventoryStore } from "@/store/useInventoryStore";
+import { cn } from "@/lib/utils";
 
 export function InventoryLayoutClient() {
+  const { fetchWarehouses } = useInventoryStore();
+
   const pathname = usePathname();
   const refreshTransfers = useTransfersStore((s) => s.refreshTransfers);
   const [isNewTransferModalOpen, setIsNewTransferModalOpen] =
     React.useState(false);
-  const [stockAlertsCount, setStockAlertsCount] = React.useState<
-    number | null
-  >(null);
+  const [isAddWarehouseModalOpen, setIsAddWarehouseModalOpen] =
+    React.useState(false);
+  const [stockAlertsCount, setStockAlertsCount] = React.useState<number | null>(
+    null
+  );
   const isStockTransferPage = pathname === "/inventory/stock-transfer";
+  const isOverview = pathname === "/inventory";
 
   React.useEffect(() => {
     api
@@ -32,16 +40,35 @@ export function InventoryLayoutClient() {
       .catch(() => setStockAlertsCount(0));
   }, []);
 
+  const handleWarehouseSuccess = () => {
+    fetchWarehouses();
+  };
+
   return (
-    <div className="flex items-center justify-between gap-4 ">
+    <div
+      className={cn(
+        "items-center justify-between gap-5",
+        pathname.includes("/inventory/warehouse") ? "hidden" : "flex"
+      )}
+    >
       <InventoryTabNav stockAlertsCount={stockAlertsCount} />
       {isStockTransferPage && (
         <Button
           onClick={() => setIsNewTransferModalOpen(true)}
-          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white shrink-0 h-[45px]"
+          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white shrink-0 h-11.25"
         >
           <Plus className="size-4 mr-2 " />
           New Transfer
+        </Button>
+      )}
+
+      {isOverview && (
+        <Button
+          onClick={() => setIsAddWarehouseModalOpen(true)}
+          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white shrink-0 h-11.25"
+        >
+          <Plus className="size-4 mr-2 " />
+          Add Warehouse
         </Button>
       )}
       {isStockTransferPage && (
@@ -52,6 +79,14 @@ export function InventoryLayoutClient() {
             setIsNewTransferModalOpen(false);
             refreshTransfers();
           }}
+        />
+      )}
+
+      {isOverview && (
+        <AddWarehouseModal
+          isOpen={isAddWarehouseModalOpen}
+          onClose={() => setIsAddWarehouseModalOpen(false)}
+          onSuccess={handleWarehouseSuccess}
         />
       )}
     </div>
