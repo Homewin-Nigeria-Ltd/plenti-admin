@@ -4,39 +4,36 @@ import * as React from "react";
 import api from "@/lib/api";
 import { INVENTORY_API } from "@/data/inventory";
 import type {
-  ReorderRecommendationItem,
-  ReorderRecommendationsResponse,
+  RestockRecommendationItem,
+  RestockRecommendationsResponse,
 } from "@/types/InventoryTypes";
 import { toast } from "sonner";
 
-function getUrgencyStyles(urgency: string) {
-  const u = urgency.toUpperCase();
-  if (u === "HIGH")
-    return "px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800";
-  if (u === "MEDIUM")
-    return "px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800";
-  return "px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700";
-}
-
 export function ReorderRecommendationsView() {
-  const [items, setItems] = React.useState<ReorderRecommendationItem[]>([]);
+  const [recommendations, setRecommendations] = React.useState<
+    RestockRecommendationItem[]
+  >([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     setLoading(true);
     api
-      .get<ReorderRecommendationsResponse>(INVENTORY_API.reorderRecommendations)
+      .get<RestockRecommendationsResponse>(INVENTORY_API.restockRecommendations)
       .then(({ data }) => {
-        if (data?.status === "success" && Array.isArray(data?.data)) {
-          setItems(data.data);
+        if (
+          data?.status === "success" &&
+          data?.data?.recommendations != null &&
+          Array.isArray(data.data.recommendations)
+        ) {
+          setRecommendations(data.data.recommendations);
         } else {
-          setItems([]);
+          setRecommendations([]);
         }
       })
       .catch((err) => {
-        console.error("Reorder recommendations fetch error:", err);
-        toast.error("Failed to load reorder recommendations");
-        setItems([]);
+        console.error("Restock recommendations fetch error:", err);
+        toast.error("Failed to load restock recommendations");
+        setRecommendations([]);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -63,45 +60,33 @@ export function ReorderRecommendationsView() {
     );
   }
 
-  if (items.length === 0) {
+  if (recommendations.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-[#EAECF0] p-8 text-center text-[#667085] text-sm">
-        No reorder recommendations at this time.
+        No restock recommendations at this time.
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {items.map((r) => (
+    <div className="space-y-3">
+      {recommendations.map((r) => (
         <div
-          key={`${r.product_id}-${r.warehouse}`}
+          key={`${r.product_id}-${r.predicted_stockout_date}`}
           className="bg-white rounded-xl border border-[#EAECF0] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-semibold text-primary">{r.product_name}</p>
-              <span
-                className={getUrgencyStyles(r.urgency)}
-              >
-                {r.urgency}
-              </span>
-            </div>
-            <p className="text-[#667085] text-sm mt-1">{r.sku} · {r.warehouse}</p>
+          <div className="min-w-0">
+            <p className="font-semibold text-[#0B1E66]">{r.product_name}</p>
             <p className="text-[#667085] text-sm mt-1">
-              Current: {r.current_stock} units · Reorder point: {r.reorder_point}
+              Current: {r.current_stock} units · Supplier: {r.supplier ?? "Not specified"}
             </p>
-            <p className="text-[#667085] text-sm">
-              Monthly sales: {r.monthly_sales} · ~{r.days_of_stock_remaining} days of stock left
-            </p>
-            <p className="text-[#667085] text-sm">Supplier: {r.supplier}</p>
           </div>
           <div className="sm:text-right shrink-0">
             <p className="font-semibold text-[#0B1E66]">
-              Order {r.recommended_reorder_quantity} units
+              Order {r.recommended_restock_quantity} units
             </p>
-            <p className="text-[#667085] text-xs mt-1">
-              Recommended reorder quantity
+            <p className="text-[#667085] text-sm mt-1">
+              Based on 30-day avg. sales
             </p>
           </div>
         </div>

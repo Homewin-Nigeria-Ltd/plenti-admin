@@ -14,7 +14,7 @@ export const INVENTORY_API = {
   transfers: "/api/admin/inventory/transfers",
   auditLog: "/api/admin/inventory/audit-log",
   lowStockAlerts: "/api/admin/inventory/low-stock-alerts",
-  reorderRecommendations: "/api/admin/inventory/reorder-recommendations",
+  restockRecommendations: "/api/admin/restock-recommendations",
 } as const;
 
 export const mockWarehouses: Warehouse[] = [
