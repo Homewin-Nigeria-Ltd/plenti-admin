@@ -67,11 +67,14 @@ type SidebarLinksProps = {
   collapsed?: boolean;
 };
 
-export default function SidebarLinks({
-  collapsed = false,
-}: SidebarLinksProps) {
+export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const isRouteActive = React.useCallback(
+    (href: string) => pathname === href || pathname.startsWith(`${href}/`),
+    [pathname]
+  );
 
   const linkBaseClass = React.useMemo(
     () =>
@@ -95,7 +98,7 @@ export default function SidebarLinks({
   return (
     <ul className={`${dmSans.className} flex-1 overflow-auto mt-3 space-y-2`}>
       {links.map((link, idx) => {
-        const isActive = pathname === link.href;
+        const isActive = isRouteActive(link.href);
 
         return (
           <li
@@ -123,8 +126,8 @@ export default function SidebarLinks({
         );
       })}
       {(() => {
-        const customerActive = pathname === "/customer";
-        const configActive = pathname === "/configuration";
+        const customerActive = isRouteActive("/customer");
+        const configActive = isRouteActive("/configuration");
 
         return (
           <>
