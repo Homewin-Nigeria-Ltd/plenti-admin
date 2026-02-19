@@ -8,11 +8,15 @@ const INVENTORY_TABS = [
   { href: "/inventory", label: "Overview" },
   { href: "/inventory/stock-transfer", label: "Stock Transfer" },
   { href: "/inventory/reorder-recommendations", label: "Reorder Recommendations" },
-  { href: "/inventory/stock-alerts", label: "Stock Alerts", count: 3 },
+  { href: "/inventory/stock-alerts", label: "Stock Alerts" },
   { href: "/inventory/audit-log", label: "Audit Log" },
 ] as const;
 
-export function InventoryTabNav() {
+type InventoryTabNavProps = {
+  stockAlertsCount?: number | null;
+};
+
+export function InventoryTabNav({ stockAlertsCount }: InventoryTabNavProps) {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
@@ -27,6 +31,9 @@ export function InventoryTabNav() {
       <ul className="flex gap-1">
         {INVENTORY_TABS.map((tab) => {
           const active = isActive(tab.href);
+          const showCount =
+            tab.href === "/inventory/stock-alerts" &&
+            stockAlertsCount != null;
           return (
             <li key={tab.href}>
               <Link
@@ -39,7 +46,7 @@ export function InventoryTabNav() {
                 )}
               >
                 {tab.label}
-                {"count" in tab && tab.count != null ? ` (${tab.count})` : null}
+                {showCount ? ` (${stockAlertsCount})` : null}
               </Link>
             </li>
           );

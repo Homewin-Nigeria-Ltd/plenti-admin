@@ -89,7 +89,6 @@ type AddStockFormValuesQuantityOnly = z.infer<typeof addStockFormSchemaQuantityO
 type AddNewStockModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  /** When set (e.g. warehouse detail or single warehouse selected), warehouse is from context and only product + quantity are shown */
   warehouseId?: string | number;
 };
 

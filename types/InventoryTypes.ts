@@ -10,7 +10,6 @@ export type Warehouse = {
   units: number;
   fillPercentage: number;
   manager: string;
-  /** From API statistics; when set, card can show product count and stock value */
   product_count?: number;
   stock_value?: string;
 };
@@ -101,7 +100,6 @@ export type InventoryState = {
   clearError: () => void;
 };
 
-/** GET {{base_url}}/api/admin/inventory/statistics */
 export type InventoryStockLevelBreakdown = {
   in_stock: { count: number; percentage: number };
   low_stock: { count: number; percentage: number };
@@ -194,4 +192,167 @@ export type CreateWarehouseRequest = {
   manager: string;
   location: string;
   description: string;
+};
+
+export type AuditLogUser = {
+  id: number;
+  name: string;
+  amount_spent?: number;
+  total_orders?: number;
+};
+
+export type AuditLogProduct = {
+  id: number;
+  name: string;
+  sku: string | null;
+  average_rating?: number;
+};
+
+export type AuditLogWarehouse = {
+  id: number;
+  name: string;
+};
+
+export type AuditLogEntry = {
+  id: number;
+  user_id: number;
+  action_type: string;
+  product_id: number;
+  warehouse_id: number;
+  details: Record<string, unknown>;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  user: AuditLogUser;
+  product: AuditLogProduct;
+  warehouse: AuditLogWarehouse;
+};
+
+export type AuditLogResponse = {
+  status?: string;
+  code?: number;
+  message?: string;
+  data: {
+    current_page: number;
+    data: AuditLogEntry[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: { url: string | null; label: string; page: number | null; active: boolean }[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+  };
+  timestamp?: string;
+};
+
+export type LowStockAlertProduct = {
+  id: number;
+  name: string;
+  sku: string | null;
+  slug: string;
+  description: string | null;
+  category_id: number | null;
+  brand_id: number | null;
+  price: number;
+  cost_price: number | null;
+  stock: number;
+  min_bulk_quantity: number | null;
+  bulk_price: number | null;
+  low_stock_threshold: number;
+  weight: number | null;
+  image_url: string | null;
+  images: unknown;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: number | null;
+  updated_by: number | null;
+  stock_status: string;
+  reorder_priority: string;
+  average_rating: number;
+  category: { id: number; name: string; slug: string } | null;
+};
+
+export type LowStockAlertsResponse = {
+  status?: string;
+  code?: number;
+  message?: string;
+  data: {
+    products: LowStockAlertProduct[];
+    count: number;
+    threshold: number;
+  };
+  timestamp?: string;
+};
+
+export type TransferHistoryUser = {
+  id: number;
+  name: string;
+  amount_spent?: number;
+  total_orders?: number;
+};
+
+export type TransferHistoryEntry = {
+  id: number;
+  product_id: number;
+  from_warehouse_id: number;
+  to_warehouse_id: number;
+  quantity: number;
+  status: string;
+  transferred_by: TransferHistoryUser;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  product: AuditLogProduct;
+  from_warehouse: AuditLogWarehouse;
+  to_warehouse: AuditLogWarehouse;
+};
+
+export type TransfersResponse = {
+  status?: string;
+  code?: number;
+  message?: string;
+  data: {
+    current_page: number;
+    data: TransferHistoryEntry[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: { url: string | null; label: string; page: number | null; active: boolean }[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+  };
+  timestamp?: string;
+};
+
+export type ReorderRecommendationItem = {
+  product_id: number;
+  product_name: string;
+  sku: string;
+  warehouse: string;
+  current_stock: number;
+  reorder_point: number;
+  monthly_sales: number;
+  days_of_stock_remaining: number;
+  recommended_reorder_quantity: number;
+  urgency: string;
+  supplier: string;
+};
+
+export type ReorderRecommendationsResponse = {
+  status?: string;
+  code?: number;
+  message?: string;
+  data: ReorderRecommendationItem[];
+  timestamp?: string;
 };

@@ -9,8 +9,12 @@ export const INVENTORY_API = {
   getStatistics: "/api/admin/inventory/statistics",
   getWarehouses: "/api/admin/warehouses",
   createWarehouse: "/api/admin/warehouses",
-  adjustStock: "/api/admin/inventory", // Base path for adjust-stock
+  adjustStock: "/api/admin/inventory",
   transfer: "/api/admin/inventory/transfer",
+  transfers: "/api/admin/inventory/transfers",
+  auditLog: "/api/admin/inventory/audit-log",
+  lowStockAlerts: "/api/admin/inventory/low-stock-alerts",
+  reorderRecommendations: "/api/admin/inventory/reorder-recommendations",
 } as const;
 
 export const mockWarehouses: Warehouse[] = [
@@ -43,76 +47,6 @@ export const mockWarehouses: Warehouse[] = [
     manager: "Amina Bello",
   },
 ];
-
-/*
-export const mockInventoryItems: InventoryItem[] = [
-  {
-    id: "INV001",
-    productId: "P001",
-    productName: "Mr. Chef Salt",
-    productImage: "https://picsum.photos/seed/mr-chef-salt/300/300",
-    warehouse: "WH001",
-    warehouseId: "WH001",
-    quantity: 150,
-    expiryDate: "2025-06-30",
-    status: "High Stock",
-    batch: "BATCH001",
-    supplier: "Nigerian Rice Mills Ltd",
-  },
-  {
-    id: "INV002",
-    productId: "P002",
-    productName: "Sonia Tomato Mix",
-    productImage: "https://picsum.photos/seed/sonia-tomato/300/300",
-    warehouse: "WH001",
-    warehouseId: "WH001",
-    quantity: 85,
-    expiryDate: "2025-05-15",
-    status: "Medium Stock",
-    batch: "BATCH002",
-    supplier: "Food Products Co.",
-  },
-  {
-    id: "INV003",
-    productId: "P003",
-    productName: "Golden Penny Spaghetti",
-    productImage: "https://picsum.photos/seed/spaghetti/300/300",
-    warehouse: "WH002",
-    warehouseId: "WH002",
-    quantity: 25,
-    expiryDate: "2026-01-20",
-    status: "Low Stock",
-    batch: "BATCH003",
-    supplier: "Pasta Industries",
-  },
-  {
-    id: "INV004",
-    productId: "P004",
-    productName: "Dangote Sugar",
-    productImage: "https://picsum.photos/seed/sugar/300/300",
-    warehouse: "WH001",
-    warehouseId: "WH001",
-    quantity: 200,
-    expiryDate: null,
-    status: "High Stock",
-    batch: "BATCH004",
-    supplier: "Dangote Group",
-  },
-  {
-    id: "INV005",
-    productId: "P005",
-    productName: "Crown Flour",
-    productImage: "https://picsum.photos/seed/flour/300/300",
-    warehouse: "WH003",
-    warehouseId: "WH003",
-    quantity: 45,
-    expiryDate: "2025-08-10",
-    status: "Medium Stock",
-    batch: "BATCH005",
-    supplier: "Flour Mills Nigeria",
-  },
-];
-*/
 
 export const mockRecentStock: RecentStock[] = [
   {
