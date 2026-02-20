@@ -335,24 +335,53 @@ export type TransfersResponse = {
   timestamp?: string;
 };
 
-export type ReorderRecommendationItem = {
+export type RestockRecommendationItem = {
+  type: string;
   product_id: number;
   product_name: string;
-  sku: string;
-  warehouse: string;
-  current_stock: number;
-  reorder_point: number;
-  monthly_sales: number;
-  days_of_stock_remaining: number;
-  recommended_reorder_quantity: number;
-  urgency: string;
+  category: string;
   supplier: string;
+  current_stock: number;
+  daily_velocity: number;
+  units_sold_30days: string;
+  days_until_stockout: number;
+  predicted_stockout_date: string;
+  recommended_restock_quantity: number;
+  priority: string;
+  potential_revenue_loss: number;
+  reason: string;
 };
 
-export type ReorderRecommendationsResponse = {
+export type RestockAlertItem = {
+  type: string;
+  product_id: number;
+  product_name: string;
+  category: string;
+  supplier: string;
+  current_stock: number;
+  threshold: number;
+  priority: string;
+  message: string;
+};
+
+export type RestockSummary = {
+  total_recommendations: number;
+  total_alerts: number;
+  critical_items: number;
+  high_priority_items: number;
+  analysis_period: string;
+  prediction_window: string;
+  generated_at: string;
+};
+
+export type RestockRecommendationsResponse = {
   status?: string;
   code?: number;
   message?: string;
-  data: ReorderRecommendationItem[];
+  data: {
+    recommendations: RestockRecommendationItem[];
+    alerts: RestockAlertItem[];
+    summary: RestockSummary;
+  };
   timestamp?: string;
 };
