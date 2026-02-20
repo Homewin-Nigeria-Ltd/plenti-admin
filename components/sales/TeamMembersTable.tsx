@@ -1,16 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import DataTable from "@/components/common/DataTable";
 import { teamMembersData } from "@/data/sales";
-import type { TeamMemberRow } from "@/types/sales";
-
-type TeamMembersTableProps = {
-  onSelectMember?: (member: TeamMemberRow) => void;
-};
 
 function StatusPill() {
   return (
@@ -20,9 +16,8 @@ function StatusPill() {
   );
 }
 
-export default function TeamMembersTable({
-  onSelectMember,
-}: TeamMembersTableProps) {
+export default function TeamMembersTable() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 4;
@@ -121,7 +116,15 @@ export default function TeamMembersTable({
         pageSize={pageSize}
         total={filteredRows.length}
         onPageChange={setPage}
-        onRowClick={(_, rowIndex) => onSelectMember?.(paginatedRows[rowIndex])}
+        onRowClick={(_, rowIndex) => {
+          const selectedMember = paginatedRows[rowIndex];
+          if (!selectedMember) return;
+
+          const memberIndex = teamMembersData.indexOf(selectedMember);
+          if (memberIndex < 0) return;
+
+          router.push(`/sales/team-members/${memberIndex}`);
+        }}
       />
     </div>
   );

@@ -22,7 +22,9 @@ export default function StatCard({ stat }: { stat: SalesStat }) {
           <p className="text-[32px] font-semibold leading-tight text-[#0B1E66]">
             {stat.value}
           </p>
-          <p className="text-xs text-[#1A3FA3]">{stat.subtitle}</p>
+          <p className="text-xs text-[#1A3FA3] bg-[#E8EEFF] rounded-2xl px-3 py-1">
+            {stat.subtitle}
+          </p>
         </div>
         <div className="shrink-0">
           <Image

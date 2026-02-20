@@ -1,14 +1,20 @@
 "use client";
 
 import { Cell, Pie, PieChart } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import type { CategoryData } from "@/types/sales";
 
 interface SalesByCategoryChartProps {
   data: CategoryData[];
 }
 
-export default function SalesByCategoryChart({ data }: SalesByCategoryChartProps) {
+export default function SalesByCategoryChart({
+  data,
+}: SalesByCategoryChartProps) {
   const chartConfig = data.reduce((config, item, index) => {
     config[`category${index}`] = {
       label: item.name,
@@ -33,7 +39,7 @@ export default function SalesByCategoryChart({ data }: SalesByCategoryChartProps
       </div>
 
       <div className="flex flex-col items-center">
-        <ChartContainer config={chartConfig} className="h-[200px] w-full">
+        <ChartContainer config={chartConfig} className="h-50 w-full">
           <PieChart>
             <ChartTooltip content={<ChartTooltipContent />} />
             <Pie
@@ -52,12 +58,12 @@ export default function SalesByCategoryChart({ data }: SalesByCategoryChartProps
           </PieChart>
         </ChartContainer>
 
-        <div className="flex flex-wrap items-center justify-center gap-5 mt-6">
+        <div className="flex flex-wrap items-center justify-center gap-5 mt-6 bg-white rounded-xl px-5 py-2 shadow-[0px_18px_40px_0px_rgba(112,144,176,0.12)]">
           {data.map((item, index) => (
             <div key={index} className="flex flex-col items-center gap-1">
               <div className="flex items-center gap-2">
                 <div
-                  className="w-[10px] h-[10px] rounded-full"
+                  className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
                 <span className="text-[15px] font-medium text-[#808080]">

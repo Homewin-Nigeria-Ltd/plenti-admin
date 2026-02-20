@@ -4,12 +4,11 @@ import { useState } from "react";
 import Image from "next/image";
 import TargetTable from "./TargetTable";
 import OverviewTab from "./OverviewTab";
+import LeaderboardTab from "./LeaderboardTab";
 import { targetData } from "@/data/sales";
 import { AssignTargetModal } from "./AssignTargetModal";
 import WithdrawalRequestsTable from "./WithdrawalRequestsTable";
 import TeamMembersTable from "./TeamMembersTable";
-import TeamMemberDetailsView from "./TeamMemberDetailsView";
-import type { TeamMemberRow } from "@/types/sales";
 
 type TabType = "target" | "withdrawal" | "team" | "leaderboard" | "overview";
 
@@ -24,8 +23,6 @@ const tabs: { id: TabType; label: string }[] = [
 export default function SalesContent() {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [isAssignTargetModalOpen, setIsAssignTargetModalOpen] = useState(false);
-  const [selectedTeamMember, setSelectedTeamMember] =
-    useState<TeamMemberRow | null>(null);
 
   return (
     <div className="space-y-6">
@@ -35,12 +32,7 @@ export default function SalesContent() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                if (tab.id !== "team") {
-                  setSelectedTeamMember(null);
-                }
-              }}
+              onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 text-base font-medium rounded-[3px] transition-colors ${
                 activeTab === tab.id
                   ? "text-[#0B1E66] bg-[#E8EEFF]"
@@ -73,17 +65,8 @@ export default function SalesContent() {
       <div>
         {activeTab === "target" && <TargetTable targets={targetData} />}
         {activeTab === "withdrawal" && <WithdrawalRequestsTable />}
-        {activeTab === "team" &&
-          (selectedTeamMember ? (
-            <TeamMemberDetailsView member={selectedTeamMember} />
-          ) : (
-            <TeamMembersTable onSelectMember={setSelectedTeamMember} />
-          ))}
-        {activeTab === "leaderboard" && (
-          <div className="bg-white rounded-xl p-8 text-center text-[#808080]">
-            Leader Board content coming soon
-          </div>
-        )}
+        {activeTab === "team" && <TeamMembersTable />}
+        {activeTab === "leaderboard" && <LeaderboardTab />}
         {activeTab === "overview" && <OverviewTab />}
       </div>
 
