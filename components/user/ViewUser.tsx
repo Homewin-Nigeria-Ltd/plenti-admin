@@ -317,10 +317,13 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
                     border: "1px solid #EEF1F6",
                     fontSize: 12,
                   }}
-                  formatter={(value: number | undefined) => [
-                    `${value}k`,
-                    "Revenue",
-                  ]}
+                  formatter={(value) => {
+                    const numericValue = Number(value);
+                    const displayValue = Number.isFinite(numericValue)
+                      ? numericValue
+                      : 0;
+                    return [`${displayValue}k`, "Revenue"];
+                  }}
                 />
                 <Line
                   type="monotone"

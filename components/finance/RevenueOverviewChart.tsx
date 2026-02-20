@@ -188,10 +188,13 @@ export function RevenueOverviewChart() {
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                 backgroundColor: "white",
               }}
-              formatter={(value: number | undefined) => [
-                `${value}M`,
-                "Revenue",
-              ]}
+              formatter={(value) => {
+                const numericValue = Number(value);
+                const displayValue = Number.isFinite(numericValue)
+                  ? numericValue
+                  : 0;
+                return [`${displayValue}M`, "Revenue"];
+              }}
             />
             <Area
               type="linear"

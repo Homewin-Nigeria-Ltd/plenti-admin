@@ -32,10 +32,12 @@ export default function RevenueOverview() {
 
   const chartData = React.useMemo(() => {
     if (!revenueStats?.chart_data) return [];
-    return revenueStats.chart_data.map((item: { label: string; value: number }) => ({
-      label: item.label,
-      value: item.value / 1000000,
-    }));
+    return revenueStats.chart_data.map(
+      (item: { label: string; value: number }) => ({
+        label: item.label,
+        value: item.value / 1000000,
+      })
+    );
   }, [revenueStats]);
 
   const maxValue = React.useMemo(() => {
@@ -92,10 +94,10 @@ export default function RevenueOverview() {
                   {range === "day"
                     ? "today"
                     : range === "week"
-                      ? "last week"
-                      : range === "month"
-                        ? "last month"
-                        : "last year"}
+                    ? "last week"
+                    : range === "month"
+                    ? "last month"
+                    : "last year"}
                 </span>
               </div>
             </div>
@@ -170,9 +172,10 @@ export default function RevenueOverview() {
                   boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                   backgroundColor: "white",
                 }}
-                formatter={(value: number | undefined) => {
-                  if (value === undefined) return ["", ""];
-                  const actualValue = value * 1000000;
+                formatter={(value) => {
+                  const numericValue = Number(value);
+                  if (!Number.isFinite(numericValue)) return ["", ""];
+                  const actualValue = numericValue * 1000000;
                   return [
                     formatCurrency(actualValue, {
                       currency,

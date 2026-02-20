@@ -129,9 +129,12 @@ export function PaymentMethodChart({
           </Pie>
 
           <Tooltip
-            formatter={(value: number | undefined) =>
-              formatCurrency(value ?? 0)
-            }
+            formatter={(value) => {
+              const numericValue = Number(value);
+              return formatCurrency(
+                Number.isFinite(numericValue) ? numericValue : 0
+              );
+            }}
             contentStyle={{
               borderRadius: 8,
               border: "1px solid #EEF1F6",
