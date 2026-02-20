@@ -164,9 +164,12 @@ export default function TicketByCategory() {
               width={100}
             />
             <Tooltip
-              formatter={(value: number | undefined) =>
-                new Intl.NumberFormat("en-US").format(value ?? 0)
-              }
+              formatter={(value) => {
+                const numericValue = Number(value);
+                return new Intl.NumberFormat("en-US").format(
+                  Number.isFinite(numericValue) ? numericValue : 0
+                );
+              }}
               contentStyle={{
                 borderRadius: 8,
                 border: "1px solid #EEF1F6",

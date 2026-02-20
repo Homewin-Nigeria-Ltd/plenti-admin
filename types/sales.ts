@@ -1,6 +1,8 @@
 export type OrderStatus = "Paid" | "Processing";
 export type TimePeriod = "Day" | "Week" | "Month" | "Year";
 export type TargetStatus = "Quarterly" | "Yearly" | "Monthly";
+export type WithdrawalRequestStatus = "Pending" | "Paid";
+export type TeamMemberStatus = "Active";
 
 export interface SalesStat {
   title: string;
@@ -56,4 +58,28 @@ export interface TargetRow {
   achieved: string;
   progress: number;
   percentage: string;
+}
+
+export interface WithdrawalRequestRow {
+  refundDate: string;
+  staffName: string;
+  staffEmail: string;
+  staffInitial: string;
+  amount: string;
+  notes: string;
+  orderStatus: WithdrawalRequestStatus;
+}
+
+export interface TeamMemberRow {
+  dateCreated: string;
+  name: string;
+  email: string;
+  initial: string;
+  role: string;
+  createdBy: string;
+  createdByInitial: string;
+  status: TeamMemberStatus;
+  location?: string;
+  dateJoined?: string;
+  lastActive?: string;
 }
