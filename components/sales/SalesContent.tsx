@@ -22,7 +22,7 @@ const tabs: { id: TabType; label: string }[] = [
 ];
 
 export default function SalesContent() {
-  const [activeTab, setActiveTab] = useState<TabType>("target");
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [isAssignTargetModalOpen, setIsAssignTargetModalOpen] = useState(false);
   const [selectedTeamMember, setSelectedTeamMember] =
     useState<TeamMemberRow | null>(null);

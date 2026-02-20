@@ -191,7 +191,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[700px]" showCloseButton={false}>
+      <DialogContent className="max-w-175" showCloseButton={false}>
         <DialogHeader className="relative pb-4">
           <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
             Create New Support Ticket
@@ -246,7 +246,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                 >
                   <SelectTrigger
                     id="category"
-                    className="w-full focus-visible:ring-0 h-[48px]"
+                    className="w-full focus-visible:ring-0 h-12"
                   >
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
@@ -275,7 +275,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                 >
                   <SelectTrigger
                     id="priority"
-                    className="w-full focus-visible:ring-0 h-[48px]"
+                    className="w-full focus-visible:ring-0 h-12"
                   >
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
@@ -299,7 +299,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                   placeholder="Input order ID"
                   value={formData.orderId}
                   onChange={(e) => setFormField("orderId", e.target.value)}
-                  className="focus-visible:ring-0 h-[48px]"
+                  className="focus-visible:ring-0 h-12"
                 />
               </div>
 
@@ -316,7 +316,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                   placeholder="Input refund ID"
                   value={formData.refundId}
                   onChange={(e) => setFormField("refundId", e.target.value)}
-                  className="focus-visible:ring-0 h-[48px]"
+                  className="focus-visible:ring-0 h-12"
                 />
               </div>
             </div>
@@ -344,7 +344,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                 placeholder="Add Brief Subject Line"
                 value={formData.subject}
                 onChange={(e) => setFormField("subject", e.target.value)}
-                className="focus-visible:ring-0 h-[48px]"
+                className="focus-visible:ring-0 h-12"
                 required
               />
             </div>
@@ -361,7 +361,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
                 placeholder="Detailed description of the issue"
                 value={formData.description}
                 onChange={(e) => setFormField("description", e.target.value)}
-                className="w-full min-h-[120px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-0 focus-visible:border-ring focus-visible:ring-ring/50 resize-none"
+                className="w-full min-h-30 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-0 focus-visible:border-ring focus-visible:ring-ring/50 resize-none"
                 required
               />
             </div>
@@ -459,7 +459,7 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
               type="submit"
               form="create-ticket-form"
               disabled={creatingTicket}
-              className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white w-full h-[52px] text-base font-medium disabled:opacity-70"
+              className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white w-full h-13 text-base font-medium disabled:opacity-70"
             >
               {creatingTicket ? "Creating…" : "Create Ticket"}
             </Button>

@@ -313,7 +313,7 @@ export function RefundRequestTable() {
   return (
     <div className="space-y-6">
       {/* Search Bar */}
-      <div className="border border-[#F0F2F5] rounded-xl h-[38px] flex items-center gap-1 p-1 px-4 shadow-sm">
+      <div className="border border-[#F0F2F5] rounded-xl h-9.5 flex items-center gap-1 p-1 px-4 shadow-sm">
         <Image src={"/icons/search.png"} alt="Search" width={20} height={20} />
         <Input
           className="w-full placeholder:text-[#253B4B] border-0 outline-none focus-visible:ring-0 shadow-none"

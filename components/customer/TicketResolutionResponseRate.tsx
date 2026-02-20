@@ -57,7 +57,7 @@ export default function TicketResolutionResponseRate() {
       <div className="bg-white rounded-xl border border-[#EEF1F6] p-6">
         <div className="h-6 bg-[#EEF1F6] rounded w-2/3 mb-4 animate-pulse" />
         <div className="h-4 bg-[#EEF1F6] rounded w-full mb-6 animate-pulse" />
-        <div className="h-[300px] bg-[#EEF1F6] rounded animate-pulse" />
+        <div className="h-75 bg-[#EEF1F6] rounded animate-pulse" />
       </div>
     );
   }
@@ -72,7 +72,7 @@ export default function TicketResolutionResponseRate() {
           value={period}
           onValueChange={(v) => setPeriod(v as ResolutionPeriod)}
         >
-          <SelectTrigger className="w-[120px] h-9 border-[#D0D5DD]">
+          <SelectTrigger className="w-30 h-9 border-[#D0D5DD]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
