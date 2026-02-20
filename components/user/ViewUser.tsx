@@ -290,7 +290,7 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
               View Details →
             </a> */}
           </div>
-          <div className="h-[220px]">
+          <div className="h-55">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={mockRevenueData}
@@ -317,10 +317,13 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
                     border: "1px solid #EEF1F6",
                     fontSize: 12,
                   }}
-                  formatter={(value: number | undefined) => [
-                    `${value}k`,
-                    "Revenue",
-                  ]}
+                  formatter={(value) => {
+                    const numericValue = Number(value);
+                    const displayValue = Number.isFinite(numericValue)
+                      ? numericValue
+                      : 0;
+                    return [`${displayValue}k`, "Revenue"];
+                  }}
                 />
                 <Line
                   type="monotone"
@@ -348,7 +351,7 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
       {/* Orders table */}
       <div className="bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div className="relative w-full sm:max-w-[280px]">
+          <div className="relative w-full sm:max-w-70">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#98A2B3]" />
             <Input
               placeholder="Search"

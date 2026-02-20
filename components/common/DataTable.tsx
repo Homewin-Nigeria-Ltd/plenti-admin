@@ -40,13 +40,14 @@ export default function DataTable<T extends Record<string, React.ReactNode>>({
   onRowClick,
   className,
 }: DataTableProps<T>) {
-  const resolvedPageCount = pageCount ?? Math.max(1, Math.ceil(total / pageSize));
+  const resolvedPageCount =
+    pageCount ?? Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
   const canNext = page < resolvedPageCount;
 
   return (
     <div className={cn("bg-white rounded-xl", className)}>
-      <Table className="min-w-[720px]">
+      <Table className="min-w-180">
         <TableHeader>
           <TableRow>
             {columns.map((c) => (

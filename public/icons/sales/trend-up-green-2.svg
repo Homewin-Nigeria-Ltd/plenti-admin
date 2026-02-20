@@ -1,0 +1,14 @@
+<svg viewBox="0 0 75 30" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0"><defs><filter id="filter3_d_1493_133771" x="-4.573999999999955" y="-0.4689999999999941" width="83.8828" height="39.9688" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="2"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.129412 0 0 0 0 0.588235 0 0 0 0 0.32549 0 0 0 0.16 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1493_133771"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1493_133771" result="shape"/>
+</filter></defs><g id="Frame 2147225294">
+<g id="Vector 4_2" filter="url(#filter3_d_1493_133771)">
+<path d="M0,23.315c2.01,0.835 7.38,0.774 12.77,-6.148c6.73,-8.653 13,-6.376 20.43,3.416c7.43,9.791 12.54,14.573 20.21,1.138c7.66,-13.434 8.59,-17.989 21.59,-20.721" stroke="#279F51" stroke-width="3"/>
+</g>
+<circle id="Ellipse 8_3" cx="64" cy="5" r="5" fill="#279F51"/>
+</g></svg>

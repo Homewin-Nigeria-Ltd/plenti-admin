@@ -84,7 +84,7 @@ export default function TicketByCategory() {
             <div key={i} className="h-16 bg-[#EEF1F6] rounded animate-pulse" />
           ))}
         </div>
-        <div className="h-[300px] bg-[#EEF1F6] rounded animate-pulse" />
+        <div className="h-75s bg-[#EEF1F6] rounded animate-pulse" />
       </div>
     );
   }
@@ -99,7 +99,7 @@ export default function TicketByCategory() {
           value={period}
           onValueChange={(v) => setPeriod(v as ResolutionPeriod)}
         >
-          <SelectTrigger className="w-[120px] h-9 border-[#D0D5DD]">
+          <SelectTrigger className="w-30 h-9 border-[#D0D5DD]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -135,7 +135,7 @@ export default function TicketByCategory() {
       </div>
 
       {/* Bar Chart */}
-      <div className="h-[300px]">
+      <div className="h-75">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
@@ -164,9 +164,12 @@ export default function TicketByCategory() {
               width={100}
             />
             <Tooltip
-              formatter={(value: number | undefined) =>
-                new Intl.NumberFormat("en-US").format(value ?? 0)
-              }
+              formatter={(value) => {
+                const numericValue = Number(value);
+                return new Intl.NumberFormat("en-US").format(
+                  Number.isFinite(numericValue) ? numericValue : 0
+                );
+              }}
               contentStyle={{
                 borderRadius: 8,
                 border: "1px solid #EEF1F6",

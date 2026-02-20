@@ -56,6 +56,12 @@ export const links: linkType = [
     inactiveIcon: "/sidebarIcons/presentation-chart-grey.png",
   },
   {
+    name: "Sales Management",
+    href: "/sales",
+    activeIcon: "/sidebarIcons/coin-active.png",
+    inactiveIcon: "/sidebarIcons/coin-inactive.png",
+  },
+  {
     name: "User Management",
     href: "/user",
     activeIcon: "/sidebarIcons/user.png",
