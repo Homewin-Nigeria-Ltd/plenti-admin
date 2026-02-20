@@ -37,7 +37,10 @@ export default function TicketResolutionResponseRate() {
     const tat = resolutionStatistics?.tat_breakdown;
     if (tat != null) {
       const within = Math.max(0, Math.min(100, tat.within_tat_percentage ?? 0));
-      const exceeded = Math.max(0, Math.min(100, tat.exceeded_tat_percentage ?? 0));
+      const exceeded = Math.max(
+        0,
+        Math.min(100, tat.exceeded_tat_percentage ?? 0)
+      );
       return [
         { name: "Within TAT", value: within, color: COLORS[0] },
         { name: "Exceeded TAT", value: exceeded, color: COLORS[1] },
@@ -129,7 +132,13 @@ export default function TicketResolutionResponseRate() {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number | undefined) => `${value?.toFixed(1)}%`}
+              formatter={(value) => {
+                const numericValue = Number(value);
+                return `${(Number.isFinite(numericValue)
+                  ? numericValue
+                  : 0
+                ).toFixed(1)}%`;
+              }}
               contentStyle={{
                 borderRadius: 8,
                 border: "1px solid #EEF1F6",
