@@ -3,7 +3,12 @@ export const metadata = {
 };
 
 import UserManagement from "@/components/user/UserManagement";
+import { Suspense } from "react";
 
 export default function UserPage() {
-  return <UserManagement />;
+  return (
+    <Suspense>
+      <UserManagement />
+    </Suspense>
+  );
 }

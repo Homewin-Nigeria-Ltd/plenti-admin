@@ -20,6 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAccountStore } from "@/store/useAccountStore";
+import { resetAllStores } from "@/store/resetAllStores";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_WIDTH_EXPANDED = 340;
@@ -31,7 +32,6 @@ export default function Sidebar() {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
-  // Only re-render when account changes (not when loadingAccount, etc.)
   const account = useAccountStore((state) => state.account);
 
   const handleExpand = React.useCallback(() => setIsExpanded(true), []);
@@ -59,6 +59,7 @@ export default function Sidebar() {
       });
 
       if (response.ok) {
+        resetAllStores();
         toast.success("Logged out successfully");
         router.push("/login");
       } else {

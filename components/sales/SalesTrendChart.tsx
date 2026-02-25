@@ -21,7 +21,7 @@ const chartConfig = {
   },
 };
 
-const timePeriods: TimePeriod[] = ["Day", "Week", "Month", "Year"];
+const timePeriods: TimePeriod[] = ["Week", "Month", "Year"];
 
 export default function SalesTrendChart({ data }: SalesTrendChartProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("Month");
@@ -58,18 +58,23 @@ export default function SalesTrendChart({ data }: SalesTrendChartProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-5">
-          {timePeriods.map((period) => (
-            <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className={`text-base font-medium ${
-                selectedPeriod === period ? "text-[#253B4B]" : "text-[#9198AD]"
-              }`}
-            >
-              {period}
-            </button>
-          ))}
+        <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1">
+          {timePeriods.map((r) => {
+            const active = selectedPeriod === (r as TimePeriod);
+            return (
+              <button
+                key={r}
+                onClick={() => setSelectedPeriod(r as TimePeriod)}
+                className={
+                  active
+                    ? "rounded-full bg-white shadow-sm px-4 py-1.5 text-[#0B1E66] text-sm font-medium transition-all"
+                    : "rounded-full px-4 py-1.5 text-[#9198AD] text-sm font-medium transition-all hover:text-[#667085]"
+                }
+              >
+                {r[0].toUpperCase() + r.slice(1)}
+              </button>
+            );
+          })}
         </div>
       </div>
 

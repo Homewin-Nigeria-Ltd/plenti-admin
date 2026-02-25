@@ -36,6 +36,13 @@ const configItems: ConfigItem[] = [
     icon: "/icons/bell.png",
     href: "/configuration/notifications",
   },
+  {
+    id: "commissions-structure",
+    title: "Commission Structure",
+    description: "Manage commission structures",
+    icon: "/icons/receipt-disscount.png",
+    href: "/configuration/commissions-structure",
+  },
   // {
   //   id: "integration",
   //   title: "Integration Setting",
