@@ -30,7 +30,7 @@ export default function SalesByCategoryChart({
   }));
 
   return (
-    <div className="rounded-[25px] border border-[#EAECF0] bg-white p-6">
+    <div className="rounded-[25px] border border-[#EAECF0] bg-white p-6 col-span-2">
       <div className="mb-4">
         <h3 className="text-[25px] font-semibold text-[#0B1E66] leading-tight">
           Sales by Category

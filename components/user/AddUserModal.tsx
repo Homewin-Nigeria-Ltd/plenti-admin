@@ -20,18 +20,20 @@ import * as React from "react";
 import { toast } from "sonner";
 import { useUserStore } from "@/store/useUserStore";
 import { generatePassword } from "@/lib/password";
+import { useRolesStore } from "@/store/useRolesStore";
 
 type AddUserModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
 
-const roles: Array<{ label: string; value: "admin" | "customer" }> = [
-  { label: "Admin", value: "admin" },
-  { label: "Customer", value: "customer" },
-];
+// const roles: Array<{ label: string; value: "admin" | "customer" }> = [
+//   { label: "Admin", value: "admin" },
+//   { label: "Customer", value: "customer" },
+// ];
 
 export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
+  const { roles, loadingRoles, rolesError, fetchRoles } = useRolesStore();
   const { createUser, creatingUser } = useUserStore();
   const [formData, setFormData] = React.useState({
     first_name: "",
@@ -48,6 +50,10 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
     email?: string;
     phone?: string;
   }>({});
+
+  React.useEffect(() => {
+    if (roles.length === 0) fetchRoles();
+  }, []);
 
   const handleGeneratePassword = () => {
     const newPassword = generatePassword();
@@ -73,11 +79,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
       return;
     }
 
-    toast.success(res.data.message || "User added successfully", {
-      description: res.data.generated_password
-        ? `Password: ${res.data.generated_password}`
-        : undefined,
-    });
+    toast.success(res.data.message || "User added successfully");
     handleClose();
   };
 
@@ -107,7 +109,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
             type="button"
             onClick={handleClose}
             aria-label="Close dialog"
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full"
           >
             <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
@@ -251,8 +253,8 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>
-                      {r.label}
+                    <SelectItem key={r.id} value={r.name}>
+                      {r.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -271,7 +273,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                       password: e.target.value,
                     }))
                   }
-                  className="form-control bg-neutral-100! border-0! pr-[300px] sm:pr-56! focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
+                  className="form-control bg-neutral-100! border-0! pr-75 sm:pr-56! focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none"
                   required
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">

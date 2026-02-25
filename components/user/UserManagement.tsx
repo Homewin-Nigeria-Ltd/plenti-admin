@@ -7,16 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserStore } from "@/store/useUserStore";
 import { Plus, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useDebounce } from "use-debounce";
 import { AddUserModal } from "./AddUserModal";
+import { useRouter, useSearchParams } from "next/navigation";
+
+type User = "admin" | "customer";
 
 export default function UserManagement() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = React.useState<"customers" | "admin">(
-    "customers"
-  );
+  const searchParams = useSearchParams();
+  const type: User =
+    searchParams.get("type") === "admin" ? "admin" : "customer";
+  const [activeTab, setActiveTab] = React.useState<User>(type);
+
+  // LOCAL STATES
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isAddUserModalOpen, setIsAddUserModalOpen] = React.useState(false);
   const [debouncedSearch] = useDebounce(searchQuery, 400);
@@ -136,9 +141,12 @@ export default function UserManagement() {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <div className="flex gap-4 sm:gap-6 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
-            onClick={() => setActiveTab("customers")}
+            onClick={() => {
+              setActiveTab("customer");
+              router.replace("/user?type=customer");
+            }}
             className={`px-4 py-2 font-medium text-sm sm:text-base transition-colors whitespace-nowrap rounded-md ${
-              activeTab === "customers"
+              activeTab === "customer"
                 ? "bg-[#E8EEFF] text-primary"
                 : "bg-transparent text-neutral-500 hover:bg-neutral-50"
             }`}
@@ -146,7 +154,10 @@ export default function UserManagement() {
             Customers
           </button>
           <button
-            onClick={() => setActiveTab("admin")}
+            onClick={() => {
+              setActiveTab("admin");
+              router.replace("/user?type=admin");
+            }}
             className={`px-4 py-2 font-medium text-sm sm:text-base transition-colors whitespace-nowrap rounded-md ${
               activeTab === "admin"
                 ? "bg-[#E8EEFF] text-primary"
@@ -168,7 +179,7 @@ export default function UserManagement() {
       </div>
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-        <div className="border border-neutral-100 rounded-xl h-[50px] flex items-center gap-1 p-2 px-4 shadow-sm flex-1 max-w-full sm:max-w-md">
+        <div className="border border-neutral-100 rounded-xl h-12.5 flex items-center gap-1 p-2 px-4 shadow-sm flex-1 max-w-full sm:max-w-md">
           <Search className="size-5 text-neutral-500 shrink-0" />
           <Input
             className="w-full placeholder:text-primary-700 border-0 outline-none focus-visible:ring-0 shadow-none"
@@ -209,7 +220,7 @@ export default function UserManagement() {
               }}
             />
           ) : !hasRequested || loadingUsers ? (
-            <div className="min-w-[720px]">
+            <div className="min-w-180">
               <div className="grid grid-cols-6 gap-4 px-4 py-3 border-b border-neutral-100">
                 {Array.from({ length: 6 }).map((_, idx) => (
                   <Skeleton key={idx} className="h-4 w-24" />

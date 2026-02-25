@@ -63,7 +63,7 @@ export const links: linkType = [
   },
   {
     name: "User Management",
-    href: "/user",
+    href: "/user?type=customer",
     activeIcon: "/sidebarIcons/user.png",
     inactiveIcon: "/sidebarIcons/user-grey.png",
   },

@@ -99,6 +99,16 @@ export const useFinanceStore = create<FinanceState>((set) => ({
           pending_refunds: 0,
           total_transactions: 0,
           average_order_value: 0,
+          percentage_change:
+            typeof apiData.percentage_change === "number"
+              ? apiData.percentage_change
+              : undefined,
+          trend:
+            apiData.trend === "up"
+              ? "up"
+              : apiData.trend === "down"
+              ? "down"
+              : undefined,
         },
         charts: {
           revenue_trend:

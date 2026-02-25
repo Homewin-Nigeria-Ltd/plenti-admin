@@ -9,8 +9,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { useFinanceStore } from "@/store/useFinanceStore";
+import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 type Range = "week" | "month" | "year";
 
@@ -26,12 +28,7 @@ function useChartData(
     // For month view, use API data if available
     if (range === "month" && apiData && apiData.length > 0) {
       // Create a map of API data by label
-      const dataMap = new Map(
-        apiData.map((item) => [
-          item.label,
-          item.value / 1000000, // Convert to millions
-        ])
-      );
+      const dataMap = new Map(apiData.map((item) => [item.label, item.value]));
 
       // Get all months (Jan-Dec) and fill in with 0 for missing months
       const months = [
@@ -57,12 +54,7 @@ function useChartData(
       setData(fullYearData);
     } else if (range === "week" && apiData && apiData.length > 0) {
       // Create a map of API data by day
-      const dataMap = new Map(
-        apiData.map((item) => [
-          item.label,
-          item.value / 1000000, // Convert to millions
-        ])
-      );
+      const dataMap = new Map(apiData.map((item) => [item.label, item.value]));
 
       // Get all days of week and fill in with 0 for missing days
       const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -77,7 +69,7 @@ function useChartData(
       // For year view, use API data as is
       const yearData = apiData.map((item) => ({
         label: item.label,
-        value: item.value / 1000000, // Convert to millions
+        value: item.value,
       }));
       setData(yearData);
     } else {
@@ -90,8 +82,8 @@ function useChartData(
 
 const formatYAxisValue = (value: number) => {
   if (value === 0) return "0";
-  if (value >= 1) return `${value}M`;
-  return `${value}M`;
+  // if (value >= 1) return `${formatCurrency(value)}`;
+  return `${value}`;
 };
 
 export function RevenueOverviewChart() {
@@ -102,16 +94,15 @@ export function RevenueOverviewChart() {
   // Fetch data when range changes
   React.useEffect(() => {
     fetchFinanceOverview(range);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range]);
 
   // Calculate total revenue from API
   const totalRevenue = React.useMemo(() => {
     if (overview?.summary?.total_revenue) {
       const amount = parseFloat(overview.summary.total_revenue);
-      return new Intl.NumberFormat("en-US").format(amount);
+      return formatCurrency(amount);
     }
-    return "0";
+    return formatCurrency(0);
   }, [overview]);
 
   return (
@@ -126,8 +117,20 @@ export function RevenueOverviewChart() {
               {totalRevenue}
             </p>
             <div className="flex items-center gap-1 mb-1">
-              <ArrowUp className="w-4 h-4 text-[#10B981]" />
-              <span className="text-sm font-medium text-[#10B981]">20%</span>
+              {overview?.summary.trend === "up" ? (
+                <ArrowUp className="w-4 h-4 text-[#10B981]" />
+              ) : (
+                <ArrowDown className="w-4 h-4 text-[#EF4444]" />
+              )}
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  overview?.summary.trend === "down" && "text-[#EF4444]",
+                  overview?.summary.trend === "up" && "text-[#10B981]"
+                )}
+              >
+                {overview?.summary.percentage_change ?? 1}%
+              </span>
               <span className="text-[#667085] text-sm">last week</span>
             </div>
           </div>
@@ -177,8 +180,8 @@ export function RevenueOverviewChart() {
               tickLine={false}
               axisLine={{ stroke: "#EEF1F6" }}
               tickFormatter={formatYAxisValue}
-              domain={[0, 15]}
-              ticks={[0, 1, 5, 10, 15]}
+              // domain={[0, 15]}
+              // ticks={[0, 1, 5, 10, 15]}
             />
             <Tooltip
               cursor={{ stroke: "#EEF1F6", strokeWidth: 1 }}
@@ -189,11 +192,12 @@ export function RevenueOverviewChart() {
                 backgroundColor: "white",
               }}
               formatter={(value) => {
-                const numericValue = Number(value);
-                const displayValue = Number.isFinite(numericValue)
-                  ? numericValue
-                  : 0;
-                return [`${displayValue}M`, "Revenue"];
+                const displayValue = typeof value === "number" ? value : 0;
+                // const numericValue = Number(value);
+                // const displayValue = Number.isFinite(numericValue)
+                //   ? numericValue
+                //   : 0;
+                return [`${formatCurrency(displayValue)}`, "Revenue"];
               }}
             />
             <Area

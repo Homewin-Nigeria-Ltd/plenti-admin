@@ -44,6 +44,8 @@ export type FinanceSummary = {
   pending_refunds: number;
   total_transactions: number;
   average_order_value: number;
+  percentage_change?: number;
+  trend?: "up" | "down";
 };
 
 /** Revenue trend data point */
