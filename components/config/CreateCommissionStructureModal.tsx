@@ -1,7 +1,6 @@
 "use client";
 
-import * as React from "react";
-import { ChevronRight, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,9 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import * as React from "react";
 
 type CreateCommissionStructureModalProps = {
   isOpen: boolean;
@@ -31,7 +31,7 @@ export default function CreateCommissionStructureModal({
   onClose,
 }: CreateCommissionStructureModalProps) {
   const [name, setName] = React.useState("Referral");
-  const [rate, setRate] = React.useState("0.005%");
+  const [rate, setRate] = React.useState("0.005");
   const [bonusAmount, setBonusAmount] = React.useState("0");
   const [minThreshold, setMinThreshold] = React.useState("0");
   const [maxThreshold, setMaxThreshold] = React.useState("0");
@@ -85,13 +85,12 @@ export default function CreateCommissionStructureModal({
             </Label>
             <Select>
               <SelectTrigger className="w-full h-14 py-6">
-                <SelectValue placeholder="Theme" />
+                <SelectValue placeholder="Select Commission Type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 <SelectGroup>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
+                  <SelectItem value="percentage">Flat Percentage</SelectItem>
+                  <SelectItem value="tiered">Tiered</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>

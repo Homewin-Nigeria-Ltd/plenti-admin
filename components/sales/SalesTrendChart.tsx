@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
@@ -8,10 +8,19 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import type { SalesTrendData, TimePeriod } from "@/types/sales";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSalesStore } from "@/store/useSalesStore";
+import type {
+  SalesTrendData,
+  SalesTrendPeriod,
+  TimePeriod,
+} from "@/types/sales";
+import { formatLargeAmount } from "@/lib/formatAmount";
+import { ArrowDown, ArrowUp } from "lucide-react";
 
 interface SalesTrendChartProps {
-  data: SalesTrendData[];
+  data?: SalesTrendData[];
+  userId?: number;
 }
 
 const chartConfig = {
@@ -21,15 +30,66 @@ const chartConfig = {
   },
 };
 
-const timePeriods: TimePeriod[] = ["Week", "Month", "Year"];
+const timePeriods: TimePeriod[] = ["Day", "Week", "Month", "Year"];
 
-export default function SalesTrendChart({ data }: SalesTrendChartProps) {
+const periodMap: Record<TimePeriod, SalesTrendPeriod> = {
+  Day: "day",
+  Week: "week",
+  Month: "month",
+  Year: "year",
+};
+
+export default function SalesTrendChart({
+  data = [],
+  userId,
+}: SalesTrendChartProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("Month");
+  const [selectedYear, setSelectedYear] = useState<number | undefined>(
+    undefined,
+  );
+  const { trend, trendRequestKey, trendLoading, fetchSalesTrend } =
+    useSalesStore();
+
+  const currentRequestKey = `${periodMap[selectedPeriod]}|${typeof selectedYear === "number" ? selectedYear : "all"}|${typeof userId === "number" ? userId : "all"}`;
+
+  useEffect(() => {
+    if (trend && trendRequestKey === currentRequestKey) {
+      return;
+    }
+    void fetchSalesTrend(periodMap[selectedPeriod], selectedYear, userId);
+  }, [
+    currentRequestKey,
+    selectedPeriod,
+    selectedYear,
+    userId,
+    trend,
+    trendRequestKey,
+    fetchSalesTrend,
+  ]);
+
+  const chartData = useMemo(() => {
+    if (trend?.data?.length) {
+      return trend.data.map((item) => ({
+        label: item.label,
+        value: item.value,
+      }));
+    }
+
+    return data.map((item) => ({
+      label: item.label ?? item.month ?? "",
+      value: item.value,
+    }));
+  }, [trend?.data, data]);
+
+  const trendSummary = trend?.trend;
+  const availableYears = trend?.chart_config?.available_years ?? [];
+  const minValue = trend?.chart_config?.min_value;
+  const maxValue = trend?.chart_config?.max_value;
 
   const formatYAxis = (value: number) => {
-    if (value >= 1000000) return `${value / 1000000}M`;
-    if (value >= 1000) return `${value / 1000}K`;
-    return value.toString();
+    // if (value >= 1000000) return `${value / 1000000}M`;
+    // if (value >= 1000) return `${value / 1000}K`;
+    return formatLargeAmount(value);
   };
 
   return (
@@ -39,87 +99,117 @@ export default function SalesTrendChart({ data }: SalesTrendChartProps) {
           <p className="text-xs font-medium text-[#98A2B3]">Sales Trend</p>
           <div className="flex items-baseline gap-2">
             <p className="text-[34px] font-bold text-[#2B3674] leading-tight">
-              3,000
+              {trendSummary ? `₦${formatLargeAmount(trendSummary.value)}` : "-"}
             </p>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                <Image
-                  src="/icons/sales/arrow-up-icon.svg"
-                  alt="up"
-                  width={14}
-                  height={14}
-                />
-                <span className="text-sm font-medium text-[#027A48]">20%</span>
+                {trendSummary?.direction === "up" ? (
+                  <ArrowUp color="#027a48" />
+                ) : (
+                  <ArrowDown color="#D42620" />
+                )}
+                <span
+                  className={`text-sm font-medium ${
+                    trendSummary?.direction === "down"
+                      ? "text-[#D42620]"
+                      : "text-[#027A48]"
+                  }`}
+                >
+                  {trendSummary ? `${trendSummary.percent}%` : "-"}
+                </span>
               </div>
               <span className="text-sm font-medium text-[#667085]">
-                last 14 days
+                {trendSummary?.label ?? "-"}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1">
-          {timePeriods.map((r) => {
-            const active = selectedPeriod === (r as TimePeriod);
-            return (
-              <button
-                key={r}
-                onClick={() => setSelectedPeriod(r as TimePeriod)}
-                className={
-                  active
-                    ? "rounded-full bg-white shadow-sm px-4 py-1.5 text-[#0B1E66] text-sm font-medium transition-all"
-                    : "rounded-full px-4 py-1.5 text-[#9198AD] text-sm font-medium transition-all hover:text-[#667085]"
-                }
-              >
-                {r[0].toUpperCase() + r.slice(1)}
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-3">
+          {/* <select
+            className="h-9 rounded-full border border-[#EAECF0] bg-white px-3 text-sm text-[#0B1E66]"
+            value={selectedYear ?? ""}
+            onChange={(e) => {
+              const year = e.target.value;
+              setSelectedYear(year ? Number(year) : undefined);
+            }}
+          >
+            <option value="">All years</option>
+            {availableYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select> */}
+
+          <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1">
+            {timePeriods.map((period) => {
+              const active = selectedPeriod === period;
+              return (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  className={
+                    active
+                      ? "rounded-full bg-white shadow-sm px-4 py-1.5 text-[#0B1E66] text-sm font-medium transition-all"
+                      : "rounded-full px-4 py-1.5 text-[#9198AD] text-sm font-medium transition-all hover:text-[#667085]"
+                  }
+                >
+                  {period}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <ChartContainer config={chartConfig} className="h-75 w-full">
-        <AreaChart
-          data={data}
-          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-        >
-          <defs>
-            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#0B1E66" stopOpacity={0.1} />
-              <stop offset="95%" stopColor="#0B1E66" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid
-            strokeDasharray="0"
-            stroke="#F4F7FE"
-            vertical={false}
-          />
-          <XAxis
-            dataKey="month"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: "#253B4B", fontSize: 12 }}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: "rgba(0, 0, 0, 0.4)", fontSize: 12 }}
-            tickFormatter={formatYAxis}
-            domain={[0, 15000000]}
-            ticks={[0, 1000000, 5000000, 10000000, 15000000]}
-          />
-          <ChartTooltip content={<ChartTooltipContent />} />
-          <Area
-            type="linear"
-            dataKey="value"
-            stroke="#0B1E66"
-            strokeWidth={2}
-            fill="url(#colorValue)"
-            dot={{ fill: "#0B1E66", r: 4 }}
-            activeDot={{ r: 6 }}
-          />
-        </AreaChart>
-      </ChartContainer>
+      {trendLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-75 w-full rounded-xl" />
+        </div>
+      ) : (
+        <ChartContainer config={chartConfig} className="h-75 w-full">
+          <AreaChart
+            data={chartData}
+            margin={{ top: 10, right: 10, left: 30, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#0B1E66" stopOpacity={0.1} />
+                <stop offset="95%" stopColor="#0B1E66" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="0"
+              stroke="#F4F7FE"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="label"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#253B4B", fontSize: 12 }}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "rgba(0, 0, 0, 0.4)", fontSize: 12 }}
+              tickFormatter={formatYAxis}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Area
+              type="linear"
+              dataKey="value"
+              stroke="#0B1E66"
+              strokeWidth={2}
+              fill="url(#colorValue)"
+              dot={{ fill: "#0B1E66", r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          </AreaChart>
+        </ChartContainer>
+      )}
     </div>
   );
 }

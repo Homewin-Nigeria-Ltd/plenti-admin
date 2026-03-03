@@ -60,6 +60,9 @@ export const useAccountStore = create<AccountState>((set, get) => ({
             ? data.message
             : "Failed to load account settings";
         set({ accountError: message });
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
         return false;
       }
 
@@ -71,6 +74,9 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         getApiErrorMessage(error) ?? "Failed to load account settings";
       console.error("Error fetching account settings =>", error);
       set({ accountError: message });
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
       return false;
     } finally {
       set({ loadingAccount: false });
@@ -158,7 +164,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       if (!res.ok) {
         const message =
           (typeof json?.message === "string" && json.message) ||
-          (json?.errors?.avatar?.[0]) ||
+          json?.errors?.avatar?.[0] ||
           "Failed to upload avatar";
         return { ok: false, message };
       }
@@ -179,8 +185,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       }
       return { ok: true, avatar_url };
     } catch (error: unknown) {
-      const message =
-        getApiErrorMessage(error) ?? "Failed to upload avatar";
+      const message = getApiErrorMessage(error) ?? "Failed to upload avatar";
       console.error("Error uploading avatar =>", error);
       return { ok: false, message };
     } finally {

@@ -14,7 +14,7 @@ const OrderDetailsModal = dynamic(
   () => import("./OrderDetailsModal").then((mod) => mod.OrderDetailsModal),
   {
     ssr: false,
-  }
+  },
 );
 
 function formatOrderDate(iso: string) {
@@ -101,7 +101,7 @@ export default function OrderTableWrapper() {
   const getInitials = (name: string) => {
     const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
     const first = parts[0]?.[0] ?? "";
-    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
     return (first + last).toUpperCase() || "?";
   };
 
@@ -110,7 +110,7 @@ export default function OrderTableWrapper() {
       orders.map((order) => {
         const qty = (order.items ?? []).reduce(
           (acc, i) => acc + (i.quantity ?? 0),
-          0
+          0,
         );
         const name = order.user?.name ?? "—";
         return {
@@ -151,7 +151,7 @@ export default function OrderTableWrapper() {
           status: statusChip(order.status),
         };
       }),
-    [orders]
+    [orders],
   );
 
   return (
@@ -187,7 +187,7 @@ export default function OrderTableWrapper() {
             }}
           />
         ) : !hasRequested || loading ? (
-          <div className="min-w-[720px]">
+          <div className="min-w-180">
             <div className="grid grid-cols-6 gap-4 px-4 py-3 border-b border-neutral-100">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-4 w-24" />

@@ -17,7 +17,14 @@ export const salesStats: SalesStat[] = [
     change: "+ 22%",
     isPositive: true,
     subtitle: "14 Transactions",
-    trendIcon: "/icons/sales/trend-up-green.svg",
+    trendData: [
+      { value: 2800000 },
+      { value: 3100000 },
+      { value: 2900000 },
+      { value: 3400000 },
+      { value: 3600000 },
+      { value: 3810000 },
+    ],
     changeColor: "green",
   },
   {
@@ -26,7 +33,14 @@ export const salesStats: SalesStat[] = [
     change: "- 25%",
     isPositive: false,
     subtitle: "Per transaction",
-    trendIcon: "/icons/sales/trend-down-red.svg",
+    trendData: [
+      { value: 420000 },
+      { value: 410000 },
+      { value: 390000 },
+      { value: 370000 },
+      { value: 360000 },
+      { value: 354000 },
+    ],
     changeColor: "red",
   },
   {
@@ -35,7 +49,14 @@ export const salesStats: SalesStat[] = [
     change: "+ 49%",
     isPositive: true,
     subtitle: "₦0k pending",
-    trendIcon: "/icons/sales/trend-up-green-2.svg",
+    trendData: [
+      { value: 28000 },
+      { value: 32000 },
+      { value: 38000 },
+      { value: 45000 },
+      { value: 51000 },
+      { value: 56000 },
+    ],
     changeColor: "green",
   },
   {
@@ -44,7 +65,14 @@ export const salesStats: SalesStat[] = [
     change: "+ 1.9%",
     isPositive: true,
     subtitle: "Completed orders",
-    trendIcon: "/icons/sales/trend-up-orange.svg",
+    trendData: [
+      { value: 10 },
+      { value: 11 },
+      { value: 12 },
+      { value: 13 },
+      { value: 13 },
+      { value: 14 },
+    ],
     changeColor: "orange",
   },
 ];
@@ -57,10 +85,10 @@ export const categoryData: CategoryData[] = [
 ];
 
 export const leaderboardData: LeaderboardEntry[] = [
-  { name: "Simisola Jegede", value: 100000 },
-  { name: "Miebi Bozimo", value: 85000 },
-  { name: "Kelechi Obiano", value: 70000 },
-  { name: "Isobo Amakiri", value: 82000 },
+  { name: "Simisola Jegede", total_achieved: 100000 },
+  { name: "Miebi Bozimo", total_achieved: 85000 },
+  { name: "Kelechi Obiano", total_achieved: 70000 },
+  { name: "Isobo Amakiri", total_achieved: 82000 },
 ];
 
 export const salesTrendData: SalesTrendData[] = [

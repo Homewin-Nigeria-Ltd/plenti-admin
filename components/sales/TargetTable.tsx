@@ -5,9 +5,22 @@ import type { TargetRow } from "@/types/sales";
 
 interface TargetTableProps {
   targets: TargetRow[];
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  pageCount?: number;
+  onPageChange?: (page: number) => void;
 }
 
-export default function TargetTable({ targets }: TargetTableProps) {
+export default function TargetTable({
+  targets,
+  page,
+  pageSize,
+  total,
+  pageCount,
+  onPageChange,
+}: TargetTableProps) {
+  console.log("Rendering TargetTable with targets:", targets);
   const columns = [
     { key: "createdDate", label: "Created Date", className: "min-w-[150px]" },
     { key: "period", label: "Period", className: "min-w-[180px]" },
@@ -29,8 +42,8 @@ export default function TargetTable({ targets }: TargetTableProps) {
           target.status === "Quarterly"
             ? "bg-[#E7F6EC] text-[#027A48]"
             : target.status === "Yearly"
-            ? "bg-[#FFF4E6] text-[#FF9500]"
-            : "bg-[#E7F6EC] text-[#027A48]"
+              ? "bg-[#FFF4E6] text-[#FF9500]"
+              : "bg-[#E7F6EC] text-[#027A48]"
         }`}
       >
         {target.status}
@@ -45,7 +58,9 @@ export default function TargetTable({ targets }: TargetTableProps) {
       </div>
     ),
     target: (
-      <span className="text-sm font-medium text-[#101828]">{target.target}</span>
+      <span className="text-sm font-medium text-[#101828]">
+        {target.target}
+      </span>
     ),
     achieved: (
       <span className="text-sm font-medium text-[#101828]">
@@ -60,12 +75,22 @@ export default function TargetTable({ targets }: TargetTableProps) {
             style={{ width: `${target.progress}%` }}
           />
         </div>
-        <span className="text-sm font-medium text-[#101828] min-w-[45px]">
+        <span className="text-sm font-medium text-[#101828] min-w-11.25">
           {target.percentage}
         </span>
       </div>
     ),
   }));
 
-  return <DataTable columns={columns} rows={rows} />;
+  return (
+    <DataTable
+      columns={columns}
+      rows={rows}
+      page={page}
+      pageSize={pageSize}
+      total={total}
+      pageCount={pageCount}
+      onPageChange={onPageChange}
+    />
+  );
 }
