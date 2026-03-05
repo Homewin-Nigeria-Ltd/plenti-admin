@@ -33,11 +33,14 @@ export default function TargetTable({
   ];
 
   const rows = targets.map((target) => {
+    const user = target.user;
+    const userName = user?.name || "Team Member";
+    const firstRole = user?.roles?.[0];
     const userRole =
-      target.user.roles && target.user.roles.length > 0
-        ? typeof target.user.roles[0] === "string"
-          ? target.user.roles[0]
-          : target.user.roles[0]?.name || "Team Member"
+      firstRole != null
+        ? typeof firstRole === "string"
+          ? firstRole
+          : firstRole?.name || "Team Member"
         : "Team Member";
 
     return {
@@ -69,9 +72,7 @@ export default function TargetTable({
       ),
       teamMember: (
         <div className="flex flex-col">
-          <span className="text-sm font-medium text-[#101928]">
-            {target.user.name}
-          </span>
+          <span className="text-sm font-medium text-[#101928]">{userName}</span>
           <span className="text-sm text-[#475367]">{userRole}</span>
         </div>
       ),
