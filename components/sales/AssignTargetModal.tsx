@@ -66,8 +66,11 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
   const [periodEnd, setPeriodEnd] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const { structures, fetchStructures } = useCommissionStructuresStore();
+  const { structures, loading, fetchStructures } =
+    useCommissionStructuresStore();
   const { saving, error, createTarget } = useTargetsStore();
+
+  const noCommissionAvailable = !loading && structures.length === 0;
 
   useEffect(() => {
     if (isOpen) {
@@ -81,6 +84,16 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
 
     if (selectedTeamMembers.length === 0) {
       setLocalError("Please select at least one team member");
+      return;
+    }
+
+    if (noCommissionAvailable) {
+      setLocalError("No commission available");
+      return;
+    }
+
+    if (!commissionStructureId) {
+      setLocalError("Please select a commission type");
       return;
     }
 
@@ -170,6 +183,7 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
                 onValueChange={(value) =>
                   setCommissionStructureId(value ? Number(value) : null)
                 }
+                disabled={noCommissionAvailable}
               >
                 <SelectTrigger className="flex items-center h-14 w-full rounded-xl border-[#D0D5DD] px-4 py-6.75 text-base">
                   <SelectValue placeholder="Select Commission Type" />
@@ -187,6 +201,11 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+              {noCommissionAvailable && (
+                <p className="text-sm text-[#D42620]">
+                  No commission available
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -268,7 +287,7 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
 
             <Button
               type="submit"
-              disabled={saving}
+              disabled={saving || noCommissionAvailable}
               className="mt-3 h-15 w-full rounded-[10px] bg-[#0B1E66] text-base font-semibold text-white hover:bg-[#0B1E66]/90"
             >
               {saving ? "Assigning..." : "Assign Target"}
