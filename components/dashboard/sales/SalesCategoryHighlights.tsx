@@ -3,7 +3,7 @@ import { categoryData } from "@/data/sales";
 
 function SalesTargetsPanel() {
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 col-span-3">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <div className="rounded-xl bg-[#E8EEFF] h-fit p-4">
         <p className="text-xs text-[#98A2B3]">Monthly Target Progress</p>
         <p className="mt-1 text-[30px] font-semibold text-[#0B1E66]">2.18M</p>
@@ -49,7 +49,7 @@ function SalesTargetsPanel() {
 
 export default function SalesCategoryHighlights() {
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <SalesByCategoryChart data={categoryData} />
       <SalesTargetsPanel />
     </div>

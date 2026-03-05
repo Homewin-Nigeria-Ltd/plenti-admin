@@ -1,17 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
+import { useDebounce } from "use-debounce";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import DataTable from "@/components/common/DataTable";
-import { teamMembersData } from "@/data/sales";
+import { useTeamMembersStore } from "@/store/useTeamMembersStore";
+import { format } from "date-fns";
+import { PAGE_SIZE } from "@/lib/constant";
 
-function StatusPill() {
+function StatusPill({ status }: { status: string }) {
+  const isActive = status.toLowerCase() === "active";
   return (
-    <span className="inline-flex rounded-full bg-[#E7F6EC] px-2 py-1 text-xs font-medium text-[#12B76A]">
-      Active
+    <span
+      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+        isActive ? "bg-[#E7F6EC] text-[#12B76A]" : "bg-gray-100 text-gray-600"
+      }`}
+    >
+      {status}
     </span>
   );
 }
@@ -19,26 +27,24 @@ function StatusPill() {
 export default function TeamMembersTable() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [debouncedSearch] = useDebounce(search, 500);
   const [page, setPage] = useState(1);
-  const pageSize = 4;
 
-  const filteredRows = useMemo(() => {
-    const value = search.trim().toLowerCase();
+  const { teamMembers, loading, pagination, fetchTeamMembers } =
+    useTeamMembersStore();
 
-    if (!value) return teamMembersData;
+  useEffect(() => {
+    fetchTeamMembers(page, PAGE_SIZE, debouncedSearch);
+  }, [page, debouncedSearch, fetchTeamMembers]);
 
-    return teamMembersData.filter(
-      (member) =>
-        member.name.toLowerCase().includes(value) ||
-        member.email.toLowerCase().includes(value) ||
-        member.role.toLowerCase().includes(value)
-    );
-  }, [search]);
-
-  const paginatedRows = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredRows.slice(start, start + pageSize);
-  }, [filteredRows, page]);
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   const columns = [
     { key: "dateCreated", label: "Date created", className: "min-w-[180px]" },
@@ -48,42 +54,51 @@ export default function TeamMembersTable() {
     { key: "status", label: "Status", className: "min-w-[120px]" },
   ];
 
-  const rows = paginatedRows.map((member) => ({
-    dateCreated: (
-      <span className="text-sm text-[#475467]">{member.dateCreated}</span>
-    ),
-    name: (
-      <div className="flex items-center gap-3">
-        <Avatar className="size-8">
-          <AvatarFallback className="bg-[#0B1E66] text-xs font-bold text-white">
-            {member.initial}
-          </AvatarFallback>
-        </Avatar>
+  const rows = (Array.isArray(teamMembers) ? teamMembers : []).map(
+    (member) => ({
+      dateCreated: (
+        <span className="text-sm text-[#475467]">
+          {format(new Date(member.joined_date), "MMM dd, yyyy")}
+        </span>
+      ),
+      name: (
+        <div className="flex items-center gap-3">
+          <Avatar className="size-8">
+            <AvatarFallback className="bg-[#0B1E66] text-xs font-bold text-white">
+              {getInitials(member.name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-[#101928]">
+              {member.name}
+            </span>
+            <span className="text-xs text-[#667085]">{member.email}</span>
+          </div>
+        </div>
+      ),
+      role: (
         <div className="flex flex-col">
           <span className="text-sm font-medium text-[#101928]">
-            {member.name}
+            {member.team_member_role ?? ""}
           </span>
-          <span className="text-xs text-[#667085]">{member.email}</span>
+          <span className="text-xs text-[#667085]">{member.department}</span>
         </div>
-      </div>
-    ),
-    role: (
-      <span className="text-sm font-medium text-[#101928]">{member.role}</span>
-    ),
-    createdBy: (
-      <div className="flex items-center gap-3">
-        <Avatar className="size-8">
-          <AvatarFallback className="bg-[#0B1E66] text-xs font-bold text-white">
-            {member.createdByInitial}
-          </AvatarFallback>
-        </Avatar>
-        <span className="text-sm font-medium text-[#101928]">
-          {member.createdBy}
-        </span>
-      </div>
-    ),
-    status: <StatusPill />,
-  }));
+      ),
+      createdBy: (
+        <div className="flex items-center gap-3">
+          <Avatar className="size-8">
+            <AvatarFallback className="bg-[#0B1E66] text-xs font-bold text-white">
+              {getInitials(member?.created_by?.name || "")}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-sm font-medium text-[#101928]">
+            {member?.created_by?.name || ""}
+          </span>
+        </div>
+      ),
+      status: <StatusPill status={member.status} />,
+    }),
+  );
 
   return (
     <div className="space-y-4 rounded-xl bg-white">
@@ -109,23 +124,43 @@ export default function TeamMembersTable() {
         </button>
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={rows}
-        page={page}
-        pageSize={pageSize}
-        total={filteredRows.length}
-        onPageChange={setPage}
-        onRowClick={(_, rowIndex) => {
-          const selectedMember = paginatedRows[rowIndex];
-          if (!selectedMember) return;
-
-          const memberIndex = teamMembersData.indexOf(selectedMember);
-          if (memberIndex < 0) return;
-
-          router.push(`/sales/team-members/${memberIndex}`);
-        }}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="size-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#0B1E66]"></div>
+            </div>
+            <p className="text-sm text-gray-500">Loading team members...</p>
+          </div>
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <p className="text-sm text-gray-500">No team members found</p>
+          </div>
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={rows}
+          page={page}
+          pageSize={PAGE_SIZE || 0}
+          total={pagination?.total || 0}
+          pageCount={
+            pagination?.total
+              ? Math.ceil(pagination.total / (pagination.per_page || PAGE_SIZE))
+              : 1
+          }
+          onPageChange={setPage}
+          onRowClick={(_, rowIndex) => {
+            const arr = Array.isArray(teamMembers) ? teamMembers : [];
+            const selectedMember = arr[rowIndex];
+            if (selectedMember) {
+              router.push(`/sales/team-members/${selectedMember.id}`);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

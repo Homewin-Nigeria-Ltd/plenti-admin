@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,39 +10,45 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CalendarDays, ChevronRight, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CalendarDays, X } from "lucide-react";
 import {
   TeamMembersMultiSelect,
   type TeamMemberOption,
 } from "./TeamMembersMultiSelect";
+import { useCommissionStructuresStore } from "@/store/useCommissionStructuresStore";
+import { useTargetsStore, type PeriodType } from "@/store/useTargetsStore";
 
 type AssignTargetModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
 
-function SelectorField({ placeholder }: { placeholder: string }) {
-  return (
-    <button
-      type="button"
-      className="flex h-14 w-full items-center justify-between rounded-xl border border-[#D0D5DD] bg-white px-4 text-left text-base text-[#98A2B3]"
-    >
-      <span>{placeholder}</span>
-      <ChevronRight className="size-5 text-[#667085]" />
-    </button>
-  );
-}
-
-function DateField({ id }: { id: string }) {
+function DateField({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
   return (
     <div className="relative">
       <Input
         id={id}
-        type="text"
-        placeholder="Pick date"
-        className="h-14 rounded-xl border-[#D0D5DD] px-4 text-base text-[#98A2B3]"
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-14 rounded-xl border-[#D0D5DD] px-4 text-base"
       />
-      <CalendarDays className="pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2 text-[#98A2B3]" />
     </div>
   );
 }
@@ -51,10 +57,64 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<
     TeamMemberOption[]
   >([]);
+  const [commissionStructureId, setCommissionStructureId] = useState<
+    number | null
+  >(null);
+  const [targetAmount, setTargetAmount] = useState("");
+  const [periodType, setPeriodType] = useState<PeriodType>("monthly");
+  const [periodStart, setPeriodStart] = useState("");
+  const [periodEnd, setPeriodEnd] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const { structures, fetchStructures } = useCommissionStructuresStore();
+  const { saving, error, createTarget } = useTargetsStore();
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchStructures();
+    }
+  }, [isOpen, fetchStructures]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onClose();
+    setLocalError(null);
+
+    if (selectedTeamMembers.length === 0) {
+      setLocalError("Please select at least one team member");
+      return;
+    }
+
+    if (!targetAmount || Number(targetAmount) <= 0) {
+      setLocalError("Target amount must be greater than 0");
+      return;
+    }
+
+    if (!periodStart || !periodEnd) {
+      setLocalError("Please select both start and end dates");
+      return;
+    }
+
+    const userIds = selectedTeamMembers.map((m) => m.value);
+
+    const success = await createTarget({
+      user_id: userIds.length === 1 ? Number(userIds[0]) : userIds.map(Number),
+      commission_type_id: commissionStructureId,
+      target_amount: Number(targetAmount),
+      period: periodType,
+      start_date: periodStart,
+      end_date: periodEnd,
+    });
+
+    if (success) {
+      setSelectedTeamMembers([]);
+      setCommissionStructureId(null);
+      setTargetAmount("");
+      setPeriodType("monthly");
+      setPeriodStart("");
+      setPeriodEnd("");
+      fetchStructures();
+      onClose();
+    }
   };
 
   return (
@@ -105,9 +165,28 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
               >
                 Commission Type
               </Label>
-              <div id="commission-type">
-                <SelectorField placeholder="Select Commission Type" />
-              </div>
+              <Select
+                value={String(commissionStructureId || "")}
+                onValueChange={(value) =>
+                  setCommissionStructureId(value ? Number(value) : null)
+                }
+              >
+                <SelectTrigger className="flex items-center h-14 w-full rounded-xl border-[#D0D5DD] px-4 py-6.75 text-base">
+                  <SelectValue placeholder="Select Commission Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {structures.map((structure) => (
+                      <SelectItem
+                        key={structure.id}
+                        value={String(structure.id)}
+                      >
+                        {structure.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -120,9 +199,11 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
                 </Label>
                 <Input
                   id="target-value"
-                  type="text"
+                  type="number"
                   placeholder="Input Target Value (₦)"
-                  className="h-14 rounded-xl border-[#D0D5DD] px-4 text-base text-[#98A2B3]"
+                  value={targetAmount}
+                  onChange={(e) => setTargetAmount(e.target.value)}
+                  className="h-14 rounded-xl border-[#D0D5DD] px-4 text-base"
                 />
               </div>
 
@@ -133,9 +214,21 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
                 >
                   Period Type
                 </Label>
-                <div id="period-type">
-                  <SelectorField placeholder="Select Period Type" />
-                </div>
+                <Select
+                  value={periodType}
+                  onValueChange={(value) => setPeriodType(value as PeriodType)}
+                >
+                  <SelectTrigger className="flex items-center w-full rounded-xl border-[#D0D5DD] px-4 py-6.75 text-base">
+                    <SelectValue placeholder="Select Period Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -147,7 +240,11 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
                 >
                   Period Start
                 </Label>
-                <DateField id="period-start" />
+                <DateField
+                  id="period-start"
+                  value={periodStart}
+                  onChange={setPeriodStart}
+                />
               </div>
 
               <div className="space-y-2">
@@ -157,15 +254,24 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
                 >
                   Period End
                 </Label>
-                <DateField id="period-end" />
+                <DateField
+                  id="period-end"
+                  value={periodEnd}
+                  onChange={setPeriodEnd}
+                />
               </div>
             </div>
 
+            {localError || error ? (
+              <p className="text-sm text-red-600">{localError || error}</p>
+            ) : null}
+
             <Button
               type="submit"
+              disabled={saving}
               className="mt-3 h-15 w-full rounded-[10px] bg-[#0B1E66] text-base font-semibold text-white hover:bg-[#0B1E66]/90"
             >
-              Assign Target
+              {saving ? "Assigning..." : "Assign Target"}
             </Button>
           </form>
         </div>

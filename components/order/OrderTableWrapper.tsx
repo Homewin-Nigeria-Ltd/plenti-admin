@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import DataTable from "@/components/common/DataTable";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { getOrderPermissions } from "@/lib/modulePermissions";
+import { useAccountStore } from "@/store/useAccountStore";
 import { Search } from "lucide-react";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useDebounce } from "use-debounce";
@@ -14,7 +16,7 @@ const OrderDetailsModal = dynamic(
   () => import("./OrderDetailsModal").then((mod) => mod.OrderDetailsModal),
   {
     ssr: false,
-  }
+  },
 );
 
 function formatOrderDate(iso: string) {
@@ -33,6 +35,7 @@ function formatOrderDate(iso: string) {
 }
 
 export default function OrderTableWrapper() {
+  const account = useAccountStore((state) => state.account);
   const {
     orders,
     loading,
@@ -49,8 +52,13 @@ export default function OrderTableWrapper() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [debouncedSearch] = useDebounce(searchQuery, 400);
   const [hasRequested, setHasRequested] = React.useState(false);
+  const { canViewOrderList, canViewOrderDetails } = React.useMemo(
+    () => getOrderPermissions(account),
+    [account],
+  );
 
   React.useEffect(() => {
+    if (!canViewOrderList) return;
     let cancelled = false;
     const searchTerm =
       typeof debouncedSearch === "string" ? debouncedSearch.trim() : "";
@@ -61,7 +69,7 @@ export default function OrderTableWrapper() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, fetchOrders]);
+  }, [debouncedSearch, fetchOrders, canViewOrderList]);
 
   const columns = [
     { key: "date", label: "Order Date" },
@@ -101,7 +109,7 @@ export default function OrderTableWrapper() {
   const getInitials = (name: string) => {
     const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
     const first = parts[0]?.[0] ?? "";
-    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
     return (first + last).toUpperCase() || "?";
   };
 
@@ -110,7 +118,7 @@ export default function OrderTableWrapper() {
       orders.map((order) => {
         const qty = (order.items ?? []).reduce(
           (acc, i) => acc + (i.quantity ?? 0),
-          0
+          0,
         );
         const name = order.user?.name ?? "—";
         return {
@@ -151,89 +159,102 @@ export default function OrderTableWrapper() {
           status: statusChip(order.status),
         };
       }),
-    [orders]
+    [orders],
   );
 
   return (
     <div className="space-y-6">
-      <div className="border border-[#F0F2F5] rounded-xl h-12 flex items-center gap-2 p-2 px-4 shadow-sm bg-white">
-        <Search className="size-5 text-neutral-500 shrink-0" />
-        <Input
-          className="w-full placeholder:text-[#253B4B] border-0 outline-none focus-visible:ring-0 shadow-none h-auto"
-          placeholder="Search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
+      {!canViewOrderList ? (
+        <div className="rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-12 text-center">
+          <p className="text-sm text-[#667085]">
+            You do not have permission to view orders.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="border border-[#F0F2F5] rounded-xl h-12 flex items-center gap-2 p-2 px-4 shadow-sm bg-white">
+            <Search className="size-5 text-neutral-500 shrink-0" />
+            <Input
+              className="w-full placeholder:text-[#253B4B] border-0 outline-none focus-visible:ring-0 shadow-none h-auto"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-      <div className="bg-white rounded-xl border border-[#EEF1F6] shadow-xs">
-        {hasRequested && !loading && orders.length > 0 ? (
-          <DataTable
-            columns={columns}
-            rows={tableRows}
-            page={currentPage}
-            pageCount={lastPage}
-            pageSize={perPage}
-            total={totalItems}
-            onPageChange={(nextPage) =>
-              fetchOrders({ page: nextPage, search: debouncedSearch })
-            }
-            onRowClick={(_, idx) => {
-              const order = orders[idx];
-              if (order?.id != null) {
-                setSelectedId(order.id);
-                setOpen(true);
-              }
-            }}
-          />
-        ) : !hasRequested || loading ? (
-          <div className="min-w-[720px]">
-            <div className="grid grid-cols-6 gap-4 px-4 py-3 border-b border-neutral-100">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-4 w-24" />
-              ))}
-            </div>
-            {Array.from({ length: Math.max(6, perPage) }).map((_, rowIdx) => (
-              <div
-                key={rowIdx}
-                className="grid grid-cols-6 gap-4 px-4 py-4 border-b border-neutral-100"
-              >
-                <Skeleton className="h-4 w-28" />
-                <Skeleton className="h-4 w-32" />
-                <div className="flex items-center gap-3">
-                  <Skeleton className="size-8 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-40" />
+          <div className="bg-white rounded-xl border border-[#EEF1F6] shadow-xs">
+            {hasRequested && !loading && orders.length > 0 ? (
+              <DataTable
+                columns={columns}
+                rows={tableRows}
+                page={currentPage}
+                pageCount={lastPage}
+                pageSize={perPage}
+                total={totalItems}
+                onPageChange={(nextPage) =>
+                  fetchOrders({ page: nextPage, search: debouncedSearch })
+                }
+                onRowClick={(_, idx) => {
+                  if (!canViewOrderDetails) return;
+                  const order = orders[idx];
+                  if (order?.id != null) {
+                    setSelectedId(order.id);
+                    setOpen(true);
+                  }
+                }}
+              />
+            ) : !hasRequested || loading ? (
+              <div className="min-w-180">
+                <div className="grid grid-cols-6 gap-4 px-4 py-3 border-b border-neutral-100">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-4 w-24" />
+                  ))}
+                </div>
+                {Array.from({ length: Math.max(6, perPage) }).map(
+                  (_, rowIdx) => (
+                    <div
+                      key={rowIdx}
+                      className="grid grid-cols-6 gap-4 px-4 py-4 border-b border-neutral-100"
+                    >
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-4 w-32" />
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="size-8 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-40" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </div>
+                  ),
+                )}
+                <div className="flex items-center justify-between px-4 py-3">
+                  <Skeleton className="h-4 w-32" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-24 rounded-full" />
+                    <Skeleton className="h-8 w-24 rounded-full" />
                   </div>
                 </div>
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-12" />
-                <Skeleton className="h-6 w-20 rounded-full" />
               </div>
-            ))}
-            <div className="flex items-center justify-between px-4 py-3">
-              <Skeleton className="h-4 w-32" />
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-8 w-24 rounded-full" />
-                <Skeleton className="h-8 w-24 rounded-full" />
-              </div>
-            </div>
+            ) : (
+              <p className="text-center py-8 text-[#667085]">No orders found</p>
+            )}
           </div>
-        ) : (
-          <p className="text-center py-8 text-[#667085]">No orders found</p>
-        )}
-      </div>
 
-      <OrderDetailsModal
-        selectedId={selectedId}
-        isOpen={open}
-        onClose={() => {
-          setOpen(false);
-          setSingleOrder();
-          setSelectedId(null);
-        }}
-      />
+          <OrderDetailsModal
+            selectedId={selectedId}
+            isOpen={open}
+            onClose={() => {
+              setOpen(false);
+              setSingleOrder();
+              setSelectedId(null);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }
