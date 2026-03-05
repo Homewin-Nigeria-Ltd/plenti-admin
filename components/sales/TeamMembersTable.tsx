@@ -54,49 +54,51 @@ export default function TeamMembersTable() {
     { key: "status", label: "Status", className: "min-w-[120px]" },
   ];
 
-  const rows = teamMembers.map((member) => ({
-    dateCreated: (
-      <span className="text-sm text-[#475467]">
-        {format(new Date(member.joined_date), "MMM dd, yyyy")}
-      </span>
-    ),
-    name: (
-      <div className="flex items-center gap-3">
-        <Avatar className="size-8">
-          <AvatarFallback className="bg-[#0B1E66] text-xs font-bold text-white">
-            {getInitials(member.name)}
-          </AvatarFallback>
-        </Avatar>
+  const rows = (Array.isArray(teamMembers) ? teamMembers : []).map(
+    (member) => ({
+      dateCreated: (
+        <span className="text-sm text-[#475467]">
+          {format(new Date(member.joined_date), "MMM dd, yyyy")}
+        </span>
+      ),
+      name: (
+        <div className="flex items-center gap-3">
+          <Avatar className="size-8">
+            <AvatarFallback className="bg-[#0B1E66] text-xs font-bold text-white">
+              {getInitials(member.name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-[#101928]">
+              {member.name}
+            </span>
+            <span className="text-xs text-[#667085]">{member.email}</span>
+          </div>
+        </div>
+      ),
+      role: (
         <div className="flex flex-col">
           <span className="text-sm font-medium text-[#101928]">
-            {member.name}
+            {member.team_member_role ?? ""}
           </span>
-          <span className="text-xs text-[#667085]">{member.email}</span>
+          <span className="text-xs text-[#667085]">{member.department}</span>
         </div>
-      </div>
-    ),
-    role: (
-      <div className="flex flex-col">
-        <span className="text-sm font-medium text-[#101928]">
-          {member.position}
-        </span>
-        <span className="text-xs text-[#667085]">{member.department}</span>
-      </div>
-    ),
-    createdBy: (
-      <div className="flex items-center gap-3">
-        <Avatar className="size-8">
-          <AvatarFallback className="bg-[#0B1E66] text-xs font-bold text-white">
-            {getInitials(member?.created_by?.name || "")}
-          </AvatarFallback>
-        </Avatar>
-        <span className="text-sm font-medium text-[#101928]">
-          {member?.created_by?.name || ""}
-        </span>
-      </div>
-    ),
-    status: <StatusPill status={member.status} />,
-  }));
+      ),
+      createdBy: (
+        <div className="flex items-center gap-3">
+          <Avatar className="size-8">
+            <AvatarFallback className="bg-[#0B1E66] text-xs font-bold text-white">
+              {getInitials(member?.created_by?.name || "")}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-sm font-medium text-[#101928]">
+            {member?.created_by?.name || ""}
+          </span>
+        </div>
+      ),
+      status: <StatusPill status={member.status} />,
+    }),
+  );
 
   return (
     <div className="space-y-4 rounded-xl bg-white">
@@ -144,9 +146,15 @@ export default function TeamMembersTable() {
           page={page}
           pageSize={PAGE_SIZE || 0}
           total={pagination?.total || 0}
+          pageCount={
+            pagination?.total
+              ? Math.ceil(pagination.total / (pagination.per_page || PAGE_SIZE))
+              : 1
+          }
           onPageChange={setPage}
           onRowClick={(_, rowIndex) => {
-            const selectedMember = teamMembers[rowIndex];
+            const arr = Array.isArray(teamMembers) ? teamMembers : [];
+            const selectedMember = arr[rowIndex];
             if (selectedMember) {
               router.push(`/sales/team-members/${selectedMember.id}`);
             }

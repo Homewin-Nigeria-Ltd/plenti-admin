@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Check, ChevronRight, X } from "lucide-react";
 import Select, {
@@ -10,22 +11,13 @@ import Select, {
   type MultiValueRemoveProps,
   type OptionProps,
 } from "react-select";
+import { useTeamMembersStore } from "@/store/useTeamMembersStore";
 
 export type TeamMemberOption = {
   value: string;
   label: string;
   avatar?: string;
 };
-
-const teamMemberOptions: TeamMemberOption[] = [
-  { value: "ayibaemi-obubra", label: "Ayibaemi Obubra" },
-  { value: "oluwanifemi-osunsanya", label: "Oluwanifemi Osunsanya" },
-  { value: "minabo-amachree", label: "Minabo Amachree" },
-  { value: "simon-obiano", label: "Simon Obiano" },
-  { value: "martha-okafor", label: "Martha Okafor" },
-  { value: "martha-wokoma", label: "Martha Wokoma" },
-  { value: "stephen-oduah", label: "Stephen Oduah" },
-];
 
 type TeamMembersMultiSelectProps = {
   selectedTeamMembers: TeamMemberOption[];
@@ -35,6 +27,16 @@ type TeamMembersMultiSelectProps = {
 function getInitials(name: string) {
   const parts = name.trim().split(" ");
   return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
+}
+
+function convertTeamMembersToOptions(
+  teamMembers: Array<{ id: number; name: string; avatar_url: string | null }>,
+): TeamMemberOption[] {
+  return teamMembers.map((member) => ({
+    value: String(member.id),
+    label: member.name,
+    avatar: member.avatar_url || undefined,
+  }));
 }
 
 function TeamMemberOptionRow(props: OptionProps<TeamMemberOption, true>) {
@@ -64,7 +66,7 @@ function TeamMemberOptionRow(props: OptionProps<TeamMemberOption, true>) {
 }
 
 function TeamMemberDropdownIndicator(
-  props: DropdownIndicatorProps<TeamMemberOption, true>
+  props: DropdownIndicatorProps<TeamMemberOption, true>,
 ) {
   return (
     <components.DropdownIndicator {...props}>
@@ -73,7 +75,7 @@ function TeamMemberDropdownIndicator(
   );
 }
 function TeamMemberMultiValueLabel(
-  props: MultiValueGenericProps<TeamMemberOption, true>
+  props: MultiValueGenericProps<TeamMemberOption, true>,
 ) {
   return (
     <components.MultiValueLabel {...props}>
@@ -93,7 +95,7 @@ function TeamMemberMultiValueLabel(
 }
 
 function TeamMemberMultiValueRemove(
-  props: MultiValueRemoveProps<TeamMemberOption, true>
+  props: MultiValueRemoveProps<TeamMemberOption, true>,
 ) {
   return (
     <components.MultiValueRemove {...props}>
@@ -106,10 +108,21 @@ export function TeamMembersMultiSelect({
   selectedTeamMembers,
   onChange,
 }: TeamMembersMultiSelectProps) {
+  const { teamMembers, fetchTeamMembers } = useTeamMembersStore();
+  const [options, setOptions] = useState<TeamMemberOption[]>([]);
+
+  useEffect(() => {
+    fetchTeamMembers(1, 100);
+  }, [fetchTeamMembers]);
+
+  useEffect(() => {
+    setOptions(convertTeamMembersToOptions(teamMembers));
+  }, [teamMembers]);
+
   return (
     <Select<TeamMemberOption, true>
       inputId="team-members"
-      options={teamMemberOptions}
+      options={options}
       value={selectedTeamMembers}
       onChange={(values: MultiValue<TeamMemberOption>) =>
         onChange(Array.from(values))

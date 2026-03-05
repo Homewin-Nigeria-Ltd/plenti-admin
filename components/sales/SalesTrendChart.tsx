@@ -10,11 +10,7 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSalesStore } from "@/store/useSalesStore";
-import type {
-  SalesTrendData,
-  SalesTrendPeriod,
-  TimePeriod,
-} from "@/types/sales";
+import type { SalesTrendData, TimePeriod } from "@/types/sales";
 import { formatLargeAmount } from "@/lib/formatAmount";
 import { ArrowDown, ArrowUp } from "lucide-react";
 
@@ -32,7 +28,7 @@ const chartConfig = {
 
 const timePeriods: TimePeriod[] = ["Day", "Week", "Month", "Year"];
 
-const periodMap: Record<TimePeriod, SalesTrendPeriod> = {
+const periodMap: Record<TimePeriod, string> = {
   Day: "day",
   Week: "week",
   Month: "month",
@@ -56,7 +52,11 @@ export default function SalesTrendChart({
     if (trend && trendRequestKey === currentRequestKey) {
       return;
     }
-    void fetchSalesTrend(periodMap[selectedPeriod], selectedYear, userId);
+    void fetchSalesTrend(
+      periodMap[selectedPeriod] as TimePeriod,
+      selectedYear,
+      userId,
+    );
   }, [
     currentRequestKey,
     selectedPeriod,
@@ -69,14 +69,14 @@ export default function SalesTrendChart({
 
   const chartData = useMemo(() => {
     if (trend?.data?.length) {
-      return trend.data.map((item) => ({
-        label: item.label,
+      return trend.data.map((item: any) => ({
+        label: item.month || item.label || "",
         value: item.value,
       }));
     }
 
-    return data.map((item) => ({
-      label: item.label ?? item.month ?? "",
+    return data.map((item: SalesTrendData) => ({
+      label: item.month ?? "",
       value: item.value,
     }));
   }, [trend?.data, data]);
@@ -167,6 +167,14 @@ export default function SalesTrendChart({
         <div className="space-y-3">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-75 w-full rounded-xl" />
+        </div>
+      ) : chartData.length === 0 ? (
+        <div className="h-75 w-full flex items-center justify-center rounded-xl border border-[#EAECF0] bg-gray-50">
+          <div className="text-center">
+            <p className="text-gray-500 text-lg">
+              No sales trend data available
+            </p>
+          </div>
         </div>
       ) : (
         <ChartContainer config={chartConfig} className="h-75 w-full">

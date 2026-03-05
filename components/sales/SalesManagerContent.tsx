@@ -6,28 +6,32 @@ import Image from "next/image";
 import TargetTable from "./TargetTable";
 import OverviewTab from "./OverviewTab";
 import LeaderboardTab from "./LeaderboardTab";
-import { AssignTargetModal } from "./AssignTargetModal";
 import WithdrawalRequestsTable from "./WithdrawalRequestsTable";
+import MyCommissionsTab from "./MyCommissionsTab";
 import TeamMembersTable from "./TeamMembersTable";
-import { useTargetsStore } from "@/store/useTargetsStore";
+import { AssignTargetModal } from "./AssignTargetModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PAGE_SIZE } from "@/lib/constant";
+import { useTargetsStore } from "@/store/useTargetsStore";
 
-type TabType = "target" | "withdrawal" | "team" | "leaderboard" | "overview";
+type TabType = "overview" | "targets" | "team" | "leaderboard" | "commissions";
+type CommissionsSubTab = "withdrawal" | "myCommissions";
 
 const tabs: { id: TabType; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "target", label: "Target" },
-  { id: "withdrawal", label: "Withdrawal Requests" },
+  { id: "targets", label: "Team Targets" },
+  { id: "commissions", label: "Commissions" },
   { id: "team", label: "Team Members" },
-  { id: "leaderboard", label: "Leader Board" },
+  { id: "leaderboard", label: "Leaderboard" },
 ];
 
-export default function SalesContent() {
+export default function SalesManagerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialTab = (searchParams.get("tab") as TabType) || "overview";
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [commissionsSubTab, setCommissionsSubTab] =
+    useState<CommissionsSubTab>("withdrawal");
   const [isAssignTargetModalOpen, setIsAssignTargetModalOpen] = useState(false);
   const [targetsPage, setTargetsPage] = useState(1);
   const { targets, loading, error, pagination, fetchTargets } =
@@ -38,7 +42,7 @@ export default function SalesContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (activeTab === "target") {
+    if (activeTab === "targets") {
       void fetchTargets({ page: targetsPage, perPage: 15 });
     }
   }, [activeTab, targetsPage, fetchTargets]);
@@ -66,7 +70,7 @@ export default function SalesContent() {
           ))}
         </div>
 
-        {activeTab === "target" && (
+        {activeTab === "targets" && (
           <button
             onClick={() => setIsAssignTargetModalOpen(true)}
             className="flex items-center gap-2 bg-[#0B1E66] text-white px-4 py-2.5 rounded-md hover:bg-[#0B1E66]/90 transition-colors"
@@ -85,7 +89,7 @@ export default function SalesContent() {
 
       {/* Tab Content */}
       <div>
-        {activeTab === "target" &&
+        {activeTab === "targets" &&
           (loading && targets.length === 0 ? (
             <div className="space-y-3 rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-6">
               <Skeleton className="h-10 w-full" />
@@ -98,7 +102,9 @@ export default function SalesContent() {
             </div>
           ) : targets.length === 0 ? (
             <div className="rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-12 text-center">
-              <p className="text-sm text-[#667085]">No targets available</p>
+              <p className="text-sm text-[#667085]">
+                No team targets available
+              </p>
             </div>
           ) : (
             <TargetTable
@@ -110,7 +116,39 @@ export default function SalesContent() {
               onPageChange={setTargetsPage}
             />
           ))}
-        {activeTab === "withdrawal" && <WithdrawalRequestsTable />}
+
+        {activeTab === "commissions" && (
+          <div className="space-y-4">
+            {/* Commissions Sub-tabs */}
+            <div className="flex items-center gap-2 border-b border-[#EAECF0]">
+              <button
+                onClick={() => setCommissionsSubTab("withdrawal")}
+                className={`px-4 py-3 font-medium transition-colors ${
+                  commissionsSubTab === "withdrawal"
+                    ? "text-[#0B1E66] border-b-2 border-[#0B1E66]"
+                    : "text-[#808080] hover:text-[#0B1E66]"
+                }`}
+              >
+                Withdrawal Request
+              </button>
+              <button
+                onClick={() => setCommissionsSubTab("myCommissions")}
+                className={`px-4 py-3 font-medium transition-colors ${
+                  commissionsSubTab === "myCommissions"
+                    ? "text-[#0B1E66] border-b-2 border-[#0B1E66]"
+                    : "text-[#808080] hover:text-[#0B1E66]"
+                }`}
+              >
+                My Commissions
+              </button>
+            </div>
+
+            {/* Sub-tab Content */}
+            {commissionsSubTab === "withdrawal" && <WithdrawalRequestsTable />}
+            {commissionsSubTab === "myCommissions" && <MyCommissionsTab />}
+          </div>
+        )}
+
         {activeTab === "team" && <TeamMembersTable />}
         {activeTab === "leaderboard" && <LeaderboardTab />}
         {activeTab === "overview" && <OverviewTab />}

@@ -44,31 +44,39 @@ export default function SalesByCategoryChart({
       </div>
 
       <div className="flex flex-col">
-        <ChartContainer config={chartConfig} className="h-80 w-full">
-          <BarChart
-            data={chartData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              vertical={false}
-              stroke="#E5E7EB"
-            />
-            <XAxis
-              dataKey="category"
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: "#6B7280", fontSize: 12 }}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: "#6B7280", fontSize: 12 }}
-            />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="value" radius={[8, 8, 0, 0]} />
-          </BarChart>
-        </ChartContainer>
+        {data.length === 0 ? (
+          <div className="h-80 w-full flex items-center justify-center rounded-xl border border-[#EAECF0] bg-gray-50">
+            <div className="text-center">
+              <p className="text-gray-500 text-lg">No sales data available</p>
+            </div>
+          </div>
+        ) : (
+          <ChartContainer config={chartConfig} className="h-80 w-full">
+            <BarChart
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="#E5E7EB"
+              />
+              <XAxis
+                dataKey="category"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: "#6B7280", fontSize: 12 }}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: "#6B7280", fontSize: 12 }}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="value" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ChartContainer>
+        )}
 
         {/* <div className="flex flex-wrap items-center justify-center gap-5 mt-6 bg-white rounded-xl px-5 py-2 shadow-[0px_18px_40px_0px_rgba(112,144,176,0.12)]">
           {data.map((item, index) => (

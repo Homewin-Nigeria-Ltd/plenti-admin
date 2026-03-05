@@ -40,7 +40,18 @@ export type AccountSettingsUser = {
   deleted_at: string | null;
   amount_spent: number;
   total_orders: number;
-  roles: string[];
+  permissions_list?: string[];
+  roles: {
+    id: number;
+    name: string;
+    slug: string;
+    permissions?: {
+      id?: number;
+      name?: string;
+      slug?: string;
+    }[];
+  }[];
+  permissions: string[];
 };
 
 export type AdminUserStatus = "active" | "pending" | "inactive" | (string & {});

@@ -1,14 +1,14 @@
 import { create } from "zustand";
 import api from "@/lib/api";
-import {
-  SalesOverviewResponse,
-  SalesTrendPeriod,
-  SalesTrendResponse,
-} from "../types/sales";
+import { SalesOverviewResponse, TimePeriod } from "../types/sales";
+
+interface SalesTrendData {
+  [key: string]: any;
+}
 
 interface SalesStore {
   overview: SalesOverviewResponse["data"] | null;
-  trend: SalesTrendResponse["data"] | null;
+  trend: SalesTrendData | null;
   trendRequestKey: string | null;
   trendLoading: boolean;
   trendError: string | null;
@@ -16,7 +16,7 @@ interface SalesStore {
   error: string | null;
   fetchSalesOverview: () => Promise<void>;
   fetchSalesTrend: (
-    period: SalesTrendPeriod,
+    period: TimePeriod,
     year?: number,
     userId?: number,
   ) => Promise<void>;
@@ -49,7 +49,7 @@ export const useSalesStore = create<SalesStore>((set, get) => ({
     set({ trendLoading: true, trendError: null });
     try {
       const requestKey = `${period}|${typeof year === "number" ? year : "all"}|${typeof userId === "number" ? userId : "all"}`;
-      const res = await api.get<SalesTrendResponse>("/api/admin/sales/trend", {
+      const res = await api.get("/api/admin/sales/trend", {
         params: {
           period,
           ...(typeof year === "number" ? { year } : {}),

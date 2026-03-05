@@ -11,7 +11,11 @@ interface TeamMembersStore {
   teamMembers: TeamMember[];
   loading: boolean;
   error: string | null;
-  pagination: TeamMembersResponse["data"] | null;
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+  } | null;
   memberDetail: TeamMemberDetailResponse["data"] | null;
   detailLoading: boolean;
   detailError: string | null;
@@ -36,18 +40,36 @@ export const useTeamMembersStore = create<TeamMembersStore>((set) => ({
     set({ loading: true, error: null });
     try {
       const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
-      const res = await api.get<TeamMembersResponse>(
+      const res = await api.get<any>(
         `/api/admin/sales/team-members?per_page=${perPage}&page=${page}${searchParam}`,
       );
+
+      // Handle both nested and flat response structures
+      const responseData = res.data;
+      const dataArray = Array.isArray(responseData.data)
+        ? responseData.data
+        : Array.isArray(responseData.data?.data)
+          ? responseData.data.data
+          : [];
+
       set({
-        teamMembers: res.data.data.data,
-        pagination: res.data.data,
+        teamMembers: dataArray,
+        pagination: {
+          current_page:
+            responseData.current_page ||
+            responseData.data?.current_page ||
+            page,
+          per_page:
+            responseData.per_page || responseData.data?.per_page || perPage,
+          total: responseData.total || responseData.data?.total || 0,
+        },
         loading: false,
       });
     } catch (error: any) {
       set({
         error: error?.message || "Failed to fetch team members",
         loading: false,
+        teamMembers: [],
       });
     }
   },

@@ -74,44 +74,8 @@ export interface LeaderboardEntry {
 }
 
 export interface SalesTrendData {
-  month?: string;
-  label?: string;
+  month: string;
   value: number;
-}
-
-export type SalesTrendPeriod = "day" | "week" | "month" | "year";
-
-export interface SalesTrendPoint {
-  label: string;
-  value: number;
-}
-
-export interface SalesTrendSummary {
-  value: number;
-  percent: number;
-  label: string;
-  direction: "up" | "down";
-}
-
-export interface SalesTrendChartConfig {
-  min_value: number;
-  max_value: number;
-  months: string[];
-  available_years: number[];
-}
-
-export interface SalesTrendResponse {
-  status: string;
-  code: number;
-  message: string;
-  data: {
-    period: SalesTrendPeriod;
-    year: number;
-    data: SalesTrendPoint[];
-    trend: SalesTrendSummary;
-    chart_config: SalesTrendChartConfig;
-  };
-  timestamp: string;
 }
 
 export interface OrderRow {
@@ -171,7 +135,8 @@ export interface TeamMemberRow {
 export interface TeamMemberCreatedBy {
   id: number;
   name: string;
-  image_url: string | null;
+  email: string;
+  avatar_url: string | null;
 }
 
 export interface TeamMember {
@@ -181,6 +146,7 @@ export interface TeamMember {
   avatar_url: string | null;
   department: string;
   position: string;
+  team_member_role: string;
   status: string;
   joined_date: string;
   created_by: TeamMemberCreatedBy;
@@ -188,30 +154,10 @@ export interface TeamMember {
 }
 
 export interface TeamMembersResponse {
-  status: string;
-  code: number;
-  message: string;
-  data: {
-    current_page: number;
-    data: TeamMember[];
-    first_page_url: string;
-    from: number;
-    last_page: number;
-    last_page_url: string;
-    links: Array<{
-      url: string | null;
-      label: string;
-      page: number | null;
-      active: boolean;
-    }>;
-    next_page_url: string | null;
-    path: string;
-    per_page: number;
-    prev_page_url: string | null;
-    to: number;
-    total: number;
-  };
-  timestamp: string;
+  data: TeamMember[];
+  current_page: number;
+  per_page: number;
+  total: number;
 }
 
 // Team Member Detail Types

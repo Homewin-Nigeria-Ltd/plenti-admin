@@ -23,6 +23,9 @@ type ProductTableProps = {
   page: number;
   pageCount: number;
   pageSize: number;
+  canEditProducts: boolean;
+  canDeleteProducts: boolean;
+  canPublishProducts: boolean;
   onPageChange: (page: number) => void;
   formatCurrency: (n: number) => string;
 };
@@ -33,16 +36,19 @@ export default function ProductTable({
   page,
   pageCount,
   pageSize,
+  canEditProducts,
+  canDeleteProducts,
+  canPublishProducts,
   onPageChange,
   formatCurrency,
 }: ProductTableProps) {
   const { toggleProductStatus, togglingStatusById } = useProductStore();
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(
-    null
+    null,
   );
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [productToDelete, setProductToDelete] = React.useState<Product | null>(
-    null
+    null,
   );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
 
@@ -119,56 +125,65 @@ export default function ProductTable({
           {new Intl.NumberFormat("en-US").format(product.stockLevel)}
         </span>
       ),
-      actions: (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <Ellipsis className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="border-0">
-            <DropdownMenuItem
-              className="text-[#0B1E66]"
-              onClick={() => {
-                setSelectedProduct(product);
-                setIsEditModalOpen(true);
-              }}
-            >
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={!!togglingStatusById[String(product.id)]}
-              className={
-                product.status !== "Unavailable"
-                  ? "text-[#DD900D]"
-                  : "text-[#0F973D]"
-              }
-              onClick={async () => {
-                const isActive = product.status !== "Unavailable";
-                const ok = await toggleProductStatus(product.id);
-                if (ok) {
-                  toast.success(
-                    isActive ? "Product unpublished" : "Product published"
-                  );
-                } else {
-                  toast.error("Failed to update product status");
-                }
-              }}
-            >
-              {product.status !== "Unavailable" ? "Unpublish" : "Publish"}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-red-500"
-              onClick={() => {
-                setProductToDelete(product);
-                setIsDeleteModalOpen(true);
-              }}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      actions:
+        canEditProducts || canDeleteProducts || canPublishProducts ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Ellipsis className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="border-0">
+              {canEditProducts && (
+                <DropdownMenuItem
+                  className="text-[#0B1E66]"
+                  onClick={() => {
+                    setSelectedProduct(product);
+                    setIsEditModalOpen(true);
+                  }}
+                >
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {canPublishProducts && (
+                <DropdownMenuItem
+                  disabled={!!togglingStatusById[String(product.id)]}
+                  className={
+                    product.status !== "Unavailable"
+                      ? "text-[#DD900D]"
+                      : "text-[#0F973D]"
+                  }
+                  onClick={async () => {
+                    const isActive = product.status !== "Unavailable";
+                    const ok = await toggleProductStatus(product.id);
+                    if (ok) {
+                      toast.success(
+                        isActive ? "Product unpublished" : "Product published",
+                      );
+                    } else {
+                      toast.error("Failed to update product status");
+                    }
+                  }}
+                >
+                  {product.status !== "Unavailable" ? "Unpublish" : "Publish"}
+                </DropdownMenuItem>
+              )}
+              {canDeleteProducts && (
+                <DropdownMenuItem
+                  className="text-red-500"
+                  onClick={() => {
+                    setProductToDelete(product);
+                    setIsDeleteModalOpen(true);
+                  }}
+                >
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <span className="text-neutral-400">-</span>
+        ),
     }));
   }, [
     products,
@@ -203,7 +218,7 @@ export default function ProductTable({
         />
       </div>
       <EditProductModal
-        isOpen={isEditModalOpen}
+        isOpen={isEditModalOpen && canEditProducts}
         onClose={() => {
           setIsEditModalOpen(false);
           setSelectedProduct(null);
@@ -211,7 +226,7 @@ export default function ProductTable({
         product={selectedProduct}
       />
       <DeleteProductModal
-        isOpen={isDeleteModalOpen}
+        isOpen={isDeleteModalOpen && canDeleteProducts}
         onClose={() => {
           setIsDeleteModalOpen(false);
           setProductToDelete(null);

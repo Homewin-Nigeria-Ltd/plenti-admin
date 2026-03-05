@@ -9,6 +9,9 @@ type ProductGridProps = {
   total: number;
   page: number;
   pageCount: number;
+  canEditProducts: boolean;
+  canDeleteProducts: boolean;
+  canPublishProducts: boolean;
   onPageChange: (page: number) => void;
   formatCurrency: (n: number) => string;
 };
@@ -18,6 +21,9 @@ export default function ProductGrid({
   total,
   page,
   pageCount,
+  canEditProducts,
+  canDeleteProducts,
+  canPublishProducts,
   onPageChange,
   formatCurrency,
 }: ProductGridProps) {
@@ -40,6 +46,9 @@ export default function ProductGrid({
             key={product.id}
             product={product}
             formatCurrency={formatCurrency}
+            canEditProducts={canEditProducts}
+            canDeleteProducts={canDeleteProducts}
+            canPublishProducts={canPublishProducts}
           />
         ))}
       </div>
@@ -54,7 +63,8 @@ export default function ProductGrid({
             onClick={() => onPageChange(page - 1)}
             className={`flex-1 sm:flex-none rounded-full border border-neutral-100 px-3 py-1 text-xs sm:text-sm ${
               !canPrev ? "opacity-50 cursor-not-allowed" : ""
-            }`}>
+            }`}
+          >
             Previous
           </button>
           <button
@@ -62,7 +72,8 @@ export default function ProductGrid({
             onClick={() => onPageChange(page + 1)}
             className={`flex-1 sm:flex-none rounded-full border border-neutral-100 px-3 py-1 text-xs sm:text-sm ${
               !canNext ? "opacity-50 cursor-not-allowed" : ""
-            }`}>
+            }`}
+          >
             Next
           </button>
         </div>
@@ -70,4 +81,3 @@ export default function ProductGrid({
     </>
   );
 }
-

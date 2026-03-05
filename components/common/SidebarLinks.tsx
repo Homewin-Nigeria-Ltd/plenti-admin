@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { dmSans } from "@/lib/fonts";
+import { getSidebarPermissions } from "@/lib/modulePermissions";
 import { cn } from "@/lib/utils";
+import { useAccountStore } from "@/store/useAccountStore";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -76,10 +78,38 @@ type SidebarLinksProps = {
 export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const account = useAccountStore((state) => state.account);
+  const {
+    canViewProductManagement,
+    canViewInventoryManagement,
+    canViewSalesManagement,
+    canViewFinanceManagement,
+    canViewOrderManagement,
+    canViewCustomerSupport,
+  } = React.useMemo(() => getSidebarPermissions(account), [account]);
+
+  const visibleLinks = React.useMemo(
+    () =>
+      links.filter((link) => {
+        if (link.href === "/product") return canViewProductManagement;
+        if (link.href === "/inventory") return canViewInventoryManagement;
+        if (link.href === "/sales") return canViewSalesManagement;
+        if (link.href === "/finance") return canViewFinanceManagement;
+        if (link.href === "/order") return canViewOrderManagement;
+        return true;
+      }),
+    [
+      canViewProductManagement,
+      canViewInventoryManagement,
+      canViewSalesManagement,
+      canViewFinanceManagement,
+      canViewOrderManagement,
+    ],
+  );
 
   const isRouteActive = React.useCallback(
     (href: string) => pathname === href || pathname.startsWith(`${href}/`),
-    [pathname]
+    [pathname],
   );
 
   const linkBaseClass = React.useMemo(
@@ -88,9 +118,9 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
         "text-[16px] font-semibold h-13.75 flex items-center cursor-pointer",
         collapsed
           ? "justify-center px-2 mx-7 rounded-[4px] "
-          : "px-4 gap-3 mx-3 rounded-lg"
+          : "px-4 gap-3 mx-3 rounded-lg",
       ),
-    [collapsed]
+    [collapsed],
   );
 
   const handleNav = React.useCallback(
@@ -98,12 +128,12 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
       const href = (e.currentTarget as HTMLElement).dataset.href;
       if (href) router.push(href);
     },
-    [router]
+    [router],
   );
 
   return (
     <ul className={`${dmSans.className} flex-1 overflow-auto mt-3 space-y-2`}>
-      {links.map((link, idx) => {
+      {visibleLinks.map((link, idx) => {
         const isActive = isRouteActive(link.href);
 
         return (
@@ -111,7 +141,7 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
             key={idx}
             className={cn(
               isActive ? "bg-primary text-white" : "text-[#98A2B3]",
-              linkBaseClass
+              linkBaseClass,
             )}
             data-href={link.href}
             onClick={handleNav}
@@ -137,39 +167,41 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
 
         return (
           <>
-            <li
-              className={cn(
-                customerActive
-                  ? "bg-primary text-white rounded-lg"
-                  : "text-[#98A2B3]",
-                linkBaseClass
-              )}
-              data-href="/customer"
-              onClick={handleNav}
-              title={collapsed ? "Customer Support" : undefined}
-            >
-              <span className="shrink-0">
-                <Image
-                  src={
-                    customerActive
-                      ? "/sidebarIcons/presentation-chart-grey.png"
-                      : "/sidebarIcons/life-ring-grey.png"
-                  }
-                  alt="Customer Support"
-                  width={24}
-                  height={24}
-                />
-              </span>
-              {!collapsed && (
-                <span className="min-w-0 truncate">Customer Support</span>
-              )}
-            </li>
+            {canViewCustomerSupport && (
+              <li
+                className={cn(
+                  customerActive
+                    ? "bg-primary text-white rounded-lg"
+                    : "text-[#98A2B3]",
+                  linkBaseClass,
+                )}
+                data-href="/customer"
+                onClick={handleNav}
+                title={collapsed ? "Customer Support" : undefined}
+              >
+                <span className="shrink-0">
+                  <Image
+                    src={
+                      customerActive
+                        ? "/sidebarIcons/presentation-chart-grey.png"
+                        : "/sidebarIcons/life-ring-grey.png"
+                    }
+                    alt="Customer Support"
+                    width={24}
+                    height={24}
+                  />
+                </span>
+                {!collapsed && (
+                  <span className="min-w-0 truncate">Customer Support</span>
+                )}
+              </li>
+            )}
             <li
               className={cn(
                 configActive
                   ? "bg-primary text-white rounded-lg"
                   : "text-[#98A2B3]",
-                linkBaseClass
+                linkBaseClass,
               )}
               data-href="/configuration"
               onClick={handleNav}
