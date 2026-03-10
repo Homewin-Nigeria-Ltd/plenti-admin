@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,13 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarDays, X } from "lucide-react";
+import { useCommissionStructuresStore } from "@/store/useCommissionStructuresStore";
+import { useTargetsStore, type PeriodType } from "@/store/useTargetsStore";
+import { X } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   TeamMembersMultiSelect,
   type TeamMemberOption,
 } from "./TeamMembersMultiSelect";
-import { useCommissionStructuresStore } from "@/store/useCommissionStructuresStore";
-import { useTargetsStore, type PeriodType } from "@/store/useTargetsStore";
 
 type AssignTargetModalProps = {
   isOpen: boolean;
@@ -133,11 +133,11 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="rounded-3xl p-0 sm:max-w-190"
+        className="rounded-3xl p-0 sm:max-w-190 max-h-[96vh] flex flex-col overflow-hidden"
         showCloseButton={false}
       >
-        <div className="p-8">
-          <div className="relative pr-12">
+        <div className="p-8 flex flex-col min-h-0 overflow-hidden">
+          <div className="relative pr-12 shrink-0">
             <DialogTitle className="text-[40px] font-semibold leading-[1.1] text-[#101928] sm:text-[34px]">
               Assign Sales Target
             </DialogTitle>
@@ -155,7 +155,10 @@ export function AssignTargetModal({ isOpen, onClose }: AssignTargetModalProps) {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          <form
+            onSubmit={handleSubmit}
+            className="mt-8 space-y-5 flex-1 overflow-y-auto pr-1"
+          >
             <div className="space-y-2">
               <Label
                 htmlFor="team-members"

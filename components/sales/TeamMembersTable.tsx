@@ -116,12 +116,12 @@ export default function TeamMembersTable() {
           />
         </div>
 
-        <button
+        {/* <button
           type="button"
           className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D0D5DD] text-[#667085]"
         >
           <SlidersHorizontal className="size-4" />
-        </button>
+        </button> */}
       </div>
 
       {loading ? (
