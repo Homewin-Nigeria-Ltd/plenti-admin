@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const INVENTORY_TABS = [
   { href: "/inventory", label: "Overview" },
   { href: "/inventory/stock-transfer", label: "Stock Transfer" },
+  { href: "/inventory/transfer-request", label: "Transfer Request" },
   { href: "/inventory/reorder-recommendations", label: "Reorder Recommendations" },
   { href: "/inventory/stock-alerts", label: "Stock Alerts" },
   { href: "/inventory/audit-log", label: "Audit Log" },
