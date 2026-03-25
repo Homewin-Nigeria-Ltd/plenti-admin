@@ -12,10 +12,19 @@ export const INVENTORY_API = {
   adjustStock: "/api/admin/inventory",
   transfer: "/api/admin/inventory/transfer",
   transfers: "/api/admin/inventory/transfers",
+  transferRequests: "/api/admin/inventory/transfer-requests",
   auditLog: "/api/admin/inventory/audit-log",
   lowStockAlerts: "/api/admin/inventory/low-stock-alerts",
   restockRecommendations: "/api/admin/restock-recommendations",
 } as const;
+
+export function inventoryTransferApprovePath(transferId: number | string): string {
+  return `/api/admin/inventory/transfer/${transferId}/approve`;
+}
+
+export function inventoryTransferRejectPath(transferId: number | string): string {
+  return `/api/admin/inventory/transfer/${transferId}/reject`;
+}
 
 export const mockWarehouses: Warehouse[] = [
   {
