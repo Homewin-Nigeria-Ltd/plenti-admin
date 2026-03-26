@@ -11,76 +11,116 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Ghost, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type NotificationItem = {
-  id: string;
-  category: string;
-  title: string;
-  message: string;
-  time: string;
-  linkLabel: string;
-  unread?: boolean;
-};
+import api from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import type {
+  NotificationItem,
+  NotificationModalProps,
+  NotificationsResponse,
+} from "@/types/NotificationTypes";
+import {
+  getInitials,
+  getNotificationRows,
+  mapNotification,
+  NOTIFICATIONS_UNREAD_PATH,
+  parseNotificationRowsFromEnvelope,
+} from "@/lib/notification";
 
 const AVATAR_BG = ["bg-[#E8EEFF]", "bg-[#EEF2FF]", "bg-[#F2F4F7]"] as const;
 
-const DUMMY_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: "1",
-    category: "Menu Management",
-    title: "Delivery",
-    message: "Ogabi Michel has just picked up meal from Home town",
-    time: "February 2, 2024 | 11:32AM",
-    linkLabel: "Check out Menu Management",
-  },
-  {
-    id: "2",
-    category: "Order Management",
-    title: "New Order",
-    message: "Oluwanifemi Osunsanya has ordered a meal from Home Town Eat hub",
-    time: "February 2, 2024 | 11:32AM",
-    linkLabel: "Check out Order Management",
-    unread: true,
-  },
-  {
-    id: "3",
-    category: "Meal Management",
-    title: "New Meal",
-    message: "A new meal has been added to Chinese World",
-    time: "February 2, 2024 | 11:32AM",
-    linkLabel: "Check out Meal Management",
-  },
-  {
-    id: "4",
-    category: "Menu Management",
-    title: "New Meal",
-    message: "A new meal has been added to Chinese World",
-    time: "February 2, 2024 | 11:32AM",
-    linkLabel: "Check out Menu Management",
-    unread: true,
-  },
-  {
-    id: "5",
-    category: "Inventory",
-    title: "Low Stock Alert",
-    message: "Rice 50kg in Abuja Central is below threshold",
-    time: "February 2, 2024 | 11:32AM",
-    linkLabel: "Check out Stock Alerts",
-  },
-];
-
-type NotificationModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-};
-
 export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
+  const router = useRouter();
   const [tab, setTab] = React.useState<"all" | "unread">("all");
+  const [loading, setLoading] = React.useState(false);
+  const [markingReadId, setMarkingReadId] = React.useState<number | null>(null);
+  const [allNotifications, setAllNotifications] = React.useState<NotificationItem[]>([]);
+  const [unreadNotifications, setUnreadNotifications] = React.useState<NotificationItem[]>([]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+
+    const fetchNotifications = async () => {
+      setLoading(true);
+      try {
+        const [allResult, unreadResult] = await Promise.allSettled([
+          api.get<NotificationsResponse>("/api/admin/notifications", {
+            params: { page: 1, per_page: 20 },
+          }),
+          api.get<NotificationsResponse>(NOTIFICATIONS_UNREAD_PATH, {
+            params: { page: 1, per_page: 50 },
+          }),
+        ]);
+
+        if (cancelled) return;
+
+        if (allResult.status === "fulfilled") {
+          const mappedAll = getNotificationRows(allResult.value.data).map(mapNotification);
+          setAllNotifications(mappedAll);
+        } else {
+          console.error("All notifications fetch error:", allResult.reason);
+          setAllNotifications([]);
+        }
+
+        if (unreadResult.status === "fulfilled") {
+          const mappedUnread = parseNotificationRowsFromEnvelope(
+            unreadResult.value.data,
+          ).map((n) => mapNotification({ ...n, read_at: n.read_at ?? null }));
+          setUnreadNotifications(mappedUnread.map((n) => ({ ...n, unread: true })));
+        } else {
+          console.error("Unread notifications fetch error:", unreadResult.reason);
+          setUnreadNotifications([]);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        console.error("Notifications fetch error:", err);
+        setAllNotifications([]);
+        setUnreadNotifications([]);
+      } finally {
+        if (cancelled) return;
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   const items = React.useMemo(() => {
-    if (tab === "all") return DUMMY_NOTIFICATIONS;
-    return DUMMY_NOTIFICATIONS.filter((item) => item.unread);
-  }, [tab]);
+    if (tab === "all") return allNotifications;
+    return unreadNotifications;
+  }, [tab, allNotifications, unreadNotifications]);
+
+  const handleItemClick = (item: NotificationItem) => {
+    const url = item.actionUrl;
+    if (!url) return;
+
+    const run = async () => {
+      if (item.unread) {
+        try {
+          setMarkingReadId(item.id);
+          await api.patch(`/api/notifications/${item.id}/read`, {});
+          setAllNotifications((prev) =>
+            prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n)),
+          );
+          setUnreadNotifications((prev) => prev.filter((n) => n.id !== item.id));
+        } catch (err) {
+          console.error("Failed to mark notification as read:", err);
+          toast.error("Failed to mark notification as read");
+        } finally {
+          setMarkingReadId(null);
+        }
+      }
+
+      router.push(url);
+      onClose();
+    };
+
+    void run();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -134,7 +174,26 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
             </Button>
           </div>
 
-          {items.length === 0 ? (
+          {loading ? (
+            <div className="space-y-3 pb-6">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-xl border border-[#EAECF0] p-4 sm:p-5 animate-pulse"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="size-8 rounded-full bg-neutral-200" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-neutral-200 rounded w-36" />
+                      <div className="h-3 bg-neutral-100 rounded w-64" />
+                      <div className="h-3 bg-neutral-100 rounded w-32" />
+                    </div>
+                    <div className="h-8 w-16 bg-neutral-100 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : items.length === 0 ? (
             <div className="h-[70vh] min-h-[520px] flex flex-col items-center justify-center text-center -mt-12">
               <Ghost className="size-36 text-[#11297A]" strokeWidth={1.8} />
               <p className="mt-6 text-[24px] leading-tight font-semibold text-[#101928]">
@@ -166,10 +225,10 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
                         <AvatarFallback
                           className={cn(
                             "text-[#0B1E66] text-xs font-semibold",
-                            AVATAR_BG[Number(item.id) % AVATAR_BG.length]
+                            AVATAR_BG[item.id % AVATAR_BG.length]
                           )}
                         >
-                          RU
+                          {getInitials(item.title)}
                         </AvatarFallback>
                       </Avatar>
                       <p className="text-sm text-[#101928] font-medium min-w-0">
@@ -179,9 +238,11 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
                     </div>
                     <button
                       type="button"
-                      className="text-sm text-[#0B1E66] underline text-left shrink-0"
+                      onClick={() => handleItemClick(item)}
+                      className="text-sm text-[#0B1E66] underline text-left shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={!item.actionUrl || markingReadId === item.id}
                     >
-                      {item.linkLabel}
+                     Open
                     </button>
                   </div>
                 </div>
