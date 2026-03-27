@@ -11,115 +11,76 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Ghost, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import api from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import type {
-  NotificationItem,
+  NotificationApiEntry,
   NotificationModalProps,
-  NotificationsResponse,
 } from "@/types/NotificationTypes";
 import {
+  formatNotificationTime,
+  getNotificationCategory,
   getInitials,
-  getNotificationRows,
-  mapNotification,
-  NOTIFICATIONS_UNREAD_PATH,
-  parseNotificationRowsFromEnvelope,
+  resolveNotificationActionUrl,
 } from "@/lib/notification";
+import { useNotificationsStore } from "@/store/useNotificationsStore";
 
 const AVATAR_BG = ["bg-[#E8EEFF]", "bg-[#EEF2FF]", "bg-[#F2F4F7]"] as const;
 
 export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
   const router = useRouter();
-  const [tab, setTab] = React.useState<"all" | "unread">("all");
-  const [loading, setLoading] = React.useState(false);
-  const [markingReadId, setMarkingReadId] = React.useState<number | null>(null);
-  const [allNotifications, setAllNotifications] = React.useState<NotificationItem[]>([]);
-  const [unreadNotifications, setUnreadNotifications] = React.useState<NotificationItem[]>([]);
+  const {
+    activeTab,
+    notifications,
+    loading,
+    loadingMore,
+    page,
+    lastPage,
+    setActiveTab,
+    fetchNotifications,
+    markAsRead,
+  } = useNotificationsStore();
+  const scrollRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (!isOpen) return;
-    let cancelled = false;
+    void fetchNotifications({ tab: activeTab, page: 1, append: false });
+  }, [isOpen, activeTab, fetchNotifications]);
 
-    const fetchNotifications = async () => {
-      setLoading(true);
-      try {
-        const [allResult, unreadResult] = await Promise.allSettled([
-          api.get<NotificationsResponse>("/api/admin/notifications", {
-            params: { page: 1, per_page: 20 },
-          }),
-          api.get<NotificationsResponse>(NOTIFICATIONS_UNREAD_PATH, {
-            params: { page: 1, per_page: 50 },
-          }),
-        ]);
-
-        if (cancelled) return;
-
-        if (allResult.status === "fulfilled") {
-          const mappedAll = getNotificationRows(allResult.value.data).map(mapNotification);
-          setAllNotifications(mappedAll);
-        } else {
-          console.error("All notifications fetch error:", allResult.reason);
-          setAllNotifications([]);
-        }
-
-        if (unreadResult.status === "fulfilled") {
-          const mappedUnread = parseNotificationRowsFromEnvelope(
-            unreadResult.value.data,
-          ).map((n) => mapNotification({ ...n, read_at: n.read_at ?? null }));
-          setUnreadNotifications(mappedUnread.map((n) => ({ ...n, unread: true })));
-        } else {
-          console.error("Unread notifications fetch error:", unreadResult.reason);
-          setUnreadNotifications([]);
-        }
-      } catch (err) {
-        if (cancelled) return;
-        console.error("Notifications fetch error:", err);
-        setAllNotifications([]);
-        setUnreadNotifications([]);
-      } finally {
-        if (cancelled) return;
-        setLoading(false);
-      }
-    };
-
-    fetchNotifications();
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen]);
+  const isUnread = React.useCallback(
+    (n: NotificationApiEntry) =>
+      typeof n.is_read === "boolean" ? !n.is_read : n.read_at === null,
+    [],
+  );
 
   const items = React.useMemo(() => {
-    if (tab === "all") return allNotifications;
-    return unreadNotifications;
-  }, [tab, allNotifications, unreadNotifications]);
+    if (activeTab === "all") return notifications;
+    return notifications;
+  }, [activeTab, notifications]);
 
-  const handleItemClick = (item: NotificationItem) => {
-    const url = item.actionUrl;
+  const loadMore = React.useCallback(async () => {
+    if (!isOpen || loading || loadingMore || page >= lastPage) return;
+    const nextPage = page + 1;
+    await fetchNotifications({ tab: activeTab, page: nextPage, append: true });
+  }, [isOpen, loading, loadingMore, page, lastPage, fetchNotifications, activeTab]);
+
+  const handleScroll = React.useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || loading || loadingMore || page >= lastPage) return;
+    const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (remaining < 120) {
+      void loadMore();
+    }
+  }, [loadMore, loading, loadingMore, page, lastPage]);
+
+  const handleItemClick = (item: NotificationApiEntry) => {
+    const url = resolveNotificationActionUrl(item);
     if (!url) return;
+    if (isUnread(item)) {
+      void markAsRead(item.id);
+    }
 
-    const run = async () => {
-      if (item.unread) {
-        try {
-          setMarkingReadId(item.id);
-          await api.patch(`/api/notifications/${item.id}/read`, {});
-          setAllNotifications((prev) =>
-            prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n)),
-          );
-          setUnreadNotifications((prev) => prev.filter((n) => n.id !== item.id));
-        } catch (err) {
-          console.error("Failed to mark notification as read:", err);
-          toast.error("Failed to mark notification as read");
-        } finally {
-          setMarkingReadId(null);
-        }
-      }
-
-      router.push(url);
-      onClose();
-    };
-
-    void run();
+    router.push(url);
+    onClose();
   };
 
   return (
@@ -144,15 +105,19 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
           </div>
         </DialogHeader>
 
-        <div className="px-8 pb-6 h-full overflow-y-auto flex flex-col">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="px-8 pb-6 h-full overflow-y-auto flex flex-col"
+        >
           <div className="sticky top-0 z-20 bg-white pt-2 pb-3 flex items-center gap-2 mb-2">
             <Button
               type="button"
-              onClick={() => setTab("all")}
+              onClick={() => setActiveTab("all")}
               variant="ghost"
               className={cn(
                 "h-10 px-7 rounded-lg font-medium",
-                tab === "all"
+                activeTab === "all"
                   ? "bg-[#E8EEFF] text-[#0B1E66]"
                   : "text-[#98A2B3] hover:text-[#667085]"
               )}
@@ -161,11 +126,11 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
             </Button>
             <Button
               type="button"
-              onClick={() => setTab("unread")}
+              onClick={() => setActiveTab("unread")}
               variant="ghost"
               className={cn(
                 "h-10 px-7 rounded-lg font-medium",
-                tab === "unread"
+                activeTab === "unread"
                   ? "bg-[#E8EEFF] text-[#0B1E66]"
                   : "text-[#98A2B3] hover:text-[#667085]"
               )}
@@ -209,15 +174,19 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
                 <div key={item.id} className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <span className="inline-flex items-center rounded-md bg-[#EEF2FF] px-3 py-1 text-sm text-[#0B1E66] font-medium">
-                      {item.category}
+                      {item.module ?? getNotificationCategory(item.type)}
                     </span>
-                    <span className="text-sm text-[#98A2B3]">{item.time}</span>
+                    <span className="text-sm text-[#98A2B3]">
+                      {item.display_time ??
+                        item.relative_time ??
+                        formatNotificationTime(item.delivered_at ?? item.created_at)}
+                    </span>
                   </div>
 
                   <div
                     className={cn(
                       " bg-[#F9FAFB] px-4 py-3 flex items-center justify-between gap-4",
-                      item.unread && "border-l-4 border-l-[#0B1E66]"
+                      isUnread(item) && "border-l-4 border-l-[#0B1E66]"
                     )}
                   >
                     <div className="min-w-0 flex items-center gap-3">
@@ -240,13 +209,16 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
                       type="button"
                       onClick={() => handleItemClick(item)}
                       className="text-sm text-[#0B1E66] underline text-left shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={!item.actionUrl || markingReadId === item.id}
+                      disabled={!resolveNotificationActionUrl(item)}
                     >
                      Open
                     </button>
                   </div>
                 </div>
               ))}
+              {loadingMore && (
+                <div className="text-center text-sm text-[#98A2B3] py-2">Loading more...</div>
+              )}
             </div>
           )}
         </div>
