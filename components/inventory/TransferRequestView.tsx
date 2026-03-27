@@ -26,12 +26,14 @@ import { useTransferRequestsStore, type TransferRequestRow } from "@/store/useTr
 type RequestStatus = TransferRequestRow["status"];
 
 function statusLabel(status: RequestStatus): string {
+  if (status === "complete") return "Complete";
   if (status === "approved") return "Approved";
   if (status === "rejected") return "Rejected";
   return "Awaiting Approval";
 }
 
 function statusClass(status: RequestStatus): string {
+  if (status === "complete") return "bg-blue-100 text-blue-700";
   if (status === "approved") return "bg-emerald-100 text-emerald-700";
   if (status === "rejected") return "bg-red-100 text-red-700";
   return "bg-amber-100 text-amber-700";
@@ -164,11 +166,13 @@ function TransferRequestModal({ isOpen, request, onClose }: TransferRequestModal
   const rejectTransferRequest = useTransferRequestsStore((s) => s.rejectTransferRequest);
   const [pendingAction, setPendingAction] = React.useState<"approve" | "reject" | null>(null);
   const [reason, setReason] = React.useState("");
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!isOpen) {
       setPendingAction(null);
       setReason("");
+      setIsRejectDialogOpen(false);
     }
   }, [isOpen]);
 
@@ -193,6 +197,20 @@ function TransferRequestModal({ isOpen, request, onClose }: TransferRequestModal
               ? request.note
               : "This transfer is pending review. An email notification may have been sent to the warehouse manager.",
         }
+      : request.status === "complete"
+        ? {
+            border: "border-blue-200",
+            bg: "bg-blue-50",
+            icon: CheckCircle2,
+            iconClass: "text-blue-700",
+            title: "Complete",
+            titleClass: "text-blue-800",
+            bodyClass: "text-blue-900/80",
+            body:
+              request.note !== "—"
+                ? request.note
+                : "This transfer has been completed.",
+          }
       : request.status === "approved"
         ? {
             border: "border-emerald-200",
@@ -243,50 +261,52 @@ function TransferRequestModal({ isOpen, request, onClose }: TransferRequestModal
     setPendingAction("reject");
     try {
       const ok = await rejectTransferRequest(request.apiId, reason);
-      if (ok) onClose();
+      if (ok) {
+        setIsRejectDialogOpen(false);
+        onClose();
+      }
     } finally {
       setPendingAction(null);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        className="p-0 w-[95vw] max-w-[621px] overflow-hidden"
-        showCloseButton={false}
-      >
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
-          <div className="flex items-start justify-between gap-4">
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent
+          className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-139.25 sm:w-139.25 sm:max-w-139.25"
+          showCloseButton={false}
+        >
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
+          <div className="pr-10 sm:pr-12 flex items-start justify-between gap-3">
             <div>
-              <DialogTitle className="text-[24px] font-semibold leading-none text-primary">
+              <DialogTitle className="text-xl sm:text-2xl font-semibold text-primary">
                 Transfer Request
               </DialogTitle>
-              <DialogDescription className="text-[#98A2B3] mt-2 text-sm">
+              <DialogDescription className="text-[#98A2B3] mt-2 text-xs sm:text-sm">
                 {request.id}
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  "px-2.5 py-1 rounded-full text-xs font-medium",
-                  statusClass(request.status),
-                )}
-              >
-                {statusLabel(request.status)}
-              </span>
-              <button
-                type="button"
-                onClick={onClose}
-                className="size-8 rounded-full bg-[#E8EEFF] flex items-center justify-center"
-                aria-label="Close"
-              >
-                <X className="size-4 text-primary" />
-              </button>
-            </div>
+            <span
+              className={cn(
+                "inline-flex px-2.5 py-1 rounded-full text-xs font-medium shrink-0",
+                statusClass(request.status),
+              )}
+            >
+              {statusLabel(request.status)}
+            </span>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 size-7.5 rounded-full bg-[#E8EEFF] flex items-center justify-center"
+            aria-label="Close"
+          >
+            <X className="size-4 text-primary" />
+          </button>
         </DialogHeader>
 
-        <div className="px-6 py-5 space-y-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6">
           <div
             className={cn(
               "rounded-xl border p-4",
@@ -341,31 +361,94 @@ function TransferRequestModal({ isOpen, request, onClose }: TransferRequestModal
             </div>
           </div>
 
-          {request.status === "awaiting_approval" && (
+            {request.status === "awaiting_approval" && (
+              <div className="grid grid-cols-2 gap-3 pt-2 pb-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-primary text-primary hover:bg-primary/5 inline-flex items-center justify-center"
+                  disabled={busy}
+                  onClick={() => setIsRejectDialogOpen(true)}
+                >
+                  Reject
+                </Button>
+                <Button
+                  type="button"
+                  className="h-11 bg-primary hover:bg-primary text-white inline-flex items-center justify-center"
+                  disabled={busy}
+                  onClick={handleApprove}
+                >
+                  {pendingAction === "approve" ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin mr-2" aria-hidden />
+                      Approving…
+                    </>
+                  ) : (
+                    "Approve"
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <DialogContent
+          className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[560px] sm:w-[560px] sm:max-w-[560px]"
+          showCloseButton={false}
+        >
+          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
+            <DialogTitle className="text-xl sm:text-2xl font-semibold text-primary">
+              Reject Transfer Request
+            </DialogTitle>
+            <DialogDescription className="mt-2 text-[#98A2B3] text-xs sm:text-sm">
+              Provide a reason for rejecting {request.id}
+            </DialogDescription>
+            <button
+              type="button"
+              onClick={() => setIsRejectDialogOpen(false)}
+              className="absolute top-4 sm:top-6 right-4 sm:right-6 size-7.5 rounded-full bg-[#E8EEFF] flex items-center justify-center"
+              aria-label="Close reject modal"
+            >
+              <X className="size-4 text-primary" />
+            </button>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="transfer-request-reason" className="text-primary text-sm font-medium">
-                Reason
+              <Label
+                htmlFor="transfer-request-reject-reason"
+                className="text-primary text-sm font-medium"
+              >
+                Rejection Reason
               </Label>
               <Textarea
-                id="transfer-request-reason"
+                id="transfer-request-reject-reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Add a note for approving or rejecting this request (required for rejection)"
+                placeholder="State the reason for rejecting this transfer request."
                 disabled={busy}
-                className="min-h-[100px] resize-y rounded-xl border-[#EAECF0] text-primary placeholder:text-[#98A2B3] focus-visible:ring-0 focus-visible:outline-none"
+                className="min-h-[120px] resize-y rounded-xl border-[#EAECF0] text-primary placeholder:text-[#98A2B3] focus-visible:ring-0 focus-visible:outline-none"
               />
               <p className="text-[#98A2B3] text-xs">
-                Rejection requires a reason; approval can include an optional note.
+                This reason will be communicated to the customer and support team.
               </p>
             </div>
-          )}
 
-          {request.status === "awaiting_approval" && (
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.8fr] gap-3 pt-2 pb-1">
               <Button
                 type="button"
                 variant="outline"
                 className="h-11 border-primary text-primary hover:bg-primary/5 inline-flex items-center justify-center"
+                disabled={busy}
+                onClick={() => setIsRejectDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="h-11 bg-[#E02424] hover:bg-[#C81E1E] text-white inline-flex items-center justify-center"
                 disabled={busy}
                 onClick={handleReject}
               >
@@ -375,28 +458,13 @@ function TransferRequestModal({ isOpen, request, onClose }: TransferRequestModal
                     Rejecting…
                   </>
                 ) : (
-                  "Reject"
-                )}
-              </Button>
-              <Button
-                type="button"
-                className="h-11 bg-primary hover:bg-primary text-white inline-flex items-center justify-center"
-                disabled={busy}
-                onClick={handleApprove}
-              >
-                {pendingAction === "approve" ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin mr-2" aria-hidden />
-                    Approving…
-                  </>
-                ) : (
-                  "Approve"
+                  "Reject Transfer Request"
                 )}
               </Button>
             </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

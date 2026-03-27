@@ -189,7 +189,7 @@ export type WarehousesResponse = {
 
 export type CreateWarehouseRequest = {
   name: string;
-  manager: string;
+  manager_user_id?: number;
   location: string;
   description: string;
 };
@@ -338,6 +338,7 @@ export type TransfersResponse = {
 export type TransferRequestApiEntry = {
   id: number;
   status?: string;
+  ui_status?: string;
   note?: string | null;
   notes?: string | null;
   created_at?: string;

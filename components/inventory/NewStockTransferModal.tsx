@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -63,6 +64,7 @@ const newTransferFormSchema = z
   .object({
     from_warehouse_id: z.string().min(1, "Please select source warehouse"),
     to_warehouse_id: z.string().min(1, "Please select destination warehouse"),
+    note: z.string().optional(),
     items: z
       .array(
         z.object({
@@ -116,6 +118,7 @@ export function NewStockTransferModal({
     defaultValues: {
       from_warehouse_id: "",
       to_warehouse_id: "",
+      note: "",
       items: [{ product_id: "", quantity: 1 }],
     },
   });
@@ -183,6 +186,7 @@ export function NewStockTransferModal({
       form.reset({
         from_warehouse_id: "",
         to_warehouse_id: "",
+        note: "",
         items: [{ product_id: "", quantity: 1 }],
       });
       setSourceProducts([]);
@@ -223,7 +227,7 @@ export function NewStockTransferModal({
         {
           source_warehouse_id: Number.parseInt(values.from_warehouse_id, 10),
           destination_warehouse_id: Number.parseInt(values.to_warehouse_id, 10),
-          note: "Frontend dynamic add-item flow",
+          note: values.note?.trim() || undefined,
           items: sanitizedItems,
         }
       );
@@ -242,6 +246,7 @@ export function NewStockTransferModal({
       form.reset({
         from_warehouse_id: "",
         to_warehouse_id: "",
+        note: "",
         items: [{ product_id: "", quantity: 1 }],
       });
       onClose();
@@ -502,6 +507,28 @@ export function NewStockTransferModal({
                 <p className="text-sm text-red-600">{rootItemsError}</p>
               ) : null}
             </div>
+
+            <FormField
+              control={form.control}
+              name="note"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Note <span className="text-neutral-400">(Optional)</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Add a note for this transfer"
+                      rows={3}
+                      className="form-control min-h-[96px] resize-y"
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="pt-4">
               <Button

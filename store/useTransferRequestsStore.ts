@@ -24,7 +24,7 @@ type TransferActionResponse = { status?: string; message?: string };
 export type TransferRequestRow = {
   apiId: number;
   id: string;
-  status: "awaiting_approval" | "approved" | "rejected";
+  status: "awaiting_approval" | "approved" | "rejected" | "complete";
   product: string;
   quantity: number;
   sourceWarehouse: string;
@@ -50,11 +50,10 @@ function formatRequestDate(iso: string | undefined): string {
 function mapStatus(raw: string | undefined): TransferRequestRow["status"] {
   const s = (raw ?? "").toLowerCase();
   if (s.includes("reject") || s.includes("declin")) return "rejected";
+  if (s === "complete" || s === "completed") return "complete";
   if (
     s === "approved" ||
-    s.includes("approved") ||
-    s === "complete" ||
-    s === "completed"
+    s.includes("approved")
   )
     return "approved";
   if (
@@ -106,7 +105,7 @@ export function mapTransferRequestApiToRow(entry: TransferRequestApiEntry): Tran
   return {
     apiId: entry.id,
     id: idLabel,
-    status: mapStatus(entry.status),
+    status: mapStatus(entry.ui_status ?? entry.status),
     product,
     quantity,
     sourceWarehouse: source,

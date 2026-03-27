@@ -1,14 +1,3 @@
-export type NotificationItem = {
-  id: number;
-  category: string;
-  title: string;
-  message: string;
-  time: string;
-  linkLabel: string;
-  unread: boolean;
-  actionUrl: string | null;
-};
-
 export type NotificationApiEntry = {
   id: number;
   user_id?: number;
@@ -53,6 +42,15 @@ export type NotificationsResponse = {
   code?: number;
   message?: string;
   data?: {
+    summary?: {
+      total?: number;
+      unread?: number;
+      read?: number;
+    };
+    tabs?: {
+      all?: number;
+      unread?: number;
+    };
     notifications?: NotificationsPaginatedData;
     // backward compatibility for flatter payloads
     current_page?: number;
