@@ -6,64 +6,25 @@ export function getSidebarPermissions(account: AccountLike) {
   return {
     canViewProductManagement:
       hasAnyRole(account, ["admin", "super-admin"]) ||
-      hasAnyPermission(account, [
-        "products.view",
-        "product.view",
-        "products.read",
-        "product.read",
-        "product-management.view",
-      ]),
+      hasAnyPermission(account, ["products.view", "product.view"]),
     canViewInventoryManagement:
       hasAnyRole(account, ["admin", "super-admin"]) ||
-      hasAnyPermission(account, [
-        "inventory.view",
-        "inventories.view",
-        "inventory.read",
-        "inventories.read",
-        "inventory-management.view",
-      ]),
+      hasAnyPermission(account, ["inventory.view", "inventories.view"]),
     canViewSalesManagement:
       hasAnyRole(account, ["admin", "super-admin"]) ||
-      hasAnyPermission(account, [
-        "sales.view",
-        "sale.view",
-        "sales.read",
-        "sale.read",
-        "sales-management.view",
-      ]),
+      hasAnyPermission(account, ["sales.view", "sale.view"]),
     canViewFinanceManagement:
       hasAnyRole(account, ["admin", "super-admin"]) ||
-      hasAnyPermission(account, [
-        "finance.view",
-        "finances.view",
-        "finance.read",
-        "finances.read",
-        "finance-management.view",
-      ]),
+      hasAnyPermission(account, ["finance.view", "finances.view"]),
     canViewOrderManagement:
       hasAnyRole(account, ["admin", "super-admin"]) ||
-      hasAnyPermission(account, [
-        "orders.view",
-        "order.view",
-        "orders.read",
-        "order.read",
-        "order-management.view",
-      ]),
+      hasAnyPermission(account, ["orders.view", "order.view"]),
     canViewCustomerSupport:
       hasAnyRole(account, ["admin", "super-admin"]) ||
-      hasAnyPermission(account, [
-        "support.view",
-        "customer-support.view",
-        "customer.support.view",
-        "support.ticket.view",
-        "support.tickets.view",
-        "tickets.view",
-        "ticket.view",
-        "support.read",
-        "tickets.read",
-        "ticket.read",
-        "customer-support.read",
-      ]),
+      hasAnyPermission(account, ["support.view"]),
+    canViewMarketingAndEngagement:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["marketing.view"]),
   };
 }
 
@@ -71,20 +32,10 @@ export function getProductPermissions(account: AccountLike) {
   return {
     canViewProducts:
       hasAnyRole(account, ["admin", "super-admin"]) ||
-      hasAnyPermission(account, [
-        "products.view",
-        "product.view",
-        "products.read",
-        "product.read",
-        "product-management.view",
-      ]),
+      hasAnyPermission(account, ["products.view", "product.view"]),
     canCreateProducts:
       hasAnyRole(account, ["admin", "super-admin"]) ||
-      hasAnyPermission(account, [
-        "products.create",
-        "product.create",
-        "product-management.create",
-      ]),
+      hasAnyPermission(account, ["products.create", "product.create"]),
     canEditProducts:
       hasAnyRole(account, ["admin", "super-admin"]) ||
       hasAnyPermission(account, [
@@ -92,15 +43,10 @@ export function getProductPermissions(account: AccountLike) {
         "product.update",
         "products.edit",
         "product.edit",
-        "product-management.update",
       ]),
     canDeleteProducts:
       hasAnyRole(account, ["admin", "super-admin"]) ||
-      hasAnyPermission(account, [
-        "products.delete",
-        "product.delete",
-        "product-management.delete",
-      ]),
+      hasAnyPermission(account, ["products.delete", "product.delete"]),
     canPublishProducts:
       hasAnyRole(account, ["admin", "super-admin"]) ||
       hasAnyPermission(account, [
@@ -108,7 +54,6 @@ export function getProductPermissions(account: AccountLike) {
         "product.publish",
         "products.unpublish",
         "product.unpublish",
-        "product-management.publish",
       ]),
   };
 }
@@ -122,7 +67,6 @@ export function getFinancePermissions(account: AccountLike) {
         "finances.view",
         "finance.read",
         "finances.read",
-        "finance-management.view",
       ]),
     canViewFinanceOverview:
       hasAnyRole(account, ["admin", "super-admin"]) ||
@@ -185,7 +129,6 @@ export function getOrderPermissions(account: AccountLike) {
         "order.view",
         "orders.read",
         "order.read",
-        "order-management.view",
       ]),
     canViewOrderStats:
       hasAnyRole(account, ["admin", "super-admin"]) ||
@@ -206,7 +149,6 @@ export function getOrderPermissions(account: AccountLike) {
         "order.view",
         "orders.read",
         "order.read",
-        "order-management.view",
       ]),
     canViewOrderDetails:
       hasAnyRole(account, ["admin", "super-admin"]) ||
@@ -257,5 +199,33 @@ export function getOrderPermissions(account: AccountLike) {
         "order.cancel",
         "order-management.delete",
       ]),
+  };
+}
+
+export function getCustomerSupportPermissions(account: AccountLike) {
+  return {
+    canViewCustomerSupportModule:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["support.view"]),
+  };
+}
+
+export function getMarketingPermissions(account: AccountLike) {
+  return {
+    canCreateBanner:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["marketing.create_banners"]),
+    canCreatePromo:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["marketing.create_promos"]),
+    canManageBanner:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["marketing.manage_banners"]),
+    canManagePromo:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["marketing.manage_promos"]),
+    canManageFaq:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["marketing.manage_faqs"]),
   };
 }

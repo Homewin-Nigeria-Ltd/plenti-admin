@@ -167,7 +167,7 @@ export default function TicketByCategory() {
               formatter={(value) => {
                 const numericValue = Number(value);
                 return new Intl.NumberFormat("en-US").format(
-                  Number.isFinite(numericValue) ? numericValue : 0
+                  Number.isFinite(numericValue) ? numericValue : 0,
                 );
               }}
               contentStyle={{

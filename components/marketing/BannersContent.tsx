@@ -9,15 +9,19 @@ import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { BannerDetailsModal } from "./BannerDetailsModal";
 import { EditBannerModal } from "./EditBannerModal";
+import { useAccountStore } from "@/store/useAccountStore";
+import { getMarketingPermissions } from "@/lib/modulePermissions";
 
 export default function BannersContent() {
+  const account = useAccountStore((state) => state.account);
+  const { canManageBanner } = getMarketingPermissions(account);
   const { fetchMarketingBanners, banners, loadingBanners } =
     useMarketingStore();
 
   // LOCAL STATES
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedBanner, setSelectedBanner] = React.useState<Banner | null>(
-    null
+    null,
   );
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
@@ -74,8 +78,9 @@ export default function BannersContent() {
   }));
 
   const handleRowClick = (
-    row: Record<string, React.ReactNode> & { id: number; title: string }
+    row: Record<string, React.ReactNode> & { id: number; title: string },
   ) => {
+    if (!canManageBanner) return null;
     const banner = banners.find((b) => b.id === row.id);
     if (banner) {
       setSelectedBanner(banner);
@@ -130,18 +135,22 @@ export default function BannersContent() {
         <p className="text-center my-5 text-[#667085]">No Banners Available</p>
       )}
 
-      <BannerDetailsModal
-        isOpen={isModalOpen}
-        onClose={handleCloseDetails}
-        banner={selectedBanner}
-        onEditClick={handleEditClick}
-      />
-
-      <EditBannerModal
-        isOpen={isEditModalOpen}
-        onClose={handleCloseEdit}
-        banner={selectedBanner}
-      />
+      {/* Can if the user can manage banner  */}
+      {canManageBanner && (
+        <>
+          <BannerDetailsModal
+            isOpen={isModalOpen}
+            onClose={handleCloseDetails}
+            banner={selectedBanner}
+            onEditClick={handleEditClick}
+          />
+          <EditBannerModal
+            isOpen={isEditModalOpen}
+            onClose={handleCloseEdit}
+            banner={selectedBanner}
+          />
+        </>
+      )}
     </div>
   );
 }
