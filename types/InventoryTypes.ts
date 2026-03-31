@@ -189,7 +189,7 @@ export type WarehousesResponse = {
 
 export type CreateWarehouseRequest = {
   name: string;
-  manager: string;
+  manager_user_id?: number;
   location: string;
   description: string;
 };
@@ -334,6 +334,63 @@ export type TransfersResponse = {
   };
   timestamp?: string;
 };
+
+export type TransferRequestApiEntry = {
+  id: number;
+  status?: string;
+  ui_status?: string;
+  note?: string | null;
+  notes?: string | null;
+  created_at?: string;
+  reference?: string | null;
+  request_number?: string | null;
+  source_warehouse?: { id?: number; name?: string };
+  destination_warehouse?: { id?: number; name?: string };
+  from_warehouse?: { id?: number; name?: string };
+  to_warehouse?: { id?: number; name?: string };
+  items?: Array<{
+    quantity?: number;
+    qty?: number;
+    product?: { name?: string };
+    product_id?: number;
+  }>;
+  product?: { name?: string };
+  quantity?: number;
+};
+
+export type TransferRequestsPaginatedMeta = {
+  current_page?: number;
+  data?: TransferRequestApiEntry[];
+  last_page?: number;
+  per_page?: number;
+  total?: number;
+};
+
+export type TransferRequestsResponse = {
+  status?: string;
+  code?: number;
+  message?: string;
+  data?: TransferRequestsPaginatedMeta | TransferRequestApiEntry[];
+  timestamp?: string;
+};
+
+export function parseTransferRequestsResponse(res: TransferRequestsResponse): {
+  rows: TransferRequestApiEntry[];
+  lastPage: number;
+  total: number;
+} {
+  const d = res.data;
+  if (!d) return { rows: [], lastPage: 1, total: 0 };
+  if (Array.isArray(d)) {
+    return { rows: d, lastPage: 1, total: d.length };
+  }
+  const rows = d.data ?? [];
+  return {
+    rows,
+    lastPage: d.last_page ?? 1,
+    total: d.total ?? rows.length,
+  };
+}
 
 export type RestockRecommendationItem = {
   type: string;
