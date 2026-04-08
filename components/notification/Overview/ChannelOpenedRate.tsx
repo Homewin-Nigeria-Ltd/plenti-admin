@@ -12,35 +12,23 @@ interface Channel {
   bgColor: string;
 }
 
-const ChannelOpenedRate: React.FC = () => {
-  const channels: Channel[] = [
-    {
-      name: "Email",
-      percentage: 28,
-      opened: 28,
-      sent: "84,900",
-      color: "#16a34a", // green-600
-      bgColor: "#16a34a",
-    },
-    {
-      name: "In-App",
-      percentage: 48,
-      opened: 48,
-      sent: "12,900",
-      color: "#f97316", // orange-500
-      bgColor: "#f97316",
-    },
-    {
-      name: "SMS",
-      percentage: 26,
-      opened: 26,
-      sent: "120,900",
-      color: "#1e3a8a", // blue-900
-      bgColor: "#1e3a8a",
-    },
-  ];
+interface ChannelStat {
+  channel: "Email" | "In-App" | "SMS";
+  sent_count: number;
+  delivery_rate: number;
+  open_rate: number;
+}
 
-  const totalMessages = "200k";
+interface ChannelOpenRateProps {
+  channel_breakdown?: ChannelStat[];
+  total?: number;
+}
+
+const ChannelOpenedRate: React.FC<ChannelOpenRateProps> = ({
+  channel_breakdown = [],
+  total = 0,
+}) => {
+  const colors = ["#28A745", "#FF7A00", "#0B1E66"];
 
   // Custom label renderer for pie chart
   const renderCustomLabel = (props: any) => {
@@ -87,47 +75,56 @@ const ChannelOpenedRate: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-8 items-center">
           {/* Donut Chart */}
           <div className="relative w-full lg:w-1/2 h-70">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={channels}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={85}
-                  outerRadius={110}
-                  paddingAngle={3}
-                  dataKey="percentage"
-                  //   label={renderCustomLabel}
-                  labelLine={false}
-                  stroke="none"
-                >
-                  {channels.map((channel, index) => (
-                    <Cell key={`cell-${index}`} fill={channel.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+            {total > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={channel_breakdown}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={85}
+                    outerRadius={110}
+                    paddingAngle={3}
+                    dataKey="sent_count"
+                    //   label={renderCustomLabel}
+                    labelLine={false}
+                    stroke="none"
+                  >
+                    {channel_breakdown.map((channel, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-gray-500">No data</p>
+              </div>
+            )}
 
-            {/* Center Text */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-[37px] font-bold text-blue-900">200k</span>
-              <span className="text-gray-400 text-sm mt-1">
-                Messages were sent
-              </span>
-            </div>
+            {total > 0 && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-[37px] font-bold text-blue-900">
+                  {total}
+                </span>
+                <span className="text-gray-400 text-sm mt-1">
+                  Messages were sent
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Progress Bars */}
           <div className="w-full lg:w-1/2 space-y-6">
-            {channels.map((channel, index) => (
+            {channel_breakdown.map((channel, index) => (
               <div key={index} className="space-y-2">
                 {/* Channel Header */}
                 <div className="flex justify-between items-center">
                   <span className="text-gray-900 font-medium text-lg">
-                    {channel.name}
+                    {channel.channel}
                   </span>
                   <span className="text-gray-900 font-semibold text-lg">
-                    {channel.opened}% Opened
+                    {channel.open_rate}% Opened
                   </span>
                 </div>
 
@@ -136,15 +133,15 @@ const ChannelOpenedRate: React.FC = () => {
                   <div
                     className="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out"
                     style={{
-                      width: `${channel.percentage}%`,
-                      backgroundColor: channel.color,
+                      width: `${channel.sent_count}%`,
+                      backgroundColor: colors[index],
                     }}
                   />
                 </div>
 
                 {/* Sent Count */}
                 <p className="text-gray-400 text-sm italic">
-                  Over {channel.sent} were sent
+                  Over {channel.sent_count} were sent
                 </p>
               </div>
             ))}

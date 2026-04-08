@@ -1,35 +1,49 @@
-const NotificationOverviewMetricCard = () => {
-  const metrics = [
+import { NotificationData } from "@/types/NotificationTypes";
+
+const NotificationOverviewMetricCard = ({
+  metrics,
+}: {
+  metrics: NotificationData | null;
+}) => {
+  if (!metrics?.summary) {
+    return (
+      <div className="flex w-full text-center h-50 items-center justify-center">
+        Loading metrics...
+      </div>
+    );
+  }
+
+  const formattedMetrics = [
     {
       title: "Total Sent (30d)",
-      value: "184,320",
-      change: 12.4,
-      isPositive: true,
+      value: metrics?.summary.total_sent.value ?? "0",
+      change: metrics?.summary.total_sent.comparison ?? 0,
+      isPositive: metrics && metrics?.summary.total_sent.comparison > 0,
     },
     {
       title: "Delivery Rate",
-      value: "97.2%",
-      change: 16.9,
-      isPositive: true,
+      value: metrics?.summary.delivery_rate.value ?? "0",
+      change: metrics?.summary.delivery_rate.comparison ?? 0,
+      isPositive: metrics && metrics?.summary.delivery_rate.comparison > 0,
     },
     {
       title: "Open Rate",
-      value: "38.5%",
-      change: 10,
-      isPositive: false,
+      value: `${metrics?.summary.open_rate.value ?? 0}%`,
+      change: metrics?.summary.open_rate.comparison ?? 0,
+      isPositive: metrics && metrics?.summary.open_rate.comparison > 0,
     },
     {
       title: "Click Rate",
-      value: "12.2%",
-      change: 21.6,
-      isPositive: true,
+      value: `${metrics?.summary.click_rate.value ?? 0}%`,
+      change: metrics?.summary.click_rate.comparison ?? 0,
+      isPositive: metrics && metrics?.summary.click_rate.comparison > 0,
     },
   ];
 
   return (
     <div className="w-full my-5">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.map((metric, index) => (
+        {formattedMetrics.map((metric, index) => (
           <div
             key={index}
             className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200"

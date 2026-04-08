@@ -16,7 +16,9 @@ const Navbar = () => {
   const pathname = usePathname() || "/";
   const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
   const unreadCount = useNotificationsStore((state) => state.unreadCount);
-  const refreshUnreadCount = useNotificationsStore((state) => state.refreshUnreadCount);
+  const refreshUnreadCount = useNotificationsStore(
+    (state) => state.refreshUnreadCount,
+  );
   const segments = pathname.split("/").filter(Boolean);
   const section = segments[0] || "dashboard";
   const matchedLink = links.find((l) => l.href === pathname);
@@ -26,15 +28,15 @@ const Navbar = () => {
     ? "Single User"
     : (matchedLink?.name ?? formatTitle(section));
 
-  React.useEffect(() => {
-    void refreshUnreadCount();
-    const intervalId = window.setInterval(() => {
-      void refreshUnreadCount();
-    }, 30000);
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [refreshUnreadCount, isNotificationOpen]);
+  // React.useEffect(() => {
+  //   void refreshUnreadCount();
+  //   const intervalId = window.setInterval(() => {
+  //     void refreshUnreadCount();
+  //   }, 30000);
+  //   return () => {
+  //     window.clearInterval(intervalId);
+  //   };
+  // }, [refreshUnreadCount, isNotificationOpen]);
 
   return (
     <nav className="h-(--navbar-height) px-6 md:px-6 bg-[#F5F5F5] w-full flex items-center justify-between sticky top-0 z-30">

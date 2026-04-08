@@ -3,6 +3,10 @@
 
 import React, { useState } from "react";
 import { Bell, Mail, MessageSquare, Smartphone } from "lucide-react";
+import { useNotificationsStore } from "@/store/useNotificationsStore";
+import { SendNotificationPayload } from "@/types/NotificationTypes";
+import { Skeleton } from "@/components/ui/skeleton";
+import dynamic from "next/dynamic";
 
 interface Channel {
   id: string;
@@ -11,7 +15,30 @@ interface Channel {
   icon: React.ReactNode;
 }
 
+function CustomerNameFieldSkeleton() {
+  return (
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-28" />
+      <Skeleton className="h-12 w-full rounded-md" />
+    </div>
+  );
+}
+
+const UserSearchSelectWithSkeleton = dynamic(
+  () =>
+    import("@/components/customer/UserSearchSelect").then((mod) => ({
+      default: mod.UserSearchSelect,
+    })),
+  {
+    ssr: false,
+    loading: () => <CustomerNameFieldSkeleton />,
+  },
+);
+
 const QuickSendNotification: React.FC = () => {
+  const sendNotifcation = useNotificationsStore(
+    (state) => state.sendNotification,
+  );
   const [sendType, setSendType] = useState<"individual" | "bulk">("individual");
   const [selectedChannel, setSelectedChannel] = useState("email");
   const [useTemplate, setUseTemplate] = useState(false);
@@ -19,9 +46,11 @@ const QuickSendNotification: React.FC = () => {
     "normal",
   );
   const [formData, setFormData] = useState({
-    recipient: "",
+    recipient: "3",
     subject: "",
     messageBody: "",
+    customerId: "3",
+    customerName: "",
   });
 
   const channels: Channel[] = [
@@ -50,12 +79,13 @@ const QuickSendNotification: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
-    console.log("Notification sent:", {
-      sendType,
-      selectedChannel,
-      priority,
-      ...formData,
-    });
+    const payload: SendNotificationPayload = {
+      channel: selectedChannel,
+      recipient: "3",
+      title: formData.subject,
+      message: formData.messageBody,
+    };
+    sendNotifcation(payload);
   };
 
   const getPriorityStyle = (p: string) => {
@@ -103,7 +133,7 @@ const QuickSendNotification: React.FC = () => {
           >
             Individual
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={() => setSendType("bulk")}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
@@ -113,7 +143,7 @@ const QuickSendNotification: React.FC = () => {
             }`}
           >
             Bulk (Multiple)
-          </button>
+          </button> */}
         </div>
 
         {/* Notification Channel */}
@@ -161,7 +191,7 @@ const QuickSendNotification: React.FC = () => {
 
         {/* Recipient */}
         <div className="space-y-2">
-          <Label className="text-gray-700 font-medium">
+          {/* <Label className="text-gray-700 font-medium">
             Recipient (Email or User ID)
           </Label>
           <input
@@ -172,6 +202,23 @@ const QuickSendNotification: React.FC = () => {
               setFormData({ ...formData, recipient: e.target.value })
             }
             className="w-full h-12 px-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-300"
+          /> */}
+
+          <UserSearchSelectWithSkeleton
+            id="customerName"
+            role="customer"
+            label="Customer's Name"
+            value={{
+              userId: Number(formData.customerId),
+              userName: formData.customerName,
+            }}
+            onSelect={(userId, userName) => {
+              setFormData({
+                ...formData,
+                customerId: String(userId),
+                customerName: userName,
+              });
+            }}
           />
         </div>
 

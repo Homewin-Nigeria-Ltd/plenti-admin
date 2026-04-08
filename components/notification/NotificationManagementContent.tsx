@@ -8,10 +8,18 @@ import CreateTemplateModal from "./Template/CreateTemplateModal";
 import CampaignAnalytics from "./Campaign/CampaignAnalytics";
 import CreateCampaignModal from "./Campaign/CreateCampaignModal";
 import QuickSendNotification from "./QuickSend/QuickSendNotification";
+import { useNotificationsStore } from "@/store/useNotificationsStore";
+import {
+  CreateCampaignPayload,
+  CreateTemplateRequest,
+} from "@/types/NotificationTypes";
 
 const NotificationManagementContent = () => {
+  const createTemplate = useNotificationsStore((state) => state.createTemplate);
+  const createCampaign = useNotificationsStore((state) => state.createCampaign);
+
   const [isAddTemplateModal, setIsAddTemplateModal] = useState(false);
-  const [isAddCampaignModal, setIsAddTemplatCampaignModal] = useState(false);
+  const [isAddCampaignModal, setIsAddCampaignModal] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
   const tabs = [
@@ -33,12 +41,24 @@ const NotificationManagementContent = () => {
     },
   ];
 
-  const handleCreateTemplate = (data: any) => {
-    console.log("Template created:", data);
+  const handleCreateTemplate = async (data: CreateTemplateRequest) => {
+    const isSuccess = await createTemplate(data);
+
+    if (isSuccess) {
+      setIsAddTemplateModal(false);
+    } else {
+      console.error("Template creation failed in the store.");
+    }
   };
 
-  const handleCreateCampaign = (data: any) => {
-    console.log("Campaign created:", data);
+  const handleCreateCampaign = async (data: CreateCampaignPayload) => {
+    const isSuccess = await createCampaign(data);
+
+    if (isSuccess) {
+      setIsAddCampaignModal(false);
+    } else {
+      console.error("Campaign creation failed in the store");
+    }
   };
 
   return (
@@ -72,7 +92,7 @@ const NotificationManagementContent = () => {
           {activeTab === "campaign" && (
             <button
               className="bg-[#0B1E66] rounded-[4px] text-white px-4 py-2 flex items-center gap-3 animate-in fade-in duration-300"
-              onClick={() => setIsAddTemplatCampaignModal(true)}
+              onClick={() => setIsAddCampaignModal(true)}
             >
               <Plus size={18} />
               Add Campaign
@@ -102,7 +122,7 @@ const NotificationManagementContent = () => {
       />
       <CreateCampaignModal
         open={isAddCampaignModal}
-        onOpenChange={setIsAddTemplatCampaignModal}
+        onOpenChange={setIsAddCampaignModal}
         onSubmit={handleCreateCampaign}
       />
     </>
