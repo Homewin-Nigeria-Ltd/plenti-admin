@@ -81,7 +81,7 @@ export default function InventoryManagement() {
       name: w.name,
       units: w.total_units,
       fillPercentage: 0,
-      manager: w.manager,
+      manager: w.manager ?? "—",
       product_count: w.total_products,
       stock_value: String(w.total_worth),
     }));
