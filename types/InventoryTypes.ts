@@ -168,13 +168,19 @@ export type InventoryStatistics = {
 export type WarehouseApi = {
   id: number;
   name: string;
-  manager: string;
+  manager: string | null;
+  manager_user_id?: number | null;
+  manager_user?: {
+    id: number;
+    name: string;
+    email?: string;
+  } | null;
   location: string;
   description: string;
   is_active: boolean;
   total_products: number;
   total_units: number;
-  total_worth: number;
+  total_worth: number | string;
   created_at: string;
   updated_at: string;
 };
@@ -183,7 +189,17 @@ export type WarehousesResponse = {
   status: string;
   code: number;
   message: string;
-  data: WarehouseApi[];
+  data:
+    | WarehouseApi[]
+    | {
+        items?: WarehouseApi[];
+        pagination?: {
+          current_page?: number;
+          per_page?: number;
+          last_page?: number;
+          total?: number;
+        };
+      };
   timestamp: string;
 };
 

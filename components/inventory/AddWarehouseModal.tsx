@@ -77,6 +77,9 @@ export function AddWarehouseModal({
       setLoadingManagers(true);
       try {
         const { data } = await api.get<{
+          status?: string;
+          code?: number;
+          message?: string;
           data?: Array<
             | string
             | {
@@ -85,7 +88,6 @@ export function AddWarehouseModal({
                 full_name?: string | null;
                 manager_code?: string | null;
                 display_name?: string | null;
-                role?: string | null;
               }
           >;
         }>(INVENTORY_API.getWarehouseManagersList);
@@ -96,11 +98,10 @@ export function AddWarehouseModal({
             if (typeof entry === "string") return null;
             const id = Number(entry?.id);
             const name = (entry?.name ?? entry?.full_name ?? "").trim();
-            const role = (entry?.role ?? "").trim().toLowerCase();
             const displayName =
               (entry?.display_name ?? "").trim() ||
               (entry?.manager_code ? `${name} (${String(entry.manager_code).trim()})` : name);
-            if (!Number.isFinite(id) || id <= 0 || !name || role !== "admin") return null;
+            if (!Number.isFinite(id) || id <= 0 || !name) return null;
             return { id, name, displayName };
           })
           .filter((entry): entry is ManagerOption => entry !== null);
