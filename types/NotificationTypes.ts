@@ -165,7 +165,7 @@ export type CreateCampaignPayload = {
   target_audience: "all" | "active" | "inactive" | "new" | "riders";
   notification_template_id: number;
   custom_filters?: Record<string, any>;
-  scheduled_at?: string; // ISO date string if scheduled later
+  scheduled_at?: string | Date; // ISO date string if scheduled later
 };
 
 export interface Campaign extends Required<CreateCampaignPayload> {
@@ -180,11 +180,12 @@ export interface Campaign extends Required<CreateCampaignPayload> {
   click_rate: number;
   failed_count: number;
   failure_rate: number;
+  created_at: Date;
 }
 
 export type SendNotificationPayload = {
   channel: string;
-  recipient: string;
+  recipient: number;
   title: string;
   message: string;
 };

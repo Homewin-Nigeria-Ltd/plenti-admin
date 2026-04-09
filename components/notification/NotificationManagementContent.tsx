@@ -82,7 +82,7 @@ const NotificationManagementContent = () => {
           </TabsList>
           {activeTab === "template" && (
             <button
-              className="bg-[#0B1E66] rounded-[4px] text-white px-4 py-2 flex items-center gap-3 animate-in fade-in duration-300"
+              className="bg-[#0B1E66] rounded-lg text-white px-4 py-2 flex items-center gap-3 animate-in fade-in duration-300"
               onClick={() => setIsAddTemplateModal(true)}
             >
               <Plus size={18} />
@@ -91,7 +91,7 @@ const NotificationManagementContent = () => {
           )}
           {activeTab === "campaign" && (
             <button
-              className="bg-[#0B1E66] rounded-[4px] text-white px-4 py-2 flex items-center gap-3 animate-in fade-in duration-300"
+              className="bg-[#0B1E66] rounded-lg text-white px-4 py-2 flex items-center gap-3 animate-in fade-in duration-300"
               onClick={() => setIsAddCampaignModal(true)}
             >
               <Plus size={18} />

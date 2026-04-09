@@ -1,12 +1,21 @@
 // components/QuickSendNotification.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Bell, Mail, MessageSquare, Smartphone } from "lucide-react";
 import { useNotificationsStore } from "@/store/useNotificationsStore";
 import { SendNotificationPayload } from "@/types/NotificationTypes";
 import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Channel {
   id: string;
@@ -39,12 +48,17 @@ const QuickSendNotification: React.FC = () => {
   const sendNotifcation = useNotificationsStore(
     (state) => state.sendNotification,
   );
+  const { getTemplates, templates } = useNotificationsStore();
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
+
+  const [selectedTemplate, setSelctedTemplate] = useState("");
   const [sendType, setSendType] = useState<"individual" | "bulk">("individual");
   const [selectedChannel, setSelectedChannel] = useState("email");
   const [useTemplate, setUseTemplate] = useState(false);
-  const [priority, setPriority] = useState<"normal" | "high" | "urgent">(
-    "normal",
-  );
+  const [loading, setLoading] = useState(false);
+  // const [priority, setPriority] = useState<"normal" | "high" | "urgent">(
+  //   "normal",
+  // );
   const [formData, setFormData] = useState({
     recipient: "3",
     subject: "",
@@ -52,6 +66,21 @@ const QuickSendNotification: React.FC = () => {
     customerId: "3",
     customerName: "",
   });
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setLoadingTemplate(true);
+        await getTemplates();
+      } finally {
+        setLoadingTemplate(false);
+      }
+    };
+
+    if (useTemplate) {
+      fetchTemplates();
+    }
+  }, [useTemplate, getTemplates]);
 
   const channels: Channel[] = [
     {
@@ -74,38 +103,54 @@ const QuickSendNotification: React.FC = () => {
     },
   ];
 
-  const isFormValid = formData.recipient.trim() && formData.messageBody.trim();
+  const isFormValid =
+    formData.customerId.trim() &&
+    formData.messageBody.trim() &&
+    formData.subject.trim();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
     const payload: SendNotificationPayload = {
-      channel: selectedChannel,
-      recipient: "3",
-      title: formData.subject,
-      message: formData.messageBody,
+      channel: selectedChannel.trim(),
+      recipient: Number(formData.customerId),
+      title: formData.subject.trim(),
+      message: formData.messageBody.trim(),
     };
-    sendNotifcation(payload);
-  };
-
-  const getPriorityStyle = (p: string) => {
-    switch (p) {
-      case "normal":
-        return priority === "normal"
-          ? "bg-gray-900 text-white border-gray-900"
-          : "bg-white text-gray-600 border-gray-200 hover:border-gray-300";
-      case "high":
-        return priority === "high"
-          ? "bg-orange-500 text-white border-orange-500"
-          : "bg-white text-gray-600 border-gray-200 hover:border-gray-300";
-      case "urgent":
-        return priority === "urgent"
-          ? "bg-red-50 text-red-600 border-red-200"
-          : "bg-white text-gray-600 border-gray-200 hover:border-gray-300";
-      default:
-        return "bg-white text-gray-600 border-gray-200";
+    setLoading(true);
+    const success = await sendNotifcation(payload).finally(() =>
+      setLoading(false),
+    );
+    if (success) {
+      setFormData({
+        recipient: "",
+        subject: "",
+        messageBody: "",
+        customerId: "",
+        customerName: "",
+      });
+      setSelctedTemplate("");
     }
   };
+
+  // const getPriorityStyle = (p: string) => {
+  //   switch (p) {
+  //     case "normal":
+  //       return priority === "normal"
+  //         ? "bg-gray-900 text-white border-gray-900"
+  //         : "bg-white text-gray-600 border-gray-200 hover:border-gray-300";
+  //     case "high":
+  //       return priority === "high"
+  //         ? "bg-orange-500 text-white border-orange-500"
+  //         : "bg-white text-gray-600 border-gray-200 hover:border-gray-300";
+  //     case "urgent":
+  //       return priority === "urgent"
+  //         ? "bg-red-50 text-red-600 border-red-200"
+  //         : "bg-white text-gray-600 border-gray-200 hover:border-gray-300";
+  //     default:
+  //       return "bg-white text-gray-600 border-gray-200";
+  //   }
+  // };
 
   return (
     <div className="w-full max-w-2xl my-5 p-8 bg-white rounded-2xl border border-gray-200 shadow-sm">
@@ -191,23 +236,11 @@ const QuickSendNotification: React.FC = () => {
 
         {/* Recipient */}
         <div className="space-y-2">
-          {/* <Label className="text-gray-700 font-medium">
-            Recipient (Email or User ID)
-          </Label>
-          <input
-            type="text"
-            placeholder="user@email.com or USR-001"
-            value={formData.recipient}
-            onChange={(e) =>
-              setFormData({ ...formData, recipient: e.target.value })
-            }
-            className="w-full h-12 px-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-300"
-          /> */}
-
           <UserSearchSelectWithSkeleton
             id="customerName"
             role="customer"
-            label="Customer's Name"
+            label="Recipient"
+            placeholder="Select a recipient"
             value={{
               userId: Number(formData.customerId),
               userName: formData.customerName,
@@ -245,6 +278,58 @@ const QuickSendNotification: React.FC = () => {
           </button>
         </div>
 
+        <div className="space-y-2">
+          {useTemplate &&
+            (loadingTemplate ? (
+              <div className="w-full h-14 flex items-center justify-center border border-gray-200 rounded-lg text-gray-400 bg-white">
+                Loading templates...
+              </div>
+            ) : templates.length === 0 ? (
+              <div className="w-full h-14 flex items-center justify-center border border-gray-200 rounded-lg text-gray-400 bg-white">
+                No templates available
+              </div>
+            ) : (
+              <div>
+                <Label className="text-gray-600">Select Template</Label>
+
+                <Select
+                  onValueChange={(value) => {
+                    // setFormData({ ...formData, template: value });
+                    const selected = templates.find(
+                      (t) => t.id.toString() === value,
+                    );
+                    if (selected) {
+                      setSelctedTemplate(selected.id.toString());
+                      setFormData((prev) => ({
+                        ...prev,
+                        messageBody: selected.message,
+                        subject: selected.title,
+                      }));
+                    }
+                  }}
+                  value={selectedTemplate}
+                >
+                  <SelectTrigger className="w-full h-12! px-4">
+                    <SelectValue placeholder="Select a template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Templates</SelectLabel>
+                      {templates.map((template) => (
+                        <SelectItem
+                          key={template.id}
+                          value={template.id.toString()}
+                        >
+                          {template.name} ({template.channel.toUpperCase()})
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+        </div>
+
         {/* Subject */}
         <div className="space-y-2">
           <Label className="text-gray-700 font-medium">Subject / Title</Label>
@@ -268,12 +353,13 @@ const QuickSendNotification: React.FC = () => {
             onChange={(e) =>
               setFormData({ ...formData, messageBody: e.target.value })
             }
-            className="w-full min-h-[120px] p-4 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-300 text-sm leading-relaxed"
+            maxLength={160}
+            className="w-full min-h-30 p-4 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-300 text-sm leading-relaxed"
           />
         </div>
 
         {/* Priority */}
-        <div className="space-y-3">
+        {/* <div className="space-y-3">
           <Label className="text-gray-700 font-medium">Priority</Label>
           <div className="flex gap-3">
             {(["normal", "high", "urgent"] as const).map((p) => (
@@ -289,15 +375,15 @@ const QuickSendNotification: React.FC = () => {
               </button>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={!isFormValid}
+          disabled={!isFormValid || loading}
           className="w-full h-12 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-all"
         >
-          Send Notification
+          {loading ? "Sending..." : "Send Notification"}
         </button>
       </form>
     </div>

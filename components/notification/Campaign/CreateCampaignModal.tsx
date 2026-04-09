@@ -97,7 +97,7 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTitle className="sr-only">Template Campaign</DialogTitle>
       <DialogContent
-        className="sm:max-w-[600px] p-0 gap-0 overflow-hidden"
+        className="sm:max-w-150 p-0 gap-0 overflow-hidden"
         showCloseButton={false}
         aria-describedby={undefined}
       >
@@ -153,7 +153,7 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Channel</SelectLabel>
-                    <SelectItem value="in-app">In App</SelectItem>
+                    {/* <SelectItem value="in-app">In App</SelectItem> */}
                     <SelectItem value="sms">SMS</SelectItem>
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="push">Push</SelectItem>

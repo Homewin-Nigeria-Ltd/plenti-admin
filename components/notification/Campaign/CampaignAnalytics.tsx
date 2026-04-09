@@ -1,76 +1,23 @@
-// components/CampaignAnalytics.tsx
 "use client";
 
 import { useNotificationsStore } from "@/store/useNotificationsStore";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const CampaignAnalytics: React.FC = () => {
-  const { campaigns, getCampaigns } = useNotificationsStore();
-  //   {
-  //     id: "1",
-  //     name: "March Ramadan Deals",
-  //     status: "Sent",
-  //     channel: "Email",
-  //     audience: "All Users",
-  //     date: "2026-03-01 09:00",
-  //     template: "Weekly Promo Blast",
-  //     stats: {
-  //       recipients: 12500,
-  //       delivered: { count: 11890, percentage: 95 },
-  //       opened: { count: 4230, percentage: 36 },
-  //       clicked: { count: 1102, percentage: 26 },
-  //       failed: 610,
-  //     },
-  //   },
-  //   {
-  //     id: "2",
-  //     name: "Premium Buyer Appreciation",
-  //     status: "Sent",
-  //     channel: "Email",
-  //     audience: "Premium Users",
-  //     date: "2026-03-01 09:00",
-  //     template: "Weekly Promo Blast",
-  //     stats: {
-  //       recipients: 12500,
-  //       delivered: { count: 11890, percentage: 95 },
-  //       opened: { count: 4230, percentage: 36 },
-  //       clicked: { count: 1102, percentage: 26 },
-  //       failed: 610,
-  //     },
-  //   },
-  //   {
-  //     id: "3",
-  //     name: "Inactive User Re-engagement",
-  //     status: "Scheduled",
-  //     channel: "Email",
-  //     audience: "Premium Users",
-  //     date: "2026-03-20 08:00",
-  //     template: "Weekly Promo Blast",
-  //     stats: {
-  //       recipients: 12500,
-  //       delivered: { count: 11890, percentage: 95 },
-  //       opened: { count: 4230, percentage: 36 },
-  //       clicked: { count: 1102, percentage: 26 },
-  //       failed: 610,
-  //     },
-  //   },
-  //   {
-  //     id: "4",
-  //     name: "Inactive User Re-engagement",
-  //     status: "Scheduled",
-  //     channel: "Email",
-  //     audience: "Premium Users",
-  //     date: "2026-03-20 08:00",
-  //     template: "Weekly Promo Blast",
-  //     stats: {
-  //       recipients: 12500,
-  //       delivered: { count: 11890, percentage: 95 },
-  //       opened: { count: 4230, percentage: 36 },
-  //       clicked: { count: 1102, percentage: 26 },
-  //       failed: 610,
-  //     },
-  //   },
-  // ];
+  const { campaigns, getCampaigns, deleteCampaign } = useNotificationsStore();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (campaigns === null) {
@@ -95,10 +42,32 @@ const CampaignAnalytics: React.FC = () => {
     }
   };
 
+  const handleDeleteClick = (id: string) => {
+    setCampaignToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!campaignToDelete) return;
+
+    setIsDeleting(true);
+    const success = await deleteCampaign(campaignToDelete);
+    setIsDeleting(false);
+
+    if (success) {
+      setDeleteDialogOpen(false);
+      setCampaignToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setCampaignToDelete(null);
+  };
+
   return (
     <div className="w-full p-6 space-y-6 overflow-y-auto">
-      {campaigns &&
-        campaigns.length > 0 &&
+      {campaigns && campaigns.length > 0 ? (
         campaigns.map((campaign) => (
           <div
             key={campaign.id}
@@ -121,7 +90,7 @@ const CampaignAnalytics: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
-                  <span className="capitalize px-2 py-0.5 bg-[#FEFEEB] text-[#ADA605] rounded-[16px] text-xs font-medium">
+                  <span className="capitalize px-2 py-0.5 bg-[#FEFEEB] text-[#ADA605] rounded-3xl text-xs font-medium">
                     {campaign.channel}
                   </span>
                   <div className="flex items-center gap-1.5 capitalize">
@@ -154,7 +123,11 @@ const CampaignAnalytics: React.FC = () => {
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    {campaign.scheduled_at}
+                    {new Date(
+                      campaign.scheduled_at
+                        ? campaign.scheduled_at
+                        : campaign.created_at,
+                    ).toLocaleString()}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <svg
@@ -175,7 +148,10 @@ const CampaignAnalytics: React.FC = () => {
                 </div>
               </div>
 
-              <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+              <button
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                onClick={() => handleDeleteClick(campaign.id.toString())}
+              >
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -241,7 +217,63 @@ const CampaignAnalytics: React.FC = () => {
               </div>
             </div>
           </div>
-        ))}
+        ))
+      ) : (
+        <div className="text-center mt-5">No Campaign</div>
+      )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              campaign and remove all associated data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Deleting...
+                </>
+              ) : (
+                "Delete Campaign"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

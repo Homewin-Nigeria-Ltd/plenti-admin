@@ -52,6 +52,7 @@ type NotificationsStore = {
   getTemplates: () => Promise<void>;
   toggleTemplate: (id: number) => Promise<boolean>;
   createCampaign: (payload: CreateCampaignPayload) => Promise<boolean>;
+  deleteCampaign: (campaignId: string) => Promise<boolean>;
   getCampaigns: () => Promise<void>;
   sendNotification: (payload: SendNotificationPayload) => Promise<boolean>;
 };
@@ -294,7 +295,9 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
 
   getTemplates: async () => {
     try {
-      const { data } = await api.get("/api/admin/notifications/templates");
+      const { data } = await api.get(
+        "/api/admin/notifications/templates?is_active=true",
+      );
       set({ templates: data.data });
     } catch (error) {
       console.error("Error fetching templates:", error);
@@ -361,16 +364,39 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
         data: any;
       }>(`/api/admin/notifications/campaigns`, payload);
 
-      if (response.data.success) {
-        toast.success(response.data.message || "Campaign created successfully");
-        return response.data.data;
-      } else {
-        toast.error(response.data.message || "Failed to create campaign");
-        return false;
-      }
+      toast.success(response.data.message || "Campaign created successfully");
+      return true;
     } catch (error) {
       console.error("create campaign:", error);
       toast.error("Failed to create campaign");
+      return false;
+    }
+  },
+
+  deleteCampaign: async (campaignId: string) => {
+    const { campaigns } = get();
+    try {
+      const response = await api.delete<{
+        success: boolean;
+        message: string;
+        data: any;
+      }>(`/api/admin/notifications/campaigns/${campaignId}`);
+
+      toast.success(response.data.message || "Campaign delete successfully");
+      const newCampaigns = campaigns?.filter(
+        (c) => c.id !== Number(campaignId),
+      );
+      set({ campaigns: newCampaigns });
+      return true;
+    } catch (error) {
+      console.error("delete campaign:", error);
+      if (error instanceof AxiosError) {
+        toast.error(
+          error?.response?.data.message || "Failed to delete campaign",
+        );
+      } else {
+        toast.error("Failed to delete campaign");
+      }
       return false;
     }
   },
@@ -400,20 +426,13 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
         code: number;
       }>("/api/admin/notifications/send", payload);
 
-      console.log(response.data);
-
-      if (response.data.code === 200) {
-        toast.success(
-          response.data.message || "Notification sent successfully",
-        );
-        return response.data.data;
-      } else {
-        toast.error(response.data.message || "Failed to send notification");
-        return false;
-      }
+      toast.success(response.data.message || "Notification sent successfully");
+      return true;
     } catch (error) {
       console.error("Get campaigns error:", error);
+      toast.error("Failed to send notification");
       set({ campaigns: [] });
+      return false;
     }
   },
 }));
