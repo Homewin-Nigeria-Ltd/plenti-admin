@@ -130,8 +130,14 @@ export const useInventoryStore = create<InventoryStoreState>((set) => ({
         INVENTORY_API.getWarehouses
       );
 
-      if (data?.status === "success" && Array.isArray(data?.data)) {
-        set({ warehouses: data.data });
+      const warehouseRows = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.data?.items)
+          ? data.data.items
+          : [];
+
+      if (data?.status === "success") {
+        set({ warehouses: warehouseRows });
         return true;
       } else {
         const message =
