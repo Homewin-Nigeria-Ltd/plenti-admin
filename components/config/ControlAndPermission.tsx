@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useRolesStore } from "@/store/useRolesStore";
 import type { Role } from "@/types/RoleTypes";
-import { CreateUpdateRoleModal, type Permission } from "./CreateUpdateRoleModal";
+import {
+  CreateUpdateRoleModal,
+  type Permission,
+} from "./CreateUpdateRoleModal";
 import { RolePreviewModal } from "./RolePreviewModal";
 
 type RoleData = {
@@ -29,7 +32,7 @@ export default function ControlAndPermission() {
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = React.useState(false);
   const [previewRoleData, setPreviewRoleData] = React.useState<RoleData | null>(
-    null
+    null,
   );
   const [selectedRole, setSelectedRole] = React.useState<Role | null>(null);
   const [editingRole, setEditingRole] = React.useState<Role | null>(null);
@@ -113,7 +116,7 @@ export default function ControlAndPermission() {
                     openPreview(role);
                   }
                 }}
-                className="bg-white rounded-lg border border-[#EAECF0] p-4 sm:p-6 cursor-pointer hover:border-[#0B1E66]/30 transition-colors text-left"
+                className="bg-white rounded-lg border border-[#EAECF0] p-4 sm:p-6 cursor-pointer hover:border-[#0B1E66]/30 transition-colors text-left h-fit"
               >
                 <h3 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
                   {role.name}

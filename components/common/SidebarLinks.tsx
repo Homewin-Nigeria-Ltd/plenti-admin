@@ -60,9 +60,17 @@ export const links: linkType = [
   {
     name: "Sales Management",
     href: "/sales",
+    activeIcon: "/sidebarIcons/notification-active.png",
+    inactiveIcon: "/sidebarIcons/coin-inactive.png",
+  },
+
+  {
+    name: "Notification Management",
+    href: "/notification",
     activeIcon: "/sidebarIcons/coin-active.png",
     inactiveIcon: "/sidebarIcons/coin-inactive.png",
   },
+
   {
     name: "User Management",
     href: "/user?type=customer",
@@ -86,6 +94,7 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
     canViewFinanceManagement,
     canViewOrderManagement,
     canViewCustomerSupport,
+    canViewMarketingAndEngagement,
   } = React.useMemo(() => getSidebarPermissions(account), [account]);
 
   const visibleLinks = React.useMemo(
@@ -96,6 +105,8 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
         if (link.href === "/sales") return canViewSalesManagement;
         if (link.href === "/finance") return canViewFinanceManagement;
         if (link.href === "/order") return canViewOrderManagement;
+        if (link.href === "/marketing") return canViewMarketingAndEngagement;
+        if (link.href === "/customer") return canViewCustomerSupport;
         return true;
       }),
     [
@@ -104,6 +115,8 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
       canViewSalesManagement,
       canViewFinanceManagement,
       canViewOrderManagement,
+      canViewCustomerSupport,
+      canViewMarketingAndEngagement,
     ],
   );
 
