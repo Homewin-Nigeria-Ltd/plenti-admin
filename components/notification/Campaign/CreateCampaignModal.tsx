@@ -20,24 +20,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { useNotificationsStore } from "@/store/useNotificationsStore";
-import {
-  CreateCampaignPayload,
-  NotificationTemplate,
-} from "@/types/NotificationTypes";
-import { ChevronRight, X } from "lucide-react";
+import { CreateCampaignPayload } from "@/types/NotificationTypes";
+import { X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 interface CreateCampaignModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit?: (data: any) => void;
+  loading: boolean;
 }
 
 const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
   open,
   onOpenChange,
   onSubmit,
+  loading,
 }) => {
   const { getTemplates, templates } = useNotificationsStore();
   const [loadingTemplate, setLoadingTemplate] = useState(false);
@@ -333,10 +333,10 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={!isFormValid}
+            disabled={!isFormValid || loading}
             className="w-full h-14 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition-all text-base"
           >
-            Create Campaign
+            {loading ? <Spinner className="size-6" /> : <p>Create Campaign</p>}
           </Button>
         </form>
       </DialogContent>

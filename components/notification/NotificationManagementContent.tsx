@@ -20,6 +20,7 @@ const NotificationManagementContent = () => {
 
   const [isAddTemplateModal, setIsAddTemplateModal] = useState(false);
   const [isAddCampaignModal, setIsAddCampaignModal] = useState(false);
+  const [loadingCampaign, setLoadingCampaign] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
   const tabs = [
@@ -52,7 +53,10 @@ const NotificationManagementContent = () => {
   };
 
   const handleCreateCampaign = async (data: CreateCampaignPayload) => {
-    const isSuccess = await createCampaign(data);
+    setLoadingCampaign(true);
+    const isSuccess = await createCampaign(data).finally(() =>
+      setLoadingCampaign(false),
+    );
 
     if (isSuccess) {
       setIsAddCampaignModal(false);
@@ -124,6 +128,7 @@ const NotificationManagementContent = () => {
         open={isAddCampaignModal}
         onOpenChange={setIsAddCampaignModal}
         onSubmit={handleCreateCampaign}
+        loading={loadingCampaign}
       />
     </>
   );
