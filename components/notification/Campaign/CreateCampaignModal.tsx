@@ -97,11 +97,11 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTitle className="sr-only">Template Campaign</DialogTitle>
       <DialogContent
-        className="sm:max-w-150 p-0 gap-0 overflow-hidden"
+        className="w-[95%] sm:max-w-150 max-h-[95vh] p-0 gap-0 overflow-y-auto rounded-xl"
         showCloseButton={false}
         aria-describedby={undefined}
       >
-        <DialogHeader className="p-6 pb-2">
+        <DialogHeader className="p-6 pb-2 sticky top-0 bg-white z-10 border-b">
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-semibold text-gray-900">
@@ -138,7 +138,7 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
           </div>
 
           {/* Channel & Target Segment */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-600">Channel</Label>
               <Select
@@ -329,15 +329,20 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
               />
             </div>
           )}
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            disabled={!isFormValid || loading}
-            className="w-full h-14 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition-all text-base"
-          >
-            {loading ? <Spinner className="size-6" /> : <p>Create Campaign</p>}
-          </Button>
+          <div className="sticky bottom-0 bg-white pt-4 pb-2">
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              disabled={!isFormValid || loading}
+              className="w-full h-14 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition-all text-base"
+            >
+              {loading ? (
+                <Spinner className="size-6" />
+              ) : (
+                <p>Create Campaign</p>
+              )}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
