@@ -101,7 +101,7 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
         showCloseButton={false}
         aria-describedby={undefined}
       >
-        <DialogHeader className="p-6 pb-2 sticky top-0 bg-white z-10 border-b">
+        <DialogHeader className="p-6 pb-2 sticky top-0 bg-white z-10">
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-semibold text-gray-900">
