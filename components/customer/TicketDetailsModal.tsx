@@ -239,10 +239,21 @@ export function TicketDetailsModal({
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger
+                    asChild
+                    disabled={
+                      updatingPriority ||
+                      displayStatus === "closed" ||
+                      displayStatus === "resolved"
+                    }
+                  >
                     <button
                       type="button"
-                      disabled={updatingPriority}
+                      disabled={
+                        updatingPriority ||
+                        displayStatus === "closed" ||
+                        displayStatus === "resolved"
+                      }
                       className="flex items-center gap-1 rounded-full focus:outline-none focus:ring-2 focus:ring-[#1F3A78]/20 disabled:opacity-60"
                     >
                       <PriorityBadge priority={displayPriority} />

@@ -17,7 +17,7 @@ const TicketResolutionResponseRate = dynamic(
     loading: () => (
       <div className="h-[360px] bg-[#EEF1F6] rounded-xl animate-pulse" />
     ),
-  }
+  },
 );
 
 const TicketByCategory = dynamic(() => import("./TicketByCategory"), {
@@ -40,7 +40,6 @@ export default function CustomerSupportContent() {
 
   React.useEffect(() => {
     fetchSupportStatistics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stats = React.useMemo(() => {

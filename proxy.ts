@@ -28,9 +28,9 @@ export function proxy(request: NextRequest) {
   }
 
   // If accessing login page with token, redirect to dashboard
-  if (isLoginPage && token) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
+  // if (isLoginPage && token) {
+  //   return NextResponse.redirect(new URL("/dashboard", request.url));
+  // }
 
   return NextResponse.next();
 }

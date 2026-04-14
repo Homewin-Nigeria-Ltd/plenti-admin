@@ -39,7 +39,7 @@ export default function TicketResolutionResponseRate() {
       const within = Math.max(0, Math.min(100, tat.within_tat_percentage ?? 0));
       const exceeded = Math.max(
         0,
-        Math.min(100, tat.exceeded_tat_percentage ?? 0)
+        Math.min(100, tat.exceeded_tat_percentage ?? 0),
       );
       return [
         { name: "Within TAT", value: within, color: COLORS[0] },

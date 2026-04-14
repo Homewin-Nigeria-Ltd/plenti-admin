@@ -4,7 +4,7 @@ import { Suspense } from "react";
 
 const LoginPage = () => {
   return (
-    <div className="min-h-screen w-screen grid grid-cols-2 p-10 overflow-hidden">
+    <div className="min-h-screen w-screen grid grid-cols-2 p-10 overflow-hidden gap-10">
       <div className="place-items-center place-content-center">
         <Image
           src={"/login-display.svg"}

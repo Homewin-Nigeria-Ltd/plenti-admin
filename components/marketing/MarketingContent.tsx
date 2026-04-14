@@ -9,8 +9,12 @@ import { CreatePromoCodeModal } from "./CreatePromoCodeModal";
 import BannersContent from "./BannersContent";
 import FaqContent from "./FaqContent";
 import PromoCodeContent from "./PromoCodeContent";
+import { getMarketingPermissions } from "@/lib/modulePermissions";
+import { useAccountStore } from "@/store/useAccountStore";
 
 export default function MarketingContent() {
+  const account = useAccountStore((state) => state.account);
+  const { canCreateBanner, canCreatePromo } = getMarketingPermissions(account);
   const [activeTab, setActiveTab] = React.useState("banners");
   const [isCreateBannerModalOpen, setIsCreateBannerModalOpen] =
     React.useState(false);
@@ -43,24 +47,32 @@ export default function MarketingContent() {
             </TabsTrigger>
           </TabsList>
 
-          <Button
-            onClick={() => {
-              if (activeTab === "faq") {
-                setIsCreateFaqModalOpen(true);
-              } else if (activeTab === "promo-code") {
-                setIsCreatePromoCodeModalOpen(true);
-              } else {
-                setIsCreateBannerModalOpen(true);
-              }
-            }}
-            className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[40px]"
-          >
-            {activeTab === "faq"
-              ? "+ Add FAQ"
-              : activeTab === "promo-code"
-              ? "+ Create New Promo Code"
-              : "+ New Banner"}
-          </Button>
+          {canCreateBanner && activeTab === "banners" && (
+            <Button
+              onClick={() => setIsCreateBannerModalOpen(true)}
+              className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[40px]"
+            >
+              + New Banner
+            </Button>
+          )}
+
+          {canCreatePromo && activeTab === "promo-code" && (
+            <Button
+              onClick={() => setIsCreatePromoCodeModalOpen(true)}
+              className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[40px]"
+            >
+              + New Promo Code
+            </Button>
+          )}
+
+          {activeTab === "faq" && (
+            <Button
+              onClick={() => setIsCreateFaqModalOpen(true)}
+              className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[40px]"
+            >
+              + Add FAQ
+            </Button>
+          )}
         </div>
 
         <TabsContent value="banners">

@@ -4,7 +4,7 @@ import { API_URL } from "@/lib/constant";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return handleRequest(request, resolvedParams, "GET");
@@ -12,7 +12,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return handleRequest(request, resolvedParams, "POST");
@@ -20,7 +20,7 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return handleRequest(request, resolvedParams, "PUT");
@@ -28,7 +28,7 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return handleRequest(request, resolvedParams, "PATCH");
@@ -36,7 +36,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return handleRequest(request, resolvedParams, "DELETE");
@@ -45,7 +45,7 @@ export async function DELETE(
 async function handleRequest(
   request: NextRequest,
   params: { path: string[] },
-  method: string
+  method: string,
 ) {
   try {
     // Get the token from HTTP-only cookie
@@ -55,7 +55,7 @@ async function handleRequest(
     if (!token) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -90,12 +90,18 @@ async function handleRequest(
 
     const data = await response.json();
 
+    if (response.status === 401 || response.status === 500) {
+      const res = NextResponse.json(data, { status: 401 });
+      res.cookies.delete("token"); // remove token cookie
+      return res;
+    }
+
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error("Proxy error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
