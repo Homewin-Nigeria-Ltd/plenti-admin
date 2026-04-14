@@ -25,6 +25,7 @@ import { useProductStore } from "@/store/useProductStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useFilePreview } from "@/lib/useFilePreview";
 import { uploadImage } from "@/lib/upload";
+import { ImageCropDialog } from "@/components/common/ImageCropDialog";
 
 type CreateProductModalProps = {
   isOpen: boolean;
@@ -56,6 +57,8 @@ export function CreateProductModal({
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [uploadingImage, setUploadingImage] = React.useState(false);
+  const [cropImageSrc, setCropImageSrc] = React.useState<string | null>(null);
+  const [isCropOpen, setIsCropOpen] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const previewUrl = useFilePreview(selectedFile);
 
@@ -66,11 +69,22 @@ export function CreateProductModal({
   }, [isOpen, fetchCategories, fetchWarehouses]);
 
   const handleFileSelect = (file: File) => {
-    if (file.type.startsWith("image/")) {
-      setSelectedFile(file);
-    } else {
+    if (!file.type.startsWith("image/")) {
       toast.error("Please select a valid image (PNG/JPG).");
+      return;
     }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : null;
+      if (!dataUrl) {
+        toast.error("Failed to read selected image");
+        return;
+      }
+      setCropImageSrc(dataUrl);
+      setIsCropOpen(true);
+    };
+    reader.onerror = () => toast.error("Failed to read selected image");
+    reader.readAsDataURL(file);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -91,6 +105,8 @@ export function CreateProductModal({
 
   const handleClearSelectedFile = () => {
     setSelectedFile(null);
+    setCropImageSrc(null);
+    setIsCropOpen(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -178,6 +194,8 @@ export function CreateProductModal({
     setMinBulkQuantity("");
     setBulkPrice("");
     setSelectedFile(null);
+    setCropImageSrc(null);
+    setIsCropOpen(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
     onClose();
   };
@@ -193,8 +211,9 @@ export function CreateProductModal({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent
         className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[557px]! sm:w-[557px]! sm:max-w-[557px]!"
         showCloseButton={false}
       >
@@ -465,7 +484,26 @@ export function CreateProductModal({
               : "Create New Product"}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <ImageCropDialog
+        isOpen={isCropOpen}
+        imageSrc={cropImageSrc}
+        onClose={() => {
+          setIsCropOpen(false);
+          setCropImageSrc(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }}
+        onApply={(file) => {
+          setSelectedFile(file);
+          setIsCropOpen(false);
+          setCropImageSrc(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }}
+        aspect={1}
+        title="Crop Product Image"
+      />
+    </>
   );
 }
