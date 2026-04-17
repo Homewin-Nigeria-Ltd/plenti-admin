@@ -50,7 +50,9 @@ export function CreateProductModal({
   const [subCategoryId, setSubCategoryId] = React.useState<number | null>(null);
   const [amount, setAmount] = React.useState("");
   const [initialStock, setInitialStock] = React.useState("");
-  const [selectedWarehouseId, setSelectedWarehouseId] = React.useState<number | null>(null);
+  const [selectedWarehouseId, setSelectedWarehouseId] = React.useState<
+    number | null
+  >(null);
   const [minBulkQuantity, setMinBulkQuantity] = React.useState("");
   const [bulkPrice, setBulkPrice] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -184,18 +186,18 @@ export function CreateProductModal({
 
   const selectedCategory = React.useMemo(
     () => categoriesTree.find((c) => c.id === categoryId) ?? null,
-    [categoriesTree, categoryId]
+    [categoriesTree, categoryId],
   );
 
   const availableSubCategories = React.useMemo(
     () => selectedCategory?.subcategories ?? [],
-    [selectedCategory]
+    [selectedCategory],
   );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[557px]! sm:w-[557px]! sm:max-w-[557px]!"
+        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-139.25! sm:w-139.25! sm:max-w-139.25!"
         showCloseButton={false}
       >
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
@@ -209,7 +211,7 @@ export function CreateProductModal({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full"
           >
             <X color="#0B1E66" size={20} cursor="pointer" />
           </button>
@@ -239,7 +241,7 @@ export function CreateProductModal({
               placeholder="Product Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="form-control w-full h-auto! min-h-[100px] resize-none"
+              className="form-control w-full h-auto! min-h-25 resize-none"
               required
             />
           </div>
@@ -330,10 +332,14 @@ export function CreateProductModal({
             <div className="space-y-2">
               <Label htmlFor="warehouse">Warehouse</Label>
               <Select
-                value={selectedWarehouseId == null ? "" : String(selectedWarehouseId)}
+                value={
+                  selectedWarehouseId == null ? "" : String(selectedWarehouseId)
+                }
                 onValueChange={(value) => {
                   const parsed = Number(value);
-                  setSelectedWarehouseId(Number.isFinite(parsed) ? parsed : null);
+                  setSelectedWarehouseId(
+                    Number.isFinite(parsed) ? parsed : null,
+                  );
                 }}
               >
                 <SelectTrigger id="warehouse" className="form-control w-full!">
@@ -407,8 +413,8 @@ export function CreateProductModal({
               >
                 {previewUrl ? (
                   <div className="w-full">
-                    <div className="relative mx-auto w-full max-w-[260px]">
-                      <div className="relative w-full h-[160px] rounded-md border border-neutral-200 overflow-hidden">
+                    <div className="relative mx-auto w-full max-w-65">
+                      <div className="relative w-full h-40 rounded-md border border-neutral-200 overflow-hidden">
                         <Image
                           src={previewUrl}
                           alt="Selected product"
@@ -461,8 +467,8 @@ export function CreateProductModal({
             {uploadingImage
               ? "Uploading image..."
               : creatingProduct
-              ? "Creating product..."
-              : "Create New Product"}
+                ? "Creating product..."
+                : "Create New Product"}
           </Button>
         </div>
       </DialogContent>
