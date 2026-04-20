@@ -88,28 +88,35 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[600px] p-0 gap-0 overflow-hidden"
+        className="sm:max-w-[600px] w-[95vw] md:w-full p-0 gap-0 overflow-hidden rounded-lg md:rounded-xl"
         showCloseButton={false}
       >
-        <DialogHeader className="p-6 pb-2">
+        <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-semibold text-gray-900">
+            <DialogTitle className="text-xl sm:text-2xl font-semibold text-gray-900">
               {template ? "Edit Template" : "Create New Template"}
             </DialogTitle>
             <button
               onClick={() => onOpenChange(false)}
-              className="rounded-full p-2 hover:bg-gray-100 transition-colors"
+              className="rounded-full p-1.5 sm:p-2 hover:bg-gray-100 transition-colors"
+              aria-label="Close modal"
             >
-              <X className="h-5 w-5 text-gray-500" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
             </button>
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 pt-4 space-y-5">
+        <form
+          onSubmit={handleSubmit}
+          className="p-4 sm:p-6 pt-2 sm:pt-4 space-y-4 sm:space-y-5"
+        >
           {/* Row 1: Template Name & Channel */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="templateName" className="text-gray-600">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label
+                htmlFor="templateName"
+                className="text-sm sm:text-base text-gray-600"
+              >
                 Template Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -119,12 +126,15 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                className="h-10 sm:h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="channel" className="text-gray-600">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label
+                htmlFor="channel"
+                className="text-sm sm:text-base text-gray-600"
+              >
                 Channel
               </Label>
               <Select
@@ -133,7 +143,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                   setFormData({ ...formData, channel: value })
                 }
               >
-                <SelectTrigger className="w-full h-12! px-4">
+                <SelectTrigger className="w-full h-10 sm:h-12 px-3 sm:px-4 text-sm sm:text-base">
                   <SelectValue placeholder="Select Channel" />
                 </SelectTrigger>
                 <SelectContent>
@@ -146,20 +156,16 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                   </SelectGroup>
                 </SelectContent>
               </Select>
-              {/* <button
-                type="button"
-                className="w-full h-12 px-4 flex items-center justify-between border border-gray-200 rounded-md text-gray-400 hover:border-gray-300 transition-colors bg-white"
-              >
-                <span>Select Channel</span>
-                <ChevronRight className="h-5 w-5" />
-              </button> */}
             </div>
           </div>
 
           {/* Row 2: Subject & Category */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="subject" className="text-gray-600">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label
+                htmlFor="subject"
+                className="text-sm sm:text-base text-gray-600"
+              >
                 Subject / Title
               </Label>
               <Input
@@ -169,12 +175,15 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
-                className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                className="h-10 sm:h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category" className="text-gray-600">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label
+                htmlFor="category"
+                className="text-sm sm:text-base text-gray-600"
+              >
                 Category
               </Label>
               <Select
@@ -183,7 +192,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                   setFormData({ ...formData, type: value })
                 }
               >
-                <SelectTrigger className="w-full h-12! px-4">
+                <SelectTrigger className="w-full h-10 sm:h-12 px-3 sm:px-4 text-sm sm:text-base">
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -200,8 +209,11 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
           </div>
 
           {/* Message Body */}
-          <div className="space-y-2">
-            <Label htmlFor="messageBody" className="text-gray-600">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label
+              htmlFor="messageBody"
+              className="text-sm sm:text-base text-gray-600"
+            >
               Message Body <span className="text-red-500">*</span>
             </Label>
             <textarea
@@ -211,14 +223,14 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               onChange={(e) =>
                 setFormData({ ...formData, message: e.target.value })
               }
-              className="w-full min-h-[180px] p-4 border border-gray-200 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm leading-relaxed placeholder:text-gray-300"
+              className="w-full min-h-[160px] sm:min-h-[180px] p-3 sm:p-4 border border-gray-200 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm leading-relaxed placeholder:text-gray-300"
             />
           </div>
 
           {/* Helper Text */}
-          <p className="text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-gray-500">
             Use{" "}
-            <code className="text-gray-400 bg-gray-50 px-1 rounded">
+            <code className="text-gray-400 bg-gray-50 px-1 rounded text-xs sm:text-sm">
               {"{{variable_name}}"}
             </code>{" "}
             for dynamic content. Variables will be auto-detected.
@@ -228,9 +240,15 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
           <Button
             type="submit"
             disabled={!isFormValid || creatingTemplate}
-            className="w-full h-12 disabled:bg-blue-500 bg-[#0B1E66] text-white font-medium rounded-lg transition-colors"
+            className="w-full h-10 sm:h-12 disabled:bg-blue-500 bg-[#0B1E66] text-white font-medium rounded-lg transition-colors text-sm sm:text-base"
           >
-            {creatingTemplate ? "Creating Template..." : "Create Template"}
+            {creatingTemplate
+              ? template
+                ? "Updating Template..."
+                : "Creating Template..."
+              : template
+                ? "Update Template"
+                : "Create Template"}
           </Button>
         </form>
       </DialogContent>
