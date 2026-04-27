@@ -68,12 +68,12 @@ export function ImageCropDialog({
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100">
           <DialogTitle className="text-xl sm:text-2xl font-semibold">{title}</DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-neutral-500">
-            Output will be {PRODUCT_IMAGE_CROP_SIZE}×{PRODUCT_IMAGE_CROP_SIZE}px. Adjust position and
-            zoom, then apply.
+            Crop area and exported image are fixed at {PRODUCT_IMAGE_CROP_SIZE}×
+            {PRODUCT_IMAGE_CROP_SIZE}px.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-4 sm:px-6 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
           <div className="relative h-[320px] w-full rounded-lg overflow-hidden bg-neutral-900">
             {imageSrc ? (
               <Cropper
@@ -81,6 +81,10 @@ export function ImageCropDialog({
                 crop={crop}
                 zoom={zoom}
                 aspect={aspect}
+                cropSize={{
+                  width: PRODUCT_IMAGE_CROP_SIZE,
+                  height: PRODUCT_IMAGE_CROP_SIZE,
+                }}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={(_, areaPixels) => setCroppedAreaPixels(areaPixels)}
