@@ -77,6 +77,7 @@ export default function ProductTable({
           </div>
           <div>
             <p className="font-medium text-primary-700">{product.name}</p>
+            <p className="text-neutral-500 text-xs">Product ID: {product.id}</p>
             <p className="text-neutral-500 text-xs">{product.description}</p>
           </div>
         </div>

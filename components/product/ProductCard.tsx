@@ -139,6 +139,9 @@ export default function ProductCard({
           <p className="text-neutral-500 text-xs sm:text-sm line-clamp-2">
             {product.description}
           </p>
+          <p className="text-neutral-500 text-xs sm:text-sm mt-1">
+            Product ID: {product.id}
+          </p>
         </div>
 
         <div className="space-y-2">
