@@ -24,6 +24,13 @@ import { ORDERS_API } from "@/data/orders";
 import type { Rider, RidersResponse } from "@/types/OrderTypes";
 import api from "@/lib/api";
 
+const formatCurrency = (n: number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 2,
+  }).format(n);
+
 export function AssignRiderModal({
   isOpen,
   onClose,
@@ -218,12 +225,23 @@ export function AssignRiderModal({
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Details</p>
                 <p className="text-[#98A2B3] text-sm">
-                  {singleOrder?.delivery_tracking ?? "—"}
+                  {singleOrder?.shipping_details ??
+                    singleOrder?.shippingDetails ??
+                    singleOrder?.delivery_tracking ??
+                    "—"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Fee</p>
-                <p className="text-[#98A2B3] text-sm">—</p>
+                <p className="text-[#98A2B3] text-sm">
+                  {(() => {
+                    const fee =
+                      singleOrder?.shipping_fee ?? singleOrder?.shippingFee;
+                    return fee != null && !Number.isNaN(Number(fee))
+                      ? formatCurrency(Number(fee))
+                      : "—";
+                  })()}
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Phone</p>
