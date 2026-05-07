@@ -51,6 +51,12 @@ export type Order = {
   paid_at: string | null;
   shipping_address: string;
   phone_number: string;
+  shipping_details?: string | null;
+  shippingDetails?: string | null;
+  shipping_fee?: number;
+  shippingFee?: number;
+  delivery_type?: string | null;
+  delivery_provider?: string | null;
   order_number: string;
   created_at: string;
   updated_at: string;

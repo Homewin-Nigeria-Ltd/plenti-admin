@@ -44,6 +44,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.phototourl.com",
       },
+      {
+        protocol: "https",
+        hostname: "image2url.com",
+      },
     ],
   },
   compiler: {
