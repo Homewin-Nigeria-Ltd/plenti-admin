@@ -20,11 +20,16 @@ import {
 import * as React from "react";
 import { toast } from "sonner";
 import { useOrderStore } from "@/store/useOrderStore";
-import { ORDERS_API } from "@/data/orders";
+import { ORDERS_API, orderStatusUpdatePath } from "@/data/orders";
+import {
+  ADMIN_ORDER_LIFECYCLE_STATUSES,
+  type AdminOrderLifecycleStatus,
+} from "@/types/OrderTypes";
 import Image from "next/image";
 import api from "@/lib/api";
 import { getOrderPermissions } from "@/lib/modulePermissions";
 import { useAccountStore } from "@/store/useAccountStore";
+import { cn } from "@/lib/utils";
 
 const AssignRiderModal = dynamic(
   () => import("./AssignRiderModal").then((mod) => mod.AssignRiderModal),
@@ -46,6 +51,79 @@ const formatCurrency = (n: number) =>
     currency: "NGN",
     minimumFractionDigits: 2,
   }).format(n);
+
+function formatOrderStatusLabel(raw: string | undefined | null) {
+  if (raw == null || String(raw).trim() === "") return "—";
+  return String(raw)
+    .replace(/_/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Normalize API order status for chip / color lookup (e.g. `in_transit` → `in transit`) */
+function normalizeOrderStatusKey(statusRaw: string | undefined | null): string {
+  return (statusRaw ?? "")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/-/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function orderStatusChipClass(statusRaw: string | undefined | null) {
+  const s = normalizeOrderStatusKey(statusRaw);
+  const colorMap: Record<string, string> = {
+    successful: "bg-green-100 text-green-700",
+    pending: "bg-gray-100 text-gray-700",
+    processing: "bg-orange-100 text-orange-700",
+    packed: "bg-sky-100 text-sky-800",
+    shipped: "bg-indigo-100 text-indigo-800",
+    "in transit": "bg-indigo-100 text-indigo-800",
+    delivered: "bg-green-100 text-green-800",
+    cancelled: "bg-red-100 text-red-700",
+  };
+  return colorMap[s] || "bg-gray-100 text-gray-700";
+}
+
+function orderStatusDotClass(statusRaw: string | undefined | null) {
+  const s = normalizeOrderStatusKey(statusRaw);
+  if (s === "successful" || s === "delivered") return "bg-green-600";
+  if (s === "cancelled") return "bg-red-600";
+  if (s === "packed") return "bg-sky-600";
+  if (s === "shipped" || s === "in transit") return "bg-indigo-600";
+  if (s === "processing") return "bg-orange-600";
+  return "bg-gray-500";
+}
+
+const LIFECYCLE_MENU_ITEM_CLASS: Record<AdminOrderLifecycleStatus, string> = {
+  pending:
+    "text-gray-700 data-highlighted:bg-gray-100 data-highlighted:text-gray-900 focus:bg-gray-100 focus:text-gray-900",
+  processing:
+    "text-orange-700 data-highlighted:bg-orange-50 data-highlighted:text-orange-900 focus:bg-orange-50 focus:text-orange-900",
+  packed:
+    "text-sky-800 data-highlighted:bg-sky-50 data-highlighted:text-sky-950 focus:bg-sky-50 focus:text-sky-950",
+  shipped:
+    "text-indigo-800 data-highlighted:bg-indigo-50 data-highlighted:text-indigo-950 focus:bg-indigo-50 focus:text-indigo-950",
+  delivered:
+    "text-green-800 data-highlighted:bg-green-50 data-highlighted:text-green-950 focus:bg-green-50 focus:text-green-950",
+  cancelled:
+    "text-red-700 data-highlighted:bg-red-50 data-highlighted:text-red-900 focus:bg-red-50 focus:text-red-900",
+};
+
+function lifecycleMenuItemClass(status: AdminOrderLifecycleStatus) {
+  return cn(
+    "text-[14px] font-medium place-self-center",
+    LIFECYCLE_MENU_ITEM_CLASS[status],
+  );
+}
+
+/** Same palette as shipped / in-transit order status chip */
+function inTransitMenuItemClass() {
+  return cn(
+    "text-[14px] font-medium place-self-center",
+    LIFECYCLE_MENU_ITEM_CLASS.shipped,
+  );
+}
 
 export function OrderDetailsModal({
   isOpen,
@@ -69,6 +147,8 @@ export function OrderDetailsModal({
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isMarkingInTransit, setIsMarkingInTransit] = React.useState(false);
   const [isIssuingRefund, setIsIssuingRefund] = React.useState(false);
+  const [lifecycleStatusUpdating, setLifecycleStatusUpdating] =
+    React.useState<AdminOrderLifecycleStatus | null>(null);
   const {
     canViewOrderDetails,
     canMarkOrderInTransit,
@@ -89,6 +169,39 @@ export function OrderDetailsModal({
     fetchSingleOrders(selectedId);
   }, [fetchSingleOrders, selectedId, canViewOrderDetails]);
 
+  const setLifecycleOrderStatus = async (status: AdminOrderLifecycleStatus) => {
+    if (!canMarkOrderInTransit) {
+      toast.error("You do not have permission to update order status");
+      return;
+    }
+    if (!selectedId) return;
+    setLifecycleStatusUpdating(status);
+    try {
+      const { data } = await api.patch<{ status?: string; message?: string }>(
+        orderStatusUpdatePath(selectedId),
+        { status },
+      );
+
+      if (data?.status === "success") {
+        toast.success(
+          `Order marked as ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+        );
+        await fetchSingleOrders(selectedId, { silent: true });
+        await fetchOrders({
+          page: lastQuery.page,
+          search: lastQuery.search,
+        });
+      } else {
+        toast.error(data?.message ?? "Failed to update order status");
+      }
+    } catch (error) {
+      console.error("Error updating order status =>", error);
+      toast.error("Failed to update order status");
+    } finally {
+      setLifecycleStatusUpdating(null);
+    }
+  };
+
   const markAsInTransit = async () => {
     if (!canMarkOrderInTransit) {
       toast.error("You do not have permission to update order status");
@@ -103,7 +216,7 @@ export function OrderDetailsModal({
 
       if (data?.status === "success") {
         toast.success("Order marked as in transit");
-        await fetchSingleOrders(selectedId);
+        await fetchSingleOrders(selectedId, { silent: true });
       } else {
         toast.error(data?.message || "Failed to mark order as in transit");
       }
@@ -129,7 +242,7 @@ export function OrderDetailsModal({
 
       if (data?.status === "success") {
         toast.success("Refund issued successfully");
-        await fetchSingleOrders(selectedId);
+        await fetchSingleOrders(selectedId, { silent: true });
       } else {
         toast.error(data?.message || "Failed to issue refund");
       }
@@ -166,6 +279,25 @@ export function OrderDetailsModal({
               <DialogDescription className="text-[#808080] text-[14px] font-normal">
                 Complete order information and actions
               </DialogDescription>
+              {singleOrder && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 pr-20">
+                    <span className="text-sm font-medium text-[#101928]">
+                      Order status
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${orderStatusChipClass(
+                        String(singleOrder.status),
+                      )}`}
+                    >
+                      <span
+                        className={`size-2 shrink-0 rounded-full ${orderStatusDotClass(
+                          String(singleOrder.status),
+                        )}`}
+                      />
+                      {formatOrderStatusLabel(String(singleOrder.status))}
+                    </span>
+                  </div>
+                )}
 
               <div className="flex items-center gap-2 absolute top-6 right-6">
                 {canShowActionMenu && (
@@ -180,10 +312,28 @@ export function OrderDetailsModal({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="border-0 rounded-2xl p-2 min-w-[220px]">
+                      {canMarkOrderInTransit &&
+                        ADMIN_ORDER_LIFECYCLE_STATUSES.map((status) => (
+                          <DropdownMenuItem
+                            key={status}
+                            className={lifecycleMenuItemClass(status)}
+                            onSelect={() => {
+                              void setLifecycleOrderStatus(status);
+                            }}
+                            disabled={lifecycleStatusUpdating !== null}
+                          >
+                            {lifecycleStatusUpdating === status
+                              ? "Updating…"
+                              : `Mark as ${status.charAt(0).toUpperCase() + status.slice(1)}`}
+                          </DropdownMenuItem>
+                        ))}
+                      {canMarkOrderInTransit && (
+                        <DropdownMenuSeparator />
+                      )}
                       {canMarkOrderInTransit && (
                         <>
                           <DropdownMenuItem
-                            className="text-[#0B1E66] text-[14px] font-medium place-self-center"
+                            className={inTransitMenuItemClass()}
                             onSelect={markAsInTransit}
                             disabled={isMarkingInTransit}
                           >

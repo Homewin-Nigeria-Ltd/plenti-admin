@@ -85,7 +85,7 @@ export function AssignRiderModal({
         toast.success(
           `Rider has been assigned to order ${singleOrder.order_number ?? ""}`
         );
-        await fetchSingleOrders(singleOrder.id);
+        await fetchSingleOrders(singleOrder.id, { silent: true });
         onClose();
         setSelectedRiderId("");
       } else {
