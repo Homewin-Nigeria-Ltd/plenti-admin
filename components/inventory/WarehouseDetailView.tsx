@@ -95,8 +95,18 @@ export default function WarehouseDetailView({
                 {warehouse.name}
               </h1>
               <p className="text-sm text-neutral-500 mt-1">
-                {warehouse.location} · Manager: {warehouse.manager}
+                {warehouse.address}
+                {warehouse.is_primary ? " · Primary" : ""} · Manager:{" "}
+                {warehouse.manager}
               </p>
+              {warehouse.lat != null &&
+                warehouse.lng != null &&
+                Number.isFinite(Number(warehouse.lat)) &&
+                Number.isFinite(Number(warehouse.lng)) && (
+                  <p className="text-xs text-neutral-500 mt-1 font-mono">
+                    {Number(warehouse.lat)}, {Number(warehouse.lng)}
+                  </p>
+                )}
               {warehouse.description && (
                 <p className="text-sm text-neutral-600 mt-2">
                   {warehouse.description}

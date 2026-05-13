@@ -1,6 +1,27 @@
+export const ADMIN_ORDER_LIFECYCLE_STATUSES = [
+  "pending",
+  "processing",
+  "packed",
+  "shipped",
+  "delivered",
+  "cancelled",
+] as const;
+
+export type AdminOrderLifecycleStatus =
+  (typeof ADMIN_ORDER_LIFECYCLE_STATUSES)[number];
+
+export type UpdateOrderStatusPayload = {
+  status: AdminOrderLifecycleStatus;
+  notes?: string;
+};
+
 export type OrderStatus =
   | "pending"
   | "processing"
+  | "packed"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
   | "SUCCESSFUL"
   | "PENDING"
   | "PROCESSING"
@@ -44,6 +65,8 @@ export type Order = {
   tax: string;
   total: number;
   status: OrderStatus;
+  /** Customer-facing label from API; use `status` for admin lifecycle truth */
+  display_status?: string | null;
   payment_status: string;
   payment_method: string | null;
   payment_reference: string | null;
@@ -95,7 +118,10 @@ export type OrderState = {
     page?: number;
     search?: string;
   }) => Promise<boolean>;
-  fetchSingleOrders: (id: number) => Promise<boolean>;
+  fetchSingleOrders: (
+    id: number,
+    options?: { silent?: boolean },
+  ) => Promise<boolean>;
   fetchOrderStats: () => Promise<boolean>;
   setSingleOrder: () => void;
 };

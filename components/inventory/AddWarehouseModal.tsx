@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Popover,
   PopoverContent,
@@ -24,7 +25,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Check, ChevronsUpDown, X, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, ExternalLink, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { INVENTORY_API } from "@/data/inventory";
 import type { CreateWarehouseRequest } from "@/types/InventoryTypes";
@@ -44,6 +45,13 @@ type ManagerOption = {
   displayName: string;
 };
 
+function parseCoordinate(raw: string): number | undefined {
+  const t = raw.trim();
+  if (t === "") return undefined;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 export function AddWarehouseModal({
   isOpen,
   onClose,
@@ -53,7 +61,10 @@ export function AddWarehouseModal({
   const isAdminUser = (account?.role ?? "").toLowerCase() === "admin";
   const [name, setName] = React.useState("");
   const [managerUserId, setManagerUserId] = React.useState("");
-  const [location, setLocation] = React.useState("");
+  const [address, setAddress] = React.useState("");
+  const [latInput, setLatInput] = React.useState("");
+  const [lngInput, setLngInput] = React.useState("");
+  const [isPrimary, setIsPrimary] = React.useState(false);
   const [description, setDescription] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [managerOptions, setManagerOptions] = React.useState<ManagerOption[]>([]);
@@ -134,14 +145,31 @@ export function AddWarehouseModal({
     setIsSubmitting(true);
 
     try {
+      const lat = parseCoordinate(latInput);
+      const lng = parseCoordinate(lngInput);
+      if (lat !== undefined && lng === undefined) {
+        toast.error("Enter longitude as well, or clear latitude.");
+        setIsSubmitting(false);
+        return;
+      }
+      if (lng !== undefined && lat === undefined) {
+        toast.error("Enter latitude as well, or clear longitude.");
+        setIsSubmitting(false);
+        return;
+      }
+
       const resolvedManagerUserId = managerUserId.trim()
         ? Number(managerUserId)
         : (!isAdminUser && account?.id ? Number(account.id) : undefined);
 
+      const trimmedAddress = address.trim();
       const payload: CreateWarehouseRequest = {
         name: name.trim(),
-        location: location.trim(),
+        address: trimmedAddress,
+        location: trimmedAddress,
         description: description.trim(),
+        is_primary: isPrimary,
+        ...(lat !== undefined && lng !== undefined ? { lat, lng } : {}),
         ...(typeof resolvedManagerUserId === "number" && Number.isFinite(resolvedManagerUserId)
           ? { manager_user_id: resolvedManagerUserId }
           : {}),
@@ -156,7 +184,10 @@ export function AddWarehouseModal({
         toast.success("Warehouse created successfully");
         setName("");
         setManagerUserId("");
-        setLocation("");
+        setAddress("");
+        setLatInput("");
+        setLngInput("");
+        setIsPrimary(false);
         setDescription("");
         onClose();
         onSuccess?.();
@@ -276,14 +307,81 @@ export function AddWarehouseModal({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="warehouse-address">Address</Label>
             <Input
-              id="location"
-              placeholder="Ikeja, Lagos"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              id="warehouse-address"
+              placeholder="Street, city, state"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
               className="form-control"
               required
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="rounded-lg border border-[#E8EEFF] bg-[#F9FAFF] px-3 py-2.5 text-xs text-[#667085] leading-relaxed">
+            <span className="font-medium text-[#101928]">Coordinates tip:</span>{" "}
+            Search your address on{" "}
+            <a
+              href="https://www.google.com/maps"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-semibold text-[#0B1E66] underline underline-offset-2 hover:text-[#0B1E66]/90"
+            >
+              Google Maps
+              <ExternalLink className="size-3 shrink-0" aria-hidden />
+            </a>
+            , then right-click the place marker and copy latitude / longitude into the
+            fields below.
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="warehouse-lat">Latitude</Label>
+              <Input
+                id="warehouse-lat"
+                type="number"
+                step="any"
+                placeholder="e.g. 6.5244"
+                value={latInput}
+                onChange={(e) => setLatInput(e.target.value)}
+                className="form-control"
+                disabled={isSubmitting}
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="warehouse-lng">Longitude</Label>
+              <Input
+                id="warehouse-lng"
+                type="number"
+                step="any"
+                placeholder="e.g. 3.3792"
+                value={lngInput}
+                onChange={(e) => setLngInput(e.target.value)}
+                className="form-control"
+                disabled={isSubmitting}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-neutral-500 -mt-2">
+            Optional. Leave both empty if coordinates are not set yet.
+          </p>
+
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 px-3 py-2.5">
+            <div className="space-y-0.5">
+              <Label htmlFor="warehouse-primary" className="text-sm font-medium">
+                Primary warehouse
+              </Label>
+              <p className="text-xs text-neutral-500">
+                Mark as the default warehouse when applicable.
+              </p>
+            </div>
+            <Switch
+              id="warehouse-primary"
+              checked={isPrimary}
+              onCheckedChange={setIsPrimary}
               disabled={isSubmitting}
             />
           </div>

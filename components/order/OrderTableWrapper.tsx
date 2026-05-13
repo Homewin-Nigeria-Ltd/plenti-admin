@@ -88,11 +88,20 @@ export default function OrderTableWrapper() {
     }).format(n);
 
   const statusChip = (status: string) => {
-    const s = (status ?? "").toLowerCase();
+    const s = (status ?? "")
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/-/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     const colorMap: Record<string, string> = {
       successful: "bg-green-100 text-green-700",
       pending: "bg-gray-100 text-gray-700",
       processing: "bg-orange-100 text-orange-700",
+      packed: "bg-sky-100 text-sky-800",
+      shipped: "bg-indigo-100 text-indigo-800",
+      "in transit": "bg-indigo-100 text-indigo-800",
+      delivered: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-700",
     };
     return (
