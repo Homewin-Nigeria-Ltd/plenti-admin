@@ -9,6 +9,11 @@ export const ORDERS_API = {
   getRiders: "/api/admin/riders",
 } as const;
 
+/** PATCH `/api/admin/orders/{orderId}/status` — lifecycle status updates */
+export function orderStatusUpdatePath(orderId: number | string): string {
+  return `${ORDERS_API.getOrders}/${orderId}/status`;
+}
+
 /*
 export const mockOrders = [
   {

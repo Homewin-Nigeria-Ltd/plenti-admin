@@ -58,11 +58,12 @@ export const useOrderStore = create<OrderState>((set) => ({
     }
   },
 
-  fetchSingleOrders: async (id: number) => {
-    set({ loadingSingle: true });
+  fetchSingleOrders: async (id, options) => {
+    const silent = options?.silent === true;
+    if (!silent) set({ loadingSingle: true });
     try {
       const { data } = await api.get<{ data: Order }>(
-        `${ORDERS_API.getOrder}/${id}`
+        `${ORDERS_API.getOrder}/${id}`,
       );
       set({ singleOrder: data.data ?? null });
       return true;
@@ -71,7 +72,7 @@ export const useOrderStore = create<OrderState>((set) => ({
       set({ error: "Failed to fetch order" });
       return false;
     } finally {
-      set({ loadingSingle: false });
+      if (!silent) set({ loadingSingle: false });
     }
   },
 
