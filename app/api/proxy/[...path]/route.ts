@@ -92,7 +92,7 @@ async function handleRequest(
 
     if (response.status === 401 || response.status === 500) {
       const res = NextResponse.json(data, { status: 401 });
-      // res.cookies.delete("token"); // remove token cookie
+      res.cookies.delete("token"); // remove token cookie
       return res;
     }
 
