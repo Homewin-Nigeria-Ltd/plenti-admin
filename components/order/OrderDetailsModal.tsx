@@ -95,10 +95,10 @@ function orderStatusDotClass(statusRaw: string | undefined | null) {
 }
 
 const LIFECYCLE_MENU_ITEM_CLASS: Record<AdminOrderLifecycleStatus, string> = {
-  pending:
-    "text-gray-700 data-highlighted:bg-gray-100 data-highlighted:text-gray-900 focus:bg-gray-100 focus:text-gray-900",
-  processing:
-    "text-orange-700 data-highlighted:bg-orange-50 data-highlighted:text-orange-900 focus:bg-orange-50 focus:text-orange-900",
+  // pending:
+  //   "text-gray-700 data-highlighted:bg-gray-100 data-highlighted:text-gray-900 focus:bg-gray-100 focus:text-gray-900",
+  // processing:
+  //   "text-orange-700 data-highlighted:bg-orange-50 data-highlighted:text-orange-900 focus:bg-orange-50 focus:text-orange-900",
   packed:
     "text-sky-800 data-highlighted:bg-sky-50 data-highlighted:text-sky-950 focus:bg-sky-50 focus:text-sky-950",
   shipped:
