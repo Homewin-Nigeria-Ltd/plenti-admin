@@ -60,7 +60,6 @@ function formatOrderStatusLabel(raw: string | undefined | null) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/** Normalize API order status for chip / color lookup (e.g. `in_transit` → `in transit`) */
 function normalizeOrderStatusKey(statusRaw: string | undefined | null): string {
   return (statusRaw ?? "")
     .toLowerCase()
@@ -330,6 +329,7 @@ export function OrderDetailsModal({
                       {canMarkOrderInTransit && (
                         <DropdownMenuSeparator />
                       )}
+                      {/* Mark as in transit — hidden from menu
                       {canMarkOrderInTransit && (
                         <>
                           <DropdownMenuItem
@@ -344,6 +344,7 @@ export function OrderDetailsModal({
                           <DropdownMenuSeparator />
                         </>
                       )}
+                      */}
 
                       {canIssueOrderRefund && (
                         <>

@@ -1,6 +1,6 @@
 export const ADMIN_ORDER_LIFECYCLE_STATUSES = [
-  "pending",
-  "processing",
+  // "pending",
+  // "processing",
   "packed",
   "shipped",
   "delivered",
