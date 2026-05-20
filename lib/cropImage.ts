@@ -14,7 +14,7 @@ function createImageElement(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export const PRODUCT_IMAGE_CROP_SIZE = 124;
+export const PRODUCT_IMAGE_CROP_SIZE = 300;
 
 export type CroppedImageOutputOptions = {
   width: number;
