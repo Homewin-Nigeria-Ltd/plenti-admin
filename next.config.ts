@@ -22,6 +22,14 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "plenti-laravel.plentinig.com",
+      },
+      {
+        protocol: "http",
+        hostname: "plenti-laravel.plentinig.com",
+      },
+      {
+        protocol: "https",
         hostname: "devmotopaymp.obs.af-south-1.myhuaweicloud.com",
       },
       {
