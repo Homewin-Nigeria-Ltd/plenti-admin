@@ -22,12 +22,17 @@ export const useOrderStore = create<OrderState>((set) => ({
   lastPage: 1,
   perPage: PAGE_SIZE,
   totalItems: 0,
-  lastQuery: { page: 1, search: "" },
+  lastQuery: { page: 1, search: "", delivery_provider: "" },
 
   fetchOrders: async (params) => {
     const page = params?.page ?? 1;
     const search = params?.search?.trim() ?? "";
-    set({ loading: true, error: null, lastQuery: { page, search } });
+    const deliveryProvider = params?.delivery_provider?.trim() ?? "";
+    set({
+      loading: true,
+      error: null,
+      lastQuery: { page, search, delivery_provider: deliveryProvider },
+    });
 
     try {
       const query: Record<string, string | number> = {
@@ -35,6 +40,9 @@ export const useOrderStore = create<OrderState>((set) => ({
         search,
         per_page: PAGE_SIZE,
       };
+      if (deliveryProvider) {
+        query.delivery_provider = deliveryProvider;
+      }
 
       const { data } = await api.get<OrdersListResponse>(ORDERS_API.getOrders, {
         params: query,
@@ -62,10 +70,18 @@ export const useOrderStore = create<OrderState>((set) => ({
     const silent = options?.silent === true;
     if (!silent) set({ loadingSingle: true });
     try {
-      const { data } = await api.get<{ data: Order }>(
+      const { data: body } = await api.get<{ status?: string; data?: Order } | Order>(
         `${ORDERS_API.getOrder}/${id}`,
       );
-      set({ singleOrder: data.data ?? null });
+      const order =
+        body &&
+        typeof body === "object" &&
+        "data" in body &&
+        body.data != null &&
+        typeof body.data === "object"
+          ? body.data
+          : (body as Order);
+      set({ singleOrder: order?.id != null ? order : null });
       return true;
     } catch (error) {
       console.error("Error fetching order =>", error);

@@ -58,6 +58,26 @@ export type RiderInfo = {
   vehicle_type?: string | null;
 };
 
+export type KwikPickupLocation = {
+  id: number;
+  name: string;
+  location: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  is_primary: boolean;
+  has_coordinates: boolean;
+  kwik_ready: boolean;
+};
+
+export type KwikPickupLocationsResponse = {
+  status: string;
+  code?: number;
+  message?: string;
+  data: KwikPickupLocation[];
+  timestamp?: string;
+};
+
 export type Order = {
   id: number;
   user_id: number;
@@ -80,6 +100,37 @@ export type Order = {
   shippingFee?: number;
   delivery_type?: string | null;
   delivery_provider?: string | null;
+  delivery_provider_label?: string | null;
+  delivery_type_label?: string | null;
+  delivery_selection?: {
+    provider?: string;
+    provider_label?: string;
+    type?: string;
+    type_label?: string;
+  } | null;
+  delivery_economics?: {
+    delivery_provider?: string;
+    customer_delivery_charge?: number | null;
+    delivery_margin?: number | null;
+    provider_delivery_cost?: number | null;
+    is_cost_known?: boolean;
+    labels?: {
+      customer_delivery_charge?: string;
+      provider_delivery_cost?: string;
+      delivery_margin?: string;
+    };
+  } | null;
+  delivery_pricing_snapshot?: {
+    kwik_provider_cost?: number;
+    kwik_customer_fees?: {
+      normal?: { margin?: number };
+      express?: { margin?: number };
+    };
+  } | null;
+  provider_delivery_cost_quote?: number | null;
+  kwik_pickup_warehouse_id?: number | null;
+  pickup_warehouse_id?: number | null;
+  kwik_pickup_warehouse?: { id?: number; name?: string } | null;
   order_number: string;
   created_at: string;
   updated_at: string;
@@ -112,11 +163,12 @@ export type OrderState = {
   lastPage: number;
   perPage: number;
   totalItems: number;
-  lastQuery: { page: number; search: string };
+  lastQuery: { page: number; search: string; delivery_provider: string };
 
   fetchOrders: (params?: {
     page?: number;
     search?: string;
+    delivery_provider?: string;
   }) => Promise<boolean>;
   fetchSingleOrders: (
     id: number,
