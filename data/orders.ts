@@ -7,11 +7,17 @@ export const ORDERS_API = {
   issueRefund: "/api/admin/orders",
   assignRider: "/api/admin/orders",
   getRiders: "/api/admin/riders",
+  kwikPickupLocations: "/api/admin/kwik/pickup-locations",
 } as const;
 
 /** PATCH `/api/admin/orders/{orderId}/status` — lifecycle status updates */
 export function orderStatusUpdatePath(orderId: number | string): string {
   return `${ORDERS_API.getOrders}/${orderId}/status`;
+}
+
+/** PUT `/api/admin/orders/{orderId}/kwik-pickup-warehouse` */
+export function orderKwikPickupWarehousePath(orderId: number | string): string {
+  return `${ORDERS_API.getOrders}/${orderId}/kwik-pickup-warehouse`;
 }
 
 /*

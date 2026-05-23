@@ -38,6 +38,14 @@ const AssignRiderModal = dynamic(
   },
 );
 
+const KwikPickupWarehouseSelect = dynamic(
+  () =>
+    import("./KwikPickupWarehouseSelect").then(
+      (mod) => mod.KwikPickupWarehouseSelect,
+    ),
+  { ssr: false },
+);
+
 const DeleteOrderConfirm = dynamic(
   () => import("./DeleteOrderConfirm").then((mod) => mod.DeleteOrderConfirm),
   {
@@ -189,6 +197,7 @@ export function OrderDetailsModal({
         await fetchOrders({
           page: lastQuery.page,
           search: lastQuery.search,
+          delivery_provider: lastQuery.delivery_provider || undefined,
         });
       } else {
         toast.error(data?.message ?? "Failed to update order status");
@@ -468,7 +477,9 @@ export function OrderDetailsModal({
                           Payment Method
                         </p>
                         <p className="text-[#667085] text-sm">
-                          {singleOrder?.payment_method ?? "—"}
+                          {singleOrder?.payment_method ?? (
+                            <span className="text-xs">–</span>
+                          )}
                         </p>
                       </div>
                       <div className="space-y-1 mt-5">
@@ -501,7 +512,9 @@ export function OrderDetailsModal({
                           Transaction Reference
                         </p>
                         <p className="text-[#98A2B3] text-sm">
-                          {singleOrder?.payment_reference ?? "—"}
+                          {singleOrder?.payment_reference ?? (
+                            <span className="text-xs">–</span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -530,24 +543,63 @@ export function OrderDetailsModal({
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[#101928] font-medium">
-                          Shipping Fee
-                        </p>
-                        <p className="text-[#98A2B3] text-sm">
-                          {(() => {
-                            const fee =
-                              singleOrder?.shipping_fee ??
-                              singleOrder?.shippingFee;
-                            return fee != null && !Number.isNaN(Number(fee))
-                              ? formatCurrency(Number(fee))
-                              : "—";
-                          })()}
-                        </p>
-                      </div>
-                      <div className="space-y-1">
                         <p className="text-[#101928] font-medium">Phone</p>
                         <p className="text-[#98A2B3] text-sm">
                           {singleOrder?.phone_number ?? "—"}
+                        </p>
+                      </div>
+                      {selectedId != null && (
+                        <KwikPickupWarehouseSelect
+                          orderId={selectedId}
+                          order={singleOrder}
+                          onUpdated={async () => {
+                            await fetchSingleOrders(selectedId, { silent: true });
+                          }}
+                        />
+                      )}
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Provider</p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.delivery_provider_label ??
+                            singleOrder?.delivery_selection?.provider_label ??
+                            singleOrder?.delivery_provider ??
+                            singleOrder?.delivery_selection?.provider ??
+                            singleOrder?.delivery_economics?.delivery_provider ??
+                            "—"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Delivery type</p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.delivery_type_label ??
+                            singleOrder?.delivery_selection?.type_label ??
+                            singleOrder?.delivery_type ??
+                            singleOrder?.delivery_selection?.type ??
+                            "—"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Delivery fee</p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.delivery_economics?.customer_delivery_charge ??
+                            "—"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">
+                          Kwik delivery fee
+                        </p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.delivery_pricing_snapshot?.kwik_provider_cost ??
+                            "—"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Plenti profit</p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.delivery_economics?.delivery_margin != null
+                            ? singleOrder.delivery_economics.delivery_margin
+                            : <span className="text-xs">–</span>}
                         </p>
                       </div>
                     </div>
@@ -612,6 +664,7 @@ export function OrderDetailsModal({
                 await fetchOrders({
                   page: lastQuery.page,
                   search: lastQuery.search,
+                  delivery_provider: lastQuery.delivery_provider || undefined,
                 });
               } catch (e) {
                 toast.error(
