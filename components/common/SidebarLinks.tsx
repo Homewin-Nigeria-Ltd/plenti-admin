@@ -41,6 +41,12 @@ export const links: linkType = [
     activeIcon: "/sidebarIcons/shopping-cart.png",
     inactiveIcon: "/sidebarIcons/shopping-cart-grey.png",
   },
+  {
+    name: "Rider Management",
+    href: "/rider",
+    activeIcon: "/sidebarIcons/rider-active.svg",
+    inactiveIcon: "/sidebarIcons/rider-grey.svg",
+  },
   // {
   //   name: "Analytics & Reporting",
   //   href: "/analytics",
@@ -95,6 +101,7 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
     canViewOrderManagement,
     canViewCustomerSupport,
     canViewMarketingAndEngagement,
+    canViewRiderManagement,
   } = React.useMemo(() => getSidebarPermissions(account), [account]);
 
   const visibleLinks = React.useMemo(
@@ -106,6 +113,7 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
         if (link.href === "/finance") return canViewFinanceManagement;
         if (link.href === "/order") return canViewOrderManagement;
         if (link.href === "/marketing") return canViewMarketingAndEngagement;
+        if (link.href === "/rider") return canViewRiderManagement;
         if (link.href === "/customer") return canViewCustomerSupport;
         return true;
       }),
@@ -117,6 +125,7 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
       canViewOrderManagement,
       canViewCustomerSupport,
       canViewMarketingAndEngagement,
+      canViewRiderManagement,
     ],
   );
 
