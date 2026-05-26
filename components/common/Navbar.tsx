@@ -24,9 +24,12 @@ const Navbar = () => {
   const matchedLink = links.find((l) => l.href === pathname);
   const isSingleUserPage =
     pathname.startsWith("/user/") && pathname !== "/user";
+  const isRiderSection = pathname === "/rider" || pathname.startsWith("/rider/");
   const title = isSingleUserPage
     ? "Single User"
-    : (matchedLink?.name ?? formatTitle(section));
+    : isRiderSection
+      ? "Rider Management"
+      : (matchedLink?.name ?? formatTitle(section));
 
   // React.useEffect(() => {
   //   void refreshUnreadCount();

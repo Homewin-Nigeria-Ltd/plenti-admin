@@ -21,7 +21,9 @@ import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useOrderStore } from "@/store/useOrderStore";
 import { ORDERS_API } from "@/data/orders";
-import type { Rider, RidersResponse } from "@/types/OrderTypes";
+import { normalizeRidersList } from "@/lib/normalizeRider";
+import type { AdminRider } from "@/types/RiderTypes";
+import type { RidersResponse } from "@/types/OrderTypes";
 import api from "@/lib/api";
 
 const formatCurrency = (n: number) =>
@@ -40,7 +42,7 @@ export function AssignRiderModal({
 }) {
   const { singleOrder, fetchSingleOrders } = useOrderStore();
   const [selectedRiderId, setSelectedRiderId] = React.useState<string>("");
-  const [riders, setRiders] = React.useState<Rider[]>([]);
+  const [riders, setRiders] = React.useState<AdminRider[]>([]);
   const [loadingRiders, setLoadingRiders] = React.useState(false);
   const [isAssigning, setIsAssigning] = React.useState(false);
 
@@ -50,7 +52,7 @@ export function AssignRiderModal({
       const { data } = await api.get<RidersResponse>(ORDERS_API.getRiders);
 
       if (data?.status === "success" && Array.isArray(data?.data)) {
-        setRiders(data.data);
+        setRiders(normalizeRidersList(data.data));
       } else {
         toast.error("Failed to fetch riders");
       }

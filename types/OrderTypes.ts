@@ -207,20 +207,12 @@ export type OrderStatCardProps = {
   className?: string;
 };
 
-export type Rider = {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  avatar_url: string | null;
-  amount_spent: number;
-  total_orders: number;
-};
+export type { AdminRider as Rider } from "@/types/RiderTypes";
 
 export type RidersResponse = {
   status: string;
   code: number;
   message: string;
-  data: Rider[];
+  data: import("@/types/RiderTypes").AdminRider[];
   timestamp: string;
 };

@@ -25,6 +25,17 @@ export function getSidebarPermissions(account: AccountLike) {
     canViewMarketingAndEngagement:
       hasAnyRole(account, ["admin", "super-admin"]) ||
       hasAnyPermission(account, ["marketing.view"]),
+    canViewRiderManagement:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["riders.view", "rider.view"]),
+  };
+}
+
+export function getRiderPermissions(account: AccountLike) {
+  return {
+    canViewRiderManagement:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["riders.view", "rider.view"]),
   };
 }
 
