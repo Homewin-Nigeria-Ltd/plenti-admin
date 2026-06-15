@@ -4,21 +4,24 @@ import DataTable from "@/components/common/DataTable";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  formatRiderDate,
   getCompletedRides,
   getDocumentsUploadProgress,
   getInitialsFromName,
+  getOnboardingStatus,
+  getOnboardingStatusBadgeClass,
+  getRiderAvatar,
+  getRiderDateAddedLabel,
   getRiderLocation,
+  getRiderPhone,
   getRiderStatus,
   getRiderStatusBadgeClass,
   getRiderVehicleLabel,
+  RIDER_EMPTY,
 } from "@/lib/riderDisplay";
-import { getRiderAvatarUrl } from "@/lib/normalizeRider";
 import type { AdminRider } from "@/types/RiderTypes";
 import * as React from "react";
 
 const RIDER_COLUMNS = [
-  { key: "dateAdded", label: "Date Added" },
   { key: "riderName", label: "Rider Name" },
   { key: "phoneNumber", label: "Phone Number" },
   { key: "completedRides", label: "Completed Rides" },
@@ -32,10 +35,11 @@ const ONBOARDING_COLUMNS = [
   { key: "phoneNumber", label: "Phone Number" },
   { key: "documentsUploaded", label: "Document Uploaded" },
   { key: "vehicle", label: "Vehicle" },
+  { key: "onboardingStatus", label: "Status" },
 ] as const;
 
 function riderNameCell(rider: AdminRider) {
-  const avatarUrl = getRiderAvatarUrl(rider);
+  const avatarUrl = getRiderAvatar(rider);
   return (
     <div className="flex items-center gap-3">
       <Avatar className="size-10">
@@ -59,16 +63,14 @@ function riderNameCell(rider: AdminRider) {
 function buildRiderTableRows(riders: AdminRider[]): Record<string, React.ReactNode>[] {
   return riders.map((rider) => {
     const status = getRiderStatus(rider);
+    const statusLabel = rider.rider_status_label?.trim()
+      ? rider.rider_status_label
+      : status;
     return {
-      dateAdded: (
-        <span className="text-neutral-500 text-sm">
-          {formatRiderDate(rider.created_at)}
-        </span>
-      ),
       riderName: riderNameCell(rider),
       phoneNumber: (
         <span className="text-neutral-700 text-xs sm:text-sm whitespace-nowrap">
-          {rider.phone || "—"}
+          {getRiderPhone(rider) || RIDER_EMPTY}
         </span>
       ),
       completedRides: (
@@ -83,7 +85,7 @@ function buildRiderTableRows(riders: AdminRider[]): Record<string, React.ReactNo
       ),
       riderStatus: (
         <span className={`badge capitalize ${getRiderStatusBadgeClass(status)}`}>
-          {status}
+          {statusLabel}
         </span>
       ),
     };
@@ -93,14 +95,12 @@ function buildRiderTableRows(riders: AdminRider[]): Record<string, React.ReactNo
 function buildOnboardingTableRows(riders: AdminRider[]): Record<string, React.ReactNode>[] {
   return riders.map((rider) => ({
     dateAdded: (
-      <span className="text-neutral-500 text-sm">
-        {formatRiderDate(rider.submitted_at ?? rider.created_at)}
-      </span>
+      <span className="text-neutral-500 text-sm">{getRiderDateAddedLabel(rider)}</span>
     ),
     riderName: riderNameCell(rider),
     phoneNumber: (
       <span className="text-neutral-700 text-xs sm:text-sm whitespace-nowrap">
-        {rider.phone || "—"}
+        {getRiderPhone(rider) || RIDER_EMPTY}
       </span>
     ),
     documentsUploaded: (
@@ -111,6 +111,11 @@ function buildOnboardingTableRows(riders: AdminRider[]): Record<string, React.Re
     vehicle: (
       <span className="text-neutral-700 text-xs sm:text-sm">
         {getRiderVehicleLabel(rider)}
+      </span>
+    ),
+    onboardingStatus: (
+      <span className={`badge capitalize ${getOnboardingStatusBadgeClass(rider)}`}>
+        {getOnboardingStatus(rider)}
       </span>
     ),
   }));

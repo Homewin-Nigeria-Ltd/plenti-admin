@@ -21,7 +21,6 @@ import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useOrderStore } from "@/store/useOrderStore";
 import { ORDERS_API } from "@/data/orders";
-import { normalizeRidersList } from "@/lib/normalizeRider";
 import type { AdminRider } from "@/types/RiderTypes";
 import type { RidersResponse } from "@/types/OrderTypes";
 import api from "@/lib/api";
@@ -52,7 +51,7 @@ export function AssignRiderModal({
       const { data } = await api.get<RidersResponse>(ORDERS_API.getRiders);
 
       if (data?.status === "success" && Array.isArray(data?.data)) {
-        setRiders(normalizeRidersList(data.data));
+        setRiders(data.data);
       } else {
         toast.error("Failed to fetch riders");
       }

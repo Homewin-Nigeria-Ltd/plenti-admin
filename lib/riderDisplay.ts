@@ -1,7 +1,9 @@
 import type { AdminRider, RiderDocument, RiderDocumentStatus } from "@/types/RiderTypes";
 
+export const RIDER_EMPTY = "–";
+
 export function formatRiderDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return RIDER_EMPTY;
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
@@ -28,15 +30,24 @@ export function getRiderStatus(rider: AdminRider): string {
   return String(raw).trim() || "active";
 }
 
+export function getRiderPhone(rider: AdminRider): string {
+  return rider.phone_number?.trim() || rider.phone?.trim() || "";
+}
+
+export function getRiderAvatar(rider: AdminRider): string | null {
+  const url = rider.avatar ?? rider.avatar_url ?? null;
+  return typeof url === "string" && url.trim() ? url.trim() : null;
+}
+
 export function getRiderLocation(rider: AdminRider): string {
   if (rider.location?.trim()) return rider.location.trim();
-  const city = rider.city?.trim();
-  const state = rider.state?.trim();
+  const city = rider.location_city?.trim();
+  const state = rider.location_state?.trim();
   if (city && state) return `${city}, ${state}`;
   if (city) return city;
   if (state) return state;
   if (rider.address?.trim()) return rider.address.trim();
-  return "—";
+  return RIDER_EMPTY;
 }
 
 export function getCompletedRides(rider: AdminRider): number {
@@ -47,7 +58,13 @@ export function getCompletedRides(rider: AdminRider): number {
 export function getRiderStatusBadgeClass(status: string): string {
   const s = status.toLowerCase();
   if (s === "active" || s === "approved" || s === "completed") return "badge-success";
-  if (s === "busy" || s === "pending" || s === "onboarding" || s === "in_review") {
+  if (
+    s === "busy" ||
+    s === "pending" ||
+    s === "onboarding" ||
+    s === "in_review" ||
+    s === "in review"
+  ) {
     return "badge-warning";
   }
   if (s === "suspended" || s === "rejected" || s === "declined") return "badge-danger";
@@ -55,7 +72,7 @@ export function getRiderStatusBadgeClass(status: string): string {
 }
 
 export function formatRiderJoinedDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return RIDER_EMPTY;
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
@@ -76,7 +93,7 @@ export function getRiderJoinedDate(rider: AdminRider): string {
 
 export function getRiderRating(rider: AdminRider): string {
   const rating = rider.rating;
-  if (rating == null || rating === "") return "—";
+  if (rating == null || rating === "") return RIDER_EMPTY;
   const n = typeof rating === "number" ? rating : Number.parseFloat(String(rating));
   return Number.isFinite(n) ? n.toFixed(1) : String(rating);
 }
@@ -114,23 +131,48 @@ const VEHICLE_LABELS: Record<string, string> = {
 };
 
 export function getRiderVehicleLabel(rider: AdminRider): string {
+  if (rider.vehicle_label?.trim()) return rider.vehicle_label.trim();
   const raw = rider.vehicle_type;
-  if (!raw) return "—";
+  if (!raw) return RIDER_EMPTY;
   const key = String(raw).trim().toLowerCase();
   return VEHICLE_LABELS[key] ?? formatRiderStatusLabel(key);
 }
 
+export function getOnboardingStatus(rider: AdminRider): string {
+  if (rider.onboarding_status_label?.trim()) {
+    return rider.onboarding_status_label.trim();
+  }
+  const raw = rider.onboarding_status;
+  if (raw?.trim()) return formatRiderStatusLabel(raw);
+  return RIDER_EMPTY;
+}
+
+export function getOnboardingStatusBadgeClass(rider: AdminRider): string {
+  const raw = (rider.onboarding_status ?? rider.onboarding_status_label ?? "")
+    .trim()
+    .toLowerCase();
+  return getRiderStatusBadgeClass(raw);
+}
+
+export function getRiderDateAddedLabel(rider: AdminRider): string {
+  if (rider.date_added_label?.trim()) return rider.date_added_label.trim();
+  return formatRiderDate(rider.date_added ?? rider.submitted_at ?? rider.created_at);
+}
+
 export function getRiderSubmittedDate(rider: AdminRider): string {
   return formatRiderJoinedDate(
-    rider.submitted_at ?? rider.created_at ?? rider.joined_at,
+    rider.date_added ?? rider.submitted_at ?? rider.created_at ?? rider.joined_at,
   );
 }
 
 export function getDocumentsUploadProgress(rider: AdminRider): string {
-  const uploaded = rider.documents_uploaded;
-  const total = rider.documents_total;
-  if (typeof uploaded === "number" && typeof total === "number" && total > 0) {
-    return `${uploaded}/${total}`;
+  if (rider.documents_uploaded?.label?.trim()) {
+    return rider.documents_uploaded.label.trim();
+  }
+  const uploaded = rider.documents_uploaded?.uploaded;
+  const required = rider.documents_uploaded?.required;
+  if (typeof uploaded === "number" && typeof required === "number" && required > 0) {
+    return `${uploaded}/${required}`;
   }
   const docs = getRiderApplicationDocuments(rider);
   const approved = docs.filter((d) => d.status?.toLowerCase() === "approved").length;
@@ -161,6 +203,7 @@ export function getRiderApplicationDocuments(rider: AdminRider): Array<{
   key: string;
   label: string;
   status: RiderDocumentStatus;
+  file_url: string | null;
 }> {
   if (rider.documents?.length) {
     return rider.documents.map((doc, index) => ({
@@ -170,6 +213,7 @@ export function getRiderApplicationDocuments(rider: AdminRider): Array<{
         doc.name ??
         formatRiderStatusLabel(String(doc.type ?? doc.document_type ?? "Document")),
       status: (doc.status ?? "pending") as RiderDocumentStatus,
+      file_url: doc.file_url?.trim() || null,
     }));
   }
 
@@ -180,6 +224,7 @@ export function getRiderApplicationDocuments(rider: AdminRider): Array<{
       (statusMap[`${doc.key}_status`] as RiderDocumentStatus | undefined) ??
       (statusMap[doc.key] as RiderDocumentStatus | undefined) ??
       "approved",
+    file_url: null,
   }));
 }
 

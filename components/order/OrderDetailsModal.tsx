@@ -46,6 +46,14 @@ const KwikPickupWarehouseSelect = dynamic(
   { ssr: false },
 );
 
+const DeliveryProviderSwitchSelect = dynamic(
+  () =>
+    import("./DeliveryProviderSwitchSelect").then(
+      (mod) => mod.DeliveryProviderSwitchSelect,
+    ),
+  { ssr: false },
+);
+
 const DeleteOrderConfirm = dynamic(
   () => import("./DeleteOrderConfirm").then((mod) => mod.DeleteOrderConfirm),
   {
@@ -557,17 +565,21 @@ export function OrderDetailsModal({
                           }}
                         />
                       )}
-                      <div className="space-y-1">
-                        <p className="text-[#101928] font-medium">Provider</p>
-                        <p className="text-[#667085] text-sm">
-                          {singleOrder?.delivery_provider_label ??
-                            singleOrder?.delivery_selection?.provider_label ??
-                            singleOrder?.delivery_provider ??
-                            singleOrder?.delivery_selection?.provider ??
-                            singleOrder?.delivery_economics?.delivery_provider ??
-                            "—"}
-                        </p>
-                      </div>
+                      {selectedId != null && (
+                        <DeliveryProviderSwitchSelect
+                          orderId={selectedId}
+                          order={singleOrder}
+                          onUpdated={async () => {
+                            await fetchSingleOrders(selectedId, { silent: true });
+                            await fetchOrders({
+                              page: lastQuery.page,
+                              search: lastQuery.search,
+                              delivery_provider:
+                                lastQuery.delivery_provider || undefined,
+                            });
+                          }}
+                        />
+                      )}
                       <div className="space-y-1">
                         <p className="text-[#101928] font-medium">Delivery type</p>
                         <p className="text-[#667085] text-sm">
