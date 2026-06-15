@@ -99,7 +99,7 @@ export function OnboardRiderModal({
     if (!res.ok) {
       setFieldErrors({
         name: res.errors?.name?.[0] ?? res.errors?.full_name?.[0],
-        phone: res.errors?.phone?.[0],
+        phone: res.errors?.phone?.[0] ?? res.errors?.phone_number?.[0],
         email: res.errors?.email?.[0],
         vehicle_type: res.errors?.vehicle_type?.[0],
       });

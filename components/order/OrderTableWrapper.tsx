@@ -228,6 +228,7 @@ export default function OrderTableWrapper() {
                   <SelectItem value="all">All providers</SelectItem>
                   <SelectItem value="plenti">Plenti</SelectItem>
                   <SelectItem value="kwik">Kwik</SelectItem>
+                  <SelectItem value="sendbox">Sendbox</SelectItem>
                 </SelectContent>
               </Select>
             </div>

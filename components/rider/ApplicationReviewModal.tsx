@@ -11,11 +11,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   formatDocumentStatusLabel,
+  formatRiderJoinedDate,
   getDocumentStatusBadgeClass,
   getRiderApplicationDocuments,
+  getRiderPhone,
   getRiderSubmittedDate,
   getRiderVehicleLabel,
+  RIDER_EMPTY,
 } from "@/lib/riderDisplay";
+import { cn } from "@/lib/utils";
 import { useRiderStore } from "@/store/useRiderStore";
 import type { AdminRider } from "@/types/RiderTypes";
 import { FileText, Loader2, X } from "lucide-react";
@@ -31,6 +35,19 @@ type ApplicationReviewModalProps = {
 };
 
 type ReviewStep = "review" | "reject";
+
+type PreviewDocument = {
+  label: string;
+  file_url: string | null;
+};
+
+function isImageUrl(url: string): boolean {
+  return /\.(jpe?g|png|gif|webp|bmp|svg)($|\?)/i.test(url);
+}
+
+function isPdfUrl(url: string): boolean {
+  return /\.pdf($|\?)/i.test(url);
+}
 
 function InfoCell({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -50,12 +67,15 @@ export function ApplicationReviewModal({
 }: ApplicationReviewModalProps) {
   const [step, setStep] = React.useState<ReviewStep>("review");
   const [rejectionReason, setRejectionReason] = React.useState("");
+  const [previewDocument, setPreviewDocument] = React.useState<PreviewDocument | null>(
+    null,
+  );
 
   const {
-    singleRider,
+    applicationReview,
     loadingSingle,
     reviewingApplication,
-    fetchSingleRider,
+    fetchApplicationReview,
     approveOnboardingRider,
     rejectOnboardingRider,
     clearSingleRider,
@@ -65,19 +85,44 @@ export function ApplicationReviewModal({
     if (!isOpen || !riderId) return;
     setStep("review");
     setRejectionReason("");
-    void fetchSingleRider(riderId, previewRider ?? null);
-  }, [isOpen, riderId, previewRider, fetchSingleRider]);
+    setPreviewDocument(null);
+    void fetchApplicationReview(riderId);
+  }, [isOpen, riderId, fetchApplicationReview]);
 
   const handleClose = () => {
     setStep("review");
     setRejectionReason("");
+    setPreviewDocument(null);
     clearSingleRider();
     onClose();
   };
 
-  const rider = singleRider;
-  const documents = rider ? getRiderApplicationDocuments(rider) : [];
+  const rider = applicationReview?.rider ?? previewRider ?? null;
+  const application = applicationReview?.application ?? null;
+  const documents = applicationReview?.documents?.length
+    ? applicationReview.documents.map((doc, index) => ({
+        key: String(doc.id ?? doc.document_type ?? index),
+        label: doc.label ?? String(doc.document_type ?? "Document"),
+        status: doc.status ?? "pending",
+        file_url: doc.file_url?.trim() || null,
+      }))
+    : rider
+      ? getRiderApplicationDocuments(rider)
+      : [];
   const canSubmitRejection = rejectionReason.trim().length > 0;
+
+  const phone =
+    application?.phone?.trim() || (rider ? getRiderPhone(rider) : "") || RIDER_EMPTY;
+  const email = application?.email?.trim() || rider?.email || RIDER_EMPTY;
+  const vehicle =
+    application?.vehicle_type?.trim() ||
+    (rider ? getRiderVehicleLabel(rider) : RIDER_EMPTY);
+  const submitted =
+    application?.submitted_at?.trim() ||
+    (rider ? getRiderSubmittedDate(rider) : RIDER_EMPTY);
+  const submittedLabel = application?.submitted_at
+    ? formatRiderJoinedDate(application.submitted_at)
+    : submitted;
 
   const handleApprove = async () => {
     if (!rider?.id) return;
@@ -104,6 +149,7 @@ export function ApplicationReviewModal({
   };
 
   return (
+    <>
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
@@ -114,7 +160,7 @@ export function ApplicationReviewModal({
         className="max-w-[520px] w-[95vw] p-0 gap-0 overflow-hidden"
         showCloseButton={false}
       >
-        {loadingSingle && !rider ? (
+        {loadingSingle ? (
           <>
             <DialogTitle className="sr-only">Loading application</DialogTitle>
             <div className="flex flex-col items-center justify-center min-h-[320px] gap-3 px-6 py-12">
@@ -154,26 +200,38 @@ export function ApplicationReviewModal({
               <>
                 <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <InfoCell label="Phone" value={rider.phone || "—"} />
-                    <InfoCell label="Email" value={rider.email || "—"} />
-                    <InfoCell label="Vehicle" value={getRiderVehicleLabel(rider)} />
-                    <InfoCell label="Submitted" value={getRiderSubmittedDate(rider)} />
+                    <InfoCell label="Phone" value={phone} />
+                    <InfoCell label="Email" value={email} />
+                    <InfoCell label="Vehicle" value={vehicle} />
+                    <InfoCell label="Submitted" value={submittedLabel} />
                   </div>
 
                   <div className="space-y-3">
                     {documents.map((doc) => {
                       const status = doc.status ?? "pending";
                       const statusLabel = formatDocumentStatusLabel(status);
+                      const fileUrl = doc.file_url?.trim() || null;
+
                       return (
-                        <div
+                        <button
                           key={doc.key}
-                          className="flex items-center justify-between gap-4 rounded-xl border border-[#EAECF0] bg-[#F9FAFB] px-4 py-3.5"
+                          type="button"
+                          onClick={() =>
+                            setPreviewDocument({
+                              label: doc.label,
+                              file_url: fileUrl,
+                            })
+                          }
+                          className={cn(
+                            "w-full text-left flex items-center justify-between gap-4 rounded-xl border border-[#EAECF0] bg-[#F9FAFB] px-4 py-3.5",
+                            "hover:bg-[#F2F4F7] transition-colors cursor-pointer",
+                          )}
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="size-10 rounded-lg bg-white border border-[#EAECF0] flex items-center justify-center shrink-0">
                               <FileText className="size-5 text-[#667085]" />
                             </div>
-                            <p className="text-sm font-medium text-[#101928] truncate">
+                            <p className="text-sm font-medium text-[#2E5CDB] truncate">
                               {doc.label}
                             </p>
                           </div>
@@ -182,7 +240,7 @@ export function ApplicationReviewModal({
                           >
                             {statusLabel}
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -257,5 +315,74 @@ export function ApplicationReviewModal({
         )}
       </DialogContent>
     </Dialog>
+
+    <Dialog
+      open={previewDocument != null}
+      onOpenChange={(open) => {
+        if (!open) setPreviewDocument(null);
+      }}
+    >
+      <DialogContent
+        className="w-[720px] max-w-[calc(100%-2rem)] sm:max-w-[720px] p-0 gap-0 overflow-hidden"
+        showCloseButton={false}
+      >
+        <DialogHeader className="relative px-6 pt-6 pb-4 border-b border-neutral-100">
+          <DialogTitle className="font-semibold text-lg text-[#101928] pr-12">
+            {previewDocument?.label ?? "Document"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Document preview for {previewDocument?.label}
+          </DialogDescription>
+          <button
+            type="button"
+            onClick={() => setPreviewDocument(null)}
+            aria-label="Close document preview"
+            className="absolute top-6 right-6 flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+          >
+            <X color="#0B1E66" size={20} />
+          </button>
+        </DialogHeader>
+
+        <div className="px-6 py-6">
+          {!previewDocument?.file_url ? (
+            <div className="flex flex-col items-center justify-center min-h-[200px] gap-2 text-center">
+              <FileText className="size-10 text-[#98A2B3]" />
+              <p className="text-sm font-medium text-[#101928]">No file uploaded</p>
+              <p className="text-sm text-[#667085]">
+                This document has not been uploaded yet.
+              </p>
+            </div>
+          ) : isImageUrl(previewDocument.file_url) ? (
+            <img
+              src={previewDocument.file_url}
+              alt={previewDocument.label}
+              className="w-full max-h-[70vh] object-contain rounded-lg border border-[#EAECF0] bg-[#F9FAFB]"
+            />
+          ) : isPdfUrl(previewDocument.file_url) ? (
+            <iframe
+              src={previewDocument.file_url}
+              title={previewDocument.label}
+              className="w-full h-[70vh] rounded-lg border border-[#EAECF0] bg-[#F9FAFB]"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center min-h-[200px] gap-4 text-center">
+              <FileText className="size-10 text-[#98A2B3]" />
+              <p className="text-sm text-[#667085]">
+                Preview is not available for this file type.
+              </p>
+              <a
+                href={previewDocument.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-[#2E5CDB] hover:underline"
+              >
+                Open file in new tab
+              </a>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

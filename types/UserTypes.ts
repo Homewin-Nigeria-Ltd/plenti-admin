@@ -115,7 +115,8 @@ export type AdminSingleUserResponse = {
 };
 
 export type AdminDetailsResponse = {
-  status: string;
+  status?: string;
+  success?: boolean;
   data: AdminUser;
 };
 

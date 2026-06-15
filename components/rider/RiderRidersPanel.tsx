@@ -69,8 +69,10 @@ export default function RiderRidersPanel() {
         }}
         riderId={selectedRider?.id ?? null}
         previewRider={selectedRider}
-        onOpenChat={() => router.push("/rider/chat")}
-        onRiderUpdated={() => fetchRiders({ page: 1, search: debouncedSearch })}
+        onOpenChat={(riderId) => router.push(`/rider/chat?riderId=${riderId}`)}
+        onRiderUpdated={() =>
+          fetchRiders({ page: currentPage, search: debouncedSearch })
+        }
       />
     </>
   );

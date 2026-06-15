@@ -1,8 +1,9 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitialsFromName } from "@/lib/riderDisplay";
 import { cn } from "@/lib/utils";
-import type { RiderConversation } from "@/lib/riderChatMock";
+import type { RiderChatConversation } from "@/types/RiderChatTypes";
 
 function OnlineStatusDot({ online = true }: { online?: boolean }) {
   if (!online) return null;
@@ -16,7 +17,7 @@ function OnlineStatusDot({ online = true }: { online?: boolean }) {
 
 function AvatarWithOnlineStatus({
   children,
-  online = true,
+  online: _online = true,
   className,
 }: {
   children: React.ReactNode;
@@ -26,7 +27,7 @@ function AvatarWithOnlineStatus({
   return (
     <div className={cn("relative shrink-0", className)}>
       {children}
-      <OnlineStatusDot online={online} />
+      {/* <OnlineStatusDot online={online} /> */}
     </div>
   );
 }
@@ -35,37 +36,18 @@ export function ConversationAvatar({
   conversation,
   showOnlineDot = false,
 }: {
-  conversation: RiderConversation;
+  conversation: RiderChatConversation;
   showOnlineDot?: boolean;
 }) {
-  const online = showOnlineDot && conversation.online !== false;
-
-  if (conversation.isGroup) {
-    return (
-      <AvatarWithOnlineStatus online={online} className="size-12">
-        <div className="relative size-12">
-          <Avatar className="size-9 absolute top-0 left-0 border-2 border-white">
-            <AvatarFallback className="bg-violet-500 text-white text-xs">D</AvatarFallback>
-          </Avatar>
-          <Avatar className="size-9 absolute bottom-0 right-0 border-2 border-white">
-            <AvatarFallback className="bg-sky-500 text-white text-xs">+</AvatarFallback>
-          </Avatar>
-        </div>
-      </AvatarWithOnlineStatus>
-    );
-  }
+  const name = conversation.rider.name;
+  const avatarUrl = conversation.rider.avatar ?? null;
 
   return (
-    <AvatarWithOnlineStatus online={online}>
+    <AvatarWithOnlineStatus online={showOnlineDot}>
       <Avatar className="size-12">
-        {conversation.avatarUrl ? (
-          <AvatarImage src={conversation.avatarUrl} alt={conversation.name} />
-        ) : null}
-        <AvatarFallback
-          className="text-white text-sm font-semibold"
-          style={{ backgroundColor: conversation.avatarColor ?? "#0B1E66" }}
-        >
-          {conversation.initials ?? conversation.name.slice(0, 2).toUpperCase()}
+        {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : null}
+        <AvatarFallback className="bg-primary text-white text-sm font-semibold">
+          {getInitialsFromName(name)}
         </AvatarFallback>
       </Avatar>
     </AvatarWithOnlineStatus>

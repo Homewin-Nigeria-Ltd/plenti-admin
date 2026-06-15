@@ -4,19 +4,17 @@ import {
   RIDERS_API,
   riderApprovePath,
   riderDetailPath,
+  riderApplicationReviewPath,
   riderRejectPath,
+  riderUnsuspendPath,
   riderSuspendPath,
 } from "@/data/riders";
-import {
-  filterOnboardingFromRiders,
-  filterRidersBySearch,
-  normalizeAdminRider,
-  normalizeRidersList,
-} from "@/lib/normalizeRider";
 import type {
   AdminRider,
   CreateRiderPayload,
   CreateRiderResponse,
+  OnboardingListResponse,
+  RiderApplicationReviewResponse,
   RiderDetailResponse,
   RiderListSlice,
   RiderState,
@@ -25,48 +23,22 @@ import type {
 import { AxiosError } from "axios";
 import { create } from "zustand";
 
-function normalizeRidersPayload(data: RidersListResponse): {
+function parseOnboardingListResponse(data: OnboardingListResponse): {
   riders: AdminRider[];
   currentPage: number;
   lastPage: number;
   perPage: number;
   totalItems: number;
 } {
-  const payload = data.data;
+  const items = data.data?.items ?? [];
+  const pagination = data.data?.pagination ?? {};
 
-  if (Array.isArray(payload)) {
-    const riders = normalizeRidersList(payload);
-    return {
-      riders,
-      currentPage: 1,
-      lastPage: 1,
-      perPage: riders.length || PAGE_SIZE,
-      totalItems: riders.length,
-    };
-  }
-
-  const rows = normalizeRidersList(payload?.data ?? []);
   return {
-    riders: rows,
-    currentPage: payload?.current_page ?? data.meta?.current_page ?? 1,
-    lastPage: payload?.last_page ?? data.meta?.last_page ?? 1,
-    perPage: payload?.per_page ?? data.meta?.per_page ?? PAGE_SIZE,
-    totalItems: payload?.total ?? data.meta?.total ?? rows.length,
-  };
-}
-
-function applySearch(
-  normalized: ReturnType<typeof normalizeRidersPayload>,
-  search: string,
-): ReturnType<typeof normalizeRidersPayload> {
-  if (!search.trim()) return normalized;
-  const riders = filterRidersBySearch(normalized.riders, search);
-  return {
-    riders,
-    currentPage: 1,
-    lastPage: 1,
-    perPage: riders.length || PAGE_SIZE,
-    totalItems: riders.length,
+    riders: items,
+    currentPage: pagination.current_page ?? 1,
+    lastPage: pagination.last_page ?? 1,
+    perPage: pagination.per_page ?? PAGE_SIZE,
+    totalItems: pagination.total ?? items.length,
   };
 }
 
@@ -81,24 +53,12 @@ const emptyListSlice = (): RiderListSlice => ({
   lastQuery: { page: 1, search: "" },
 });
 
-async function requestRiders(
-  endpoint: string,
-  params: { page: number; search: string },
-): Promise<ReturnType<typeof normalizeRidersPayload>> {
-  const query: Record<string, string | number> = {
-    page: params.page,
-    per_page: PAGE_SIZE,
-  };
-  if (params.search) query.search = params.search;
-
-  const { data } = await api.get<RidersListResponse>(endpoint, { params: query });
-  return normalizeRidersPayload(data);
-}
-
 export const useRiderStore = create<RiderState>((set, get) => ({
   ...emptyListSlice(),
   onboarding: emptyListSlice(),
   singleRider: null,
+  currentDelivery: null,
+  applicationReview: null,
   loadingSingle: false,
   suspending: false,
   creatingRider: false,
@@ -107,21 +67,35 @@ export const useRiderStore = create<RiderState>((set, get) => ({
   fetchRiders: async (params) => {
     const page = params?.page ?? 1;
     const search = params?.search?.trim() ?? "";
-    set({ loading: true, error: null, lastQuery: { page, search } });
+    const rider_status = params?.rider_status?.trim() ?? "";
+    set({ loading: true, error: null, lastQuery: { page, search, rider_status } });
 
     try {
-      const normalized = applySearch(
-        await requestRiders(RIDERS_API.list, { page, search }),
-        search,
-      );
-      set({
-        riders: normalized.riders,
-        currentPage: normalized.currentPage,
-        lastPage: normalized.lastPage,
-        perPage: normalized.perPage,
-        totalItems: normalized.totalItems,
+      const query: Record<string, string | number> = {
+        page,
+        per_page: PAGE_SIZE,
+      };
+      if (search) query.search = search;
+      if (rider_status) query.rider_status = rider_status;
+
+      const { data } = await api.get<RidersListResponse>(RIDERS_API.list, {
+        params: query,
       });
-      return true;
+
+      if (data?.status === "success" && data.data) {
+        const pagination = data.data.pagination ?? {};
+        set({
+          riders: data.data.items ?? [],
+          currentPage: pagination.current_page ?? 1,
+          lastPage: pagination.last_page ?? 1,
+          perPage: pagination.per_page ?? PAGE_SIZE,
+          totalItems: pagination.total ?? data.data.items?.length ?? 0,
+        });
+        return true;
+      }
+
+      set({ error: "Failed to fetch riders", riders: [] });
+      return false;
     } catch (error) {
       console.error("Error fetching riders =>", error);
       set({ error: "Failed to fetch riders", riders: [] });
@@ -144,83 +118,35 @@ export const useRiderStore = create<RiderState>((set, get) => ({
     }));
 
     try {
-      let normalized = applySearch(
-        await requestRiders(RIDERS_API.onboarding, { page, search }),
-        search,
-      );
+      const query: Record<string, string | number> = { page, per_page: PAGE_SIZE };
+      if (search) query.search = search;
 
-      if (normalized.riders.length === 0) {
-        try {
-          const allRiders = await requestRiders(RIDERS_API.list, { page: 1, search: "" });
-          const filtered = filterOnboardingFromRiders(allRiders.riders);
-          if (filtered.length > 0) {
-            normalized = applySearch(
-              {
-                riders: filtered,
-                currentPage: 1,
-                lastPage: 1,
-                perPage: filtered.length || PAGE_SIZE,
-                totalItems: filtered.length,
-              },
-              search,
-            );
-          }
-        } catch {
-          // keep empty onboarding result from primary request
-        }
-      }
+      const { data } = await api.get<OnboardingListResponse>(RIDERS_API.onboarding, {
+        params: query,
+      });
+      const parsed = parseOnboardingListResponse(data);
 
       set((state) => ({
         onboarding: {
           ...state.onboarding,
-          riders: normalized.riders,
-          currentPage: normalized.currentPage,
-          lastPage: normalized.lastPage,
-          perPage: normalized.perPage,
-          totalItems: normalized.totalItems,
+          riders: parsed.riders,
+          currentPage: parsed.currentPage,
+          lastPage: parsed.lastPage,
+          perPage: parsed.perPage,
+          totalItems: parsed.totalItems,
         },
       }));
       return true;
     } catch (error) {
       console.error("Error fetching onboarding riders =>", error);
-
-      try {
-        const fallback = applySearch(
-          await requestRiders(RIDERS_API.list, { page, search }),
-          search,
-        );
-        const filtered = filterOnboardingFromRiders(fallback.riders);
-        const result = applySearch(
-          {
-            riders: filtered,
-            currentPage: 1,
-            lastPage: 1,
-            perPage: filtered.length || PAGE_SIZE,
-            totalItems: filtered.length,
-          },
-          search,
-        );
-        set((state) => ({
-          onboarding: {
-            ...state.onboarding,
-            riders: result.riders,
-            currentPage: result.currentPage,
-            lastPage: result.lastPage,
-            perPage: result.perPage,
-            totalItems: result.totalItems,
-          },
-        }));
-        return true;
-      } catch {
-        set((state) => ({
-          onboarding: {
-            ...state.onboarding,
-            error: "Failed to fetch onboarding riders",
-            riders: [],
-          },
-        }));
-        return false;
-      }
+      set((state) => ({
+        onboarding: {
+          ...state.onboarding,
+          error: "Failed to fetch onboarding riders",
+          riders: [],
+        },
+      }));
+      return false;
     } finally {
       set((state) => ({
         onboarding: { ...state.onboarding, loading: false },
@@ -228,37 +154,68 @@ export const useRiderStore = create<RiderState>((set, get) => ({
     }
   },
 
-  fetchSingleRider: async (id, preview) => {
+  fetchRiderDetail: async (id) => {
     set({
       loadingSingle: true,
-      singleRider: preview ?? null,
+      singleRider: null,
+      currentDelivery: null,
+      applicationReview: null,
     });
-
     try {
       const { data } = await api.get<RiderDetailResponse>(riderDetailPath(id));
-      if (data?.data) {
-        set({ singleRider: normalizeAdminRider(data.data) });
+      if (data?.data?.rider) {
+        set({
+          singleRider: data.data.rider,
+          currentDelivery: data.data.current_delivery ?? null,
+        });
         return true;
       }
+      return false;
     } catch (error) {
       console.error("Error fetching rider profile =>", error);
-      const state = get();
       const fromList =
-        state.riders.find((r) => r.id === id) ??
-        state.onboarding.riders.find((r) => r.id === id) ??
-        preview ??
+        get().riders.find((r) => r.id === id) ??
+        get().onboarding.riders.find((r) => r.id === id) ??
         null;
       if (fromList) {
-        set({ singleRider: fromList });
+        set({ singleRider: fromList, currentDelivery: null });
         return true;
       }
-      set({ singleRider: null });
+      set({ singleRider: null, currentDelivery: null });
       return false;
     } finally {
       set({ loadingSingle: false });
     }
+  },
 
-    return false;
+  fetchApplicationReview: async (id) => {
+    set({
+      loadingSingle: true,
+      singleRider: null,
+      currentDelivery: null,
+      applicationReview: null,
+    });
+    try {
+      const { data } = await api.get<RiderApplicationReviewResponse>(
+        riderApplicationReviewPath(id),
+      );
+      if (data?.data) {
+        set({ applicationReview: data.data });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error fetching rider application review =>", error);
+      const fromList = get().onboarding.riders.find((r) => r.id === id) ?? null;
+      if (fromList) {
+        set({ applicationReview: { rider: fromList, documents: fromList.documents ?? [] } });
+        return true;
+      }
+      set({ applicationReview: null });
+      return false;
+    } finally {
+      set({ loadingSingle: false });
+    }
   },
 
   suspendRider: async (id) => {
@@ -272,8 +229,8 @@ export const useRiderStore = create<RiderState>((set, get) => ({
           singleRider: state.singleRider
             ? {
                 ...state.singleRider,
-                status: "suspended",
                 rider_status: "suspended",
+                rider_status_label: "Suspended",
               }
             : null,
         }));
@@ -288,7 +245,40 @@ export const useRiderStore = create<RiderState>((set, get) => ({
     }
   },
 
-  clearSingleRider: () => set({ singleRider: null, loadingSingle: false }),
+  unsuspendRider: async (id) => {
+    set({ suspending: true });
+    try {
+      const { data } = await api.post<{ status?: string; message?: string }>(
+        riderUnsuspendPath(id),
+      );
+      if (data?.status === "success") {
+        set((state) => ({
+          singleRider: state.singleRider
+            ? {
+                ...state.singleRider,
+                rider_status: "active",
+                rider_status_label: "Active",
+              }
+            : null,
+        }));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error unsuspending rider =>", error);
+      return false;
+    } finally {
+      set({ suspending: false });
+    }
+  },
+
+  clearSingleRider: () =>
+    set({
+      singleRider: null,
+      currentDelivery: null,
+      applicationReview: null,
+      loadingSingle: false,
+    }),
 
   createRider: async (payload) => {
     set({ creatingRider: true });
@@ -296,17 +286,21 @@ export const useRiderStore = create<RiderState>((set, get) => ({
       const body = {
         name: payload.name.trim(),
         full_name: payload.name.trim(),
-        phone: payload.phone.trim(),
+        phone_number: payload.phone.trim(),
         email: payload.email.trim(),
         ...(payload.vehicle_type ? { vehicle_type: payload.vehicle_type } : {}),
       };
 
-      const { data } = await api.post<CreateRiderResponse>(RIDERS_API.list, body);
+      const { data } = await api.post<CreateRiderResponse>(RIDERS_API.create, body);
 
       if (data?.status === "success") {
         const { lastQuery } = get();
         const onboardingSearch = get().onboarding.lastQuery.search;
-        await get().fetchRiders({ page: 1, search: lastQuery.search });
+        await get().fetchRiders({
+          page: 1,
+          search: lastQuery.search,
+          rider_status: lastQuery.rider_status,
+        });
         await get().fetchOnboardingRiders({ page: 1, search: onboardingSearch });
         return { ok: true, message: data.message };
       }
@@ -344,7 +338,11 @@ export const useRiderStore = create<RiderState>((set, get) => ({
       if (data?.status === "success") {
         const onboardingSearch = get().onboarding.lastQuery.search;
         await get().fetchOnboardingRiders({ page: 1, search: onboardingSearch });
-        await get().fetchRiders({ page: 1, search: get().lastQuery.search });
+        await get().fetchRiders({
+          page: 1,
+          search: get().lastQuery.search,
+          rider_status: get().lastQuery.rider_status,
+        });
         return true;
       }
       return false;

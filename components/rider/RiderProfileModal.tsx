@@ -1,5 +1,6 @@
 "use client";
 
+import { ReassignRiderOrderModal } from "@/components/rider/ReassignRiderOrderModal";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,8 +15,10 @@ import {
   getRiderActiveOrderNumber,
   getRiderJoinedDate,
   getRiderLocation,
+  getRiderPhone,
   getRiderRating,
   getRiderStatus,
+  RIDER_EMPTY,
   getRiderStatusBadgeClass,
   riderHasActiveDelivery,
 } from "@/lib/riderDisplay";
@@ -30,7 +33,7 @@ type RiderProfileModalProps = {
   onClose: () => void;
   riderId: number | null;
   previewRider?: AdminRider | null;
-  onOpenChat?: () => void;
+  onOpenChat?: (riderId: number) => void;
   onRiderUpdated?: () => void;
 };
 
@@ -53,17 +56,21 @@ export function RiderProfileModal({
 }: RiderProfileModalProps) {
   const {
     singleRider,
+    currentDelivery,
     loadingSingle,
     suspending,
-    fetchSingleRider,
+    fetchRiderDetail,
     suspendRider,
+    unsuspendRider,
     clearSingleRider,
   } = useRiderStore();
 
+  const [isReassignOpen, setIsReassignOpen] = React.useState(false);
+
   React.useEffect(() => {
     if (!isOpen || !riderId) return;
-    void fetchSingleRider(riderId, previewRider ?? null);
-  }, [isOpen, riderId, previewRider, fetchSingleRider]);
+    void fetchRiderDetail(riderId);
+  }, [isOpen, riderId, fetchRiderDetail]);
 
   const handleClose = () => {
     clearSingleRider();
@@ -72,31 +79,55 @@ export function RiderProfileModal({
 
   const rider = singleRider;
   const status = rider ? getRiderStatus(rider) : "";
-  const statusLabel = formatRiderStatusLabel(status);
-  const showActiveDelivery = rider ? riderHasActiveDelivery(rider) : false;
-  const activeOrderNumber = rider ? getRiderActiveOrderNumber(rider) : null;
+  const statusLabel = rider?.rider_status_label?.trim()
+    ? rider.rider_status_label
+    : formatRiderStatusLabel(status);
+  const showActiveDelivery =
+    currentDelivery != null ||
+    (rider ? riderHasActiveDelivery(rider) : false);
+  const activeOrderNumber =
+    currentDelivery?.order_number?.trim() ||
+    (rider ? getRiderActiveOrderNumber(rider) : null);
 
-  const handleSuspend = async () => {
+  const isSuspended = status.toLowerCase() === "suspended";
+
+  const handleSuspendToggle = async () => {
     if (!rider?.id) return;
-    const ok = await suspendRider(rider.id);
+    const ok = isSuspended
+      ? await unsuspendRider(rider.id)
+      : await suspendRider(rider.id);
     if (ok) {
-      toast.success(`${rider.name} has been suspended`);
+      toast.success(
+        isSuspended
+          ? `${rider.name} has been unsuspended`
+          : `${rider.name} has been suspended`,
+      );
       onRiderUpdated?.();
     } else {
-      toast.error("Failed to suspend rider");
+      toast.error(isSuspended ? "Failed to unsuspend rider" : "Failed to suspend rider");
     }
   };
 
   const handleOpenChat = () => {
+    if (!rider?.id) return;
+    const riderId = rider.id;
     handleClose();
-    onOpenChat?.();
+    onOpenChat?.(riderId);
   };
 
   const handleReassign = () => {
-    toast.info("Reassign order will be available soon");
+    if (!rider?.id) return;
+    setIsReassignOpen(true);
+  };
+
+  const handleReassignSuccess = () => {
+    if (!rider?.id) return;
+    void fetchRiderDetail(rider.id);
+    onRiderUpdated?.();
   };
 
   return (
+    <>
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
@@ -107,7 +138,7 @@ export function RiderProfileModal({
         className="max-w-[520px] w-[95vw] p-0 gap-0 overflow-hidden"
         showCloseButton={false}
       >
-        {loadingSingle && !rider ? (
+        {loadingSingle ? (
           <>
             <DialogTitle className="sr-only">Loading rider profile</DialogTitle>
             <div className="flex flex-col items-center justify-center min-h-[320px] gap-3 px-6 py-12">
@@ -156,7 +187,7 @@ export function RiderProfileModal({
                       Currently Delivering
                     </p>
                     <p className="text-2xl font-bold text-[#0B1E66] tracking-tight">
-                      {activeOrderNumber ?? "—"}
+                      {activeOrderNumber ?? RIDER_EMPTY}
                     </p>
                   </div>
                   <Button
@@ -171,8 +202,8 @@ export function RiderProfileModal({
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <InfoCell label="Phone" value={rider.phone || "—"} />
-                <InfoCell label="Email" value={rider.email || "—"} />
+                <InfoCell label="Phone" value={getRiderPhone(rider) || RIDER_EMPTY} />
+                <InfoCell label="Email" value={rider.email || RIDER_EMPTY} />
                 <InfoCell label="Rating" value={getRiderRating(rider)} />
                 <InfoCell
                   label="Completed Orders"
@@ -187,15 +218,21 @@ export function RiderProfileModal({
               <Button
                 type="button"
                 variant="outline"
-                disabled={suspending || status.toLowerCase() === "suspended"}
-                onClick={() => void handleSuspend()}
-                className="flex-1 h-12 rounded-xl border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 bg-white"
+                disabled={suspending}
+                onClick={() => void handleSuspendToggle()}
+                className={
+                  isSuspended
+                    ? "flex-1 h-12 rounded-xl border-[#0B1E66] text-[#0B1E66] hover:bg-[#E8EEFF] bg-white"
+                    : "flex-1 h-12 rounded-xl border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 bg-white"
+                }
               >
                 {suspending ? (
                   <>
                     <Loader2 className="size-4 mr-2 animate-spin" />
-                    Suspending…
+                    {isSuspended ? "Unsuspending…" : "Suspending…"}
                   </>
+                ) : isSuspended ? (
+                  "Unsuspend Rider"
                 ) : (
                   "Suspend Rider"
                 )}
@@ -212,5 +249,17 @@ export function RiderProfileModal({
         )}
       </DialogContent>
     </Dialog>
+
+    {rider ? (
+      <ReassignRiderOrderModal
+        isOpen={isReassignOpen}
+        onClose={() => setIsReassignOpen(false)}
+        riderId={rider.id}
+        riderName={rider.name}
+        orderNumber={activeOrderNumber}
+        onSuccess={handleReassignSuccess}
+      />
+    ) : null}
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import api from "@/lib/api";
+import { userManagementDetailPath } from "@/data/userManagement";
 import { create } from "zustand";
 import type {
   AdminSingleUserResponse,
@@ -86,7 +87,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ loadingAdminDetails: true, adminDetailsError: null });
     try {
       const { data } = await api.get<AdminDetailsResponse>(
-        `/api/admin/users/${id}/admin-details`
+        userManagementDetailPath(id),
       );
       set({ adminDetails: data.data ?? null });
       return true;
