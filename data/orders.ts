@@ -26,6 +26,10 @@ export function orderSwitchToSendboxPath(orderId: number | string): string {
   return `/api/admin/sendbox/orders/${orderId}/switch-to-sendbox`;
 }
 
+export function orderSwitchToPlentiPath(orderId: number | string): string {
+  return `/api/admin/plenti/orders/${orderId}/create`;
+}
+
 /*
 export const mockOrders = [
   {

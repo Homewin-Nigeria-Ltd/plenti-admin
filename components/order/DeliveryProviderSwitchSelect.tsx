@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import {
   orderSwitchToKwikPath,
+  orderSwitchToPlentiPath,
   orderSwitchToSendboxPath,
 } from "@/data/orders";
 import api from "@/lib/api";
@@ -19,9 +20,16 @@ import * as React from "react";
 import { toast } from "sonner";
 
 const PROVIDER_OPTIONS = [
+  { value: "plenti", label: "Plenti" },
   { value: "kwik", label: "Kwik" },
   { value: "sendbox", label: "Sendbox" },
 ] as const;
+
+const SWITCH_PATH = {
+  plenti: orderSwitchToPlentiPath,
+  kwik: orderSwitchToKwikPath,
+  sendbox: orderSwitchToSendboxPath,
+} as const;
 
 type ProviderValue = (typeof PROVIDER_OPTIONS)[number]["value"];
 
@@ -88,10 +96,7 @@ export function DeliveryProviderSwitchSelect({
     setSwitching(true);
 
     try {
-      const path =
-        provider === "kwik"
-          ? orderSwitchToKwikPath(orderId)
-          : orderSwitchToSendboxPath(orderId);
+      const path = SWITCH_PATH[provider](orderId);
 
       const { data } = await api.post<{ status?: string; message?: string }>(
         path,
