@@ -20,7 +20,7 @@ import {
 import * as React from "react";
 import { toast } from "sonner";
 import { useOrderStore } from "@/store/useOrderStore";
-import { ORDERS_API, orderStatusUpdatePath } from "@/data/orders";
+import { ORDERS_API, orderStatusUpdatePath, plentiDeliveryBroadcastPath } from "@/data/orders";
 import {
   ADMIN_ORDER_LIFECYCLE_STATUSES,
   type AdminOrderLifecycleStatus,
@@ -201,6 +201,7 @@ export function OrderDetailsModal({
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isMarkingInTransit, setIsMarkingInTransit] = React.useState(false);
   const [isIssuingRefund, setIsIssuingRefund] = React.useState(false);
+  const [isBroadcasting, setIsBroadcasting] = React.useState(false);
   const [lifecycleStatusUpdating, setLifecycleStatusUpdating] =
     React.useState<AdminOrderLifecycleStatus | null>(null);
   const {
@@ -306,6 +307,38 @@ export function OrderDetailsModal({
       toast.error("Failed to issue refund");
     } finally {
       setIsIssuingRefund(false);
+    }
+  };
+
+  const broadcastDelivery = async () => {
+    const deliveryId = getOrderPlentiDeliveryId(singleOrder);
+    if (deliveryId == null) {
+      toast.error(
+        "This order has no Plenti delivery to broadcast. Switch the provider to Plenti first.",
+      );
+      return;
+    }
+
+    setIsBroadcasting(true);
+    try {
+      const { data } = await api.patch<{ status?: string; message?: string }>(
+        plentiDeliveryBroadcastPath(deliveryId),
+      );
+
+      if (data?.status === "error" || data?.status === "failed") {
+        toast.error(data?.message ?? "Failed to broadcast delivery");
+        return;
+      }
+
+      toast.success(data?.message ?? "Delivery broadcast to riders");
+      if (selectedId) {
+        await fetchSingleOrders(selectedId, { silent: true });
+      }
+    } catch (error) {
+      console.error("Error broadcasting delivery =>", error);
+      toast.error("Failed to broadcast delivery");
+    } finally {
+      setIsBroadcasting(false);
     }
   };
 
@@ -680,6 +713,24 @@ export function OrderDetailsModal({
                         : "—"}
                     </p>
                   </div>
+
+                  {canAssignOrderRider && (
+                    <Button
+                      type="button"
+                      onClick={() => void broadcastDelivery()}
+                      disabled={isBroadcasting}
+                      className="w-full h-[52px] rounded-xl bg-[#0B1E66] hover:bg-[#0B1E66]/90 disabled:opacity-50"
+                    >
+                      {isBroadcasting ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="size-4 animate-spin" />
+                          Broadcasting…
+                        </span>
+                      ) : (
+                        "Broadcast to Riders"
+                      )}
+                    </Button>
+                  )}
 
                   <Button
                     variant="outline"

@@ -36,6 +36,12 @@ export function orderAssignmentReassignPath(
   return `/api/admin/rider-management/order-assignments/${deliveryId}/reassign`;
 }
 
+export function plentiDeliveryBroadcastPath(
+  deliveryId: number | string,
+): string {
+  return `/api/admin/plenti/deliveries/${deliveryId}/broadcast`;
+}
+
 /*
 export const mockOrders = [
   {
