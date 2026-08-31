@@ -30,6 +30,12 @@ export function orderSwitchToPlentiPath(orderId: number | string): string {
   return `/api/admin/plenti/orders/${orderId}/create`;
 }
 
+export function orderAssignmentReassignPath(
+  deliveryId: number | string,
+): string {
+  return `/api/admin/order-assignments/${deliveryId}/reassign`;
+}
+
 /*
 export const mockOrders = [
   {
