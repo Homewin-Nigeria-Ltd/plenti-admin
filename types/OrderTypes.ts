@@ -52,6 +52,7 @@ export type OrderUser = {
 };
 
 export type RiderInfo = {
+  rider_id?: number | null;
   rider_name?: string | null;
   assigned_at?: string | null;
   rider_phone?: string | null;
@@ -102,6 +103,17 @@ export type Order = {
   delivery_provider?: string | null;
   delivery_provider_label?: string | null;
   delivery_type_label?: string | null;
+  plenti_delivery_id?: number | null;
+  delivery_id?: number | null;
+  order_assignment_id?: number | null;
+  rider_id?: number | null;
+  rider?: { id?: number; name?: string | null } | null;
+  plenti_delivery?: { id?: number; rider_id?: number | null } | null;
+  order_assignment?: {
+    id?: number;
+    delivery_id?: number | null;
+    rider_id?: number | null;
+  } | null;
   delivery_selection?: {
     provider?: string;
     provider_label?: string;

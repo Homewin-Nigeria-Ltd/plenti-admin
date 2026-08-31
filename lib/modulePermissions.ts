@@ -200,6 +200,10 @@ export function getOrderPermissions(account: AccountLike) {
         "order.assign-rider",
         "orders.delivery.assign",
         "order.delivery.assign",
+        "orders.rider.reassign",
+        "order.rider.reassign",
+        "orders.reassign-rider",
+        "order.reassign-rider",
       ]),
     canDeleteOrder:
       hasAnyRole(account, ["admin", "super-admin"]) ||

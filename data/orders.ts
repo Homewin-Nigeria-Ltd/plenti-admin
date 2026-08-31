@@ -26,6 +26,16 @@ export function orderSwitchToSendboxPath(orderId: number | string): string {
   return `/api/admin/sendbox/orders/${orderId}/switch-to-sendbox`;
 }
 
+export function orderSwitchToPlentiPath(orderId: number | string): string {
+  return `/api/admin/plenti/orders/${orderId}/create`;
+}
+
+export function orderAssignmentReassignPath(
+  deliveryId: number | string,
+): string {
+  return `/api/admin/rider-management/order-assignments/${deliveryId}/reassign`;
+}
+
 /*
 export const mockOrders = [
   {

@@ -24,6 +24,7 @@ import { ORDERS_API, orderStatusUpdatePath } from "@/data/orders";
 import {
   ADMIN_ORDER_LIFECYCLE_STATUSES,
   type AdminOrderLifecycleStatus,
+  type Order,
 } from "@/types/OrderTypes";
 import Image from "next/image";
 import api from "@/lib/api";
@@ -33,6 +34,16 @@ import { cn } from "@/lib/utils";
 
 const AssignRiderModal = dynamic(
   () => import("./AssignRiderModal").then((mod) => mod.AssignRiderModal),
+  {
+    ssr: false,
+  },
+);
+
+const ReassignOrderDeliveryModal = dynamic(
+  () =>
+    import("./ReassignOrderDeliveryModal").then(
+      (mod) => mod.ReassignOrderDeliveryModal,
+    ),
   {
     ssr: false,
   },
@@ -140,6 +151,33 @@ function inTransitMenuItemClass() {
   );
 }
 
+function asPositiveId(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function getOrderPlentiDeliveryId(order: Order | null): number | null {
+  if (!order) return null;
+  return (
+    asPositiveId(order.plenti_delivery_id) ??
+    asPositiveId(order.delivery_id) ??
+    asPositiveId(order.order_assignment_id) ??
+    asPositiveId(order.plenti_delivery?.id) ??
+    asPositiveId(order.order_assignment?.delivery_id)
+  );
+}
+
+function getOrderAssignedRiderId(order: Order | null): number | null {
+  if (!order) return null;
+  return (
+    asPositiveId(order.rider_id) ??
+    asPositiveId(order.rider?.id) ??
+    asPositiveId(order.plenti_delivery?.rider_id) ??
+    asPositiveId(order.order_assignment?.rider_id) ??
+    asPositiveId(order.payment_gateway_response?.rider_info?.rider_id)
+  );
+}
+
 export function OrderDetailsModal({
   isOpen,
   onClose,
@@ -158,6 +196,7 @@ export function OrderDetailsModal({
     lastQuery,
   } = useOrderStore();
   const [assignOpen, setAssignOpen] = React.useState(false);
+  const [reassignOpen, setReassignOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isMarkingInTransit, setIsMarkingInTransit] = React.useState(false);
@@ -383,6 +422,22 @@ export function OrderDetailsModal({
                             onSelect={() => setAssignOpen(true)}
                           >
                             Assign Rider
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-[#D69200] text-[14px] place-self-center"
+                            onSelect={() => {
+                              const deliveryId =
+                                getOrderPlentiDeliveryId(singleOrder);
+                              if (deliveryId == null) {
+                                toast.error(
+                                  "This order has no Plenti delivery to reassign. Switch the provider to Plenti first.",
+                                );
+                                return;
+                              }
+                              setReassignOpen(true);
+                            }}
+                          >
+                            Reassign Rider
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                         </>
@@ -641,6 +696,22 @@ export function OrderDetailsModal({
           isOpen={assignOpen && canAssignOrderRider}
           onClose={() => setAssignOpen(false)}
         />
+        <ReassignOrderDeliveryModal
+          isOpen={reassignOpen && canAssignOrderRider}
+          onClose={() => setReassignOpen(false)}
+          deliveryId={getOrderPlentiDeliveryId(singleOrder)}
+          orderNumber={singleOrder?.order_number}
+          currentRiderId={getOrderAssignedRiderId(singleOrder)}
+          onSuccess={async () => {
+            if (!selectedId) return;
+            await fetchSingleOrders(selectedId, { silent: true });
+            await fetchOrders({
+              page: lastQuery.page,
+              search: lastQuery.search,
+              delivery_provider: lastQuery.delivery_provider || undefined,
+            });
+          }}
+        />
         {canDeleteOrder && (
           <DeleteOrderConfirm
             open={confirmOpen}
@@ -670,6 +741,7 @@ export function OrderDetailsModal({
 
                 setConfirmOpen(false);
                 setAssignOpen(false);
+                setReassignOpen(false);
                 onClose();
 
                 toast.success("Order has been cancelled");
