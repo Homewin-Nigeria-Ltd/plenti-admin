@@ -33,7 +33,7 @@ export function orderSwitchToPlentiPath(orderId: number | string): string {
 export function orderAssignmentReassignPath(
   deliveryId: number | string,
 ): string {
-  return `/api/admin/order-assignments/${deliveryId}/reassign`;
+  return `/api/admin/rider-management/order-assignments/${deliveryId}/reassign`;
 }
 
 /*
