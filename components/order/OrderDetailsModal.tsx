@@ -644,6 +644,12 @@ export function OrderDetailsModal({
                           {singleOrder?.phone_number ?? "—"}
                         </p>
                       </div>
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Rider</p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.plenti_delivery?.rider_name ?? "—"}
+                        </p>
+                      </div>
                       {selectedId != null && (
                         <KwikPickupWarehouseSelect
                           orderId={selectedId}
