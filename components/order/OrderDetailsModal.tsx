@@ -738,12 +738,14 @@ export function OrderDetailsModal({
                     </Button>
                   )}
 
+                  {/*
                   <Button
                     variant="outline"
                     className="w-full h-[52px] rounded-xl border-primary text-primary hover:bg-primary hover:text-white cursor-pointer"
                   >
                     View Order Timeline
                   </Button>
+                  */}
                 </div>
               )}
             </div>
