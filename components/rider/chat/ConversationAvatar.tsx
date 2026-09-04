@@ -39,8 +39,8 @@ export function ConversationAvatar({
   conversation: RiderChatConversation;
   showOnlineDot?: boolean;
 }) {
-  const name = conversation.rider.name;
-  const avatarUrl = conversation.rider.avatar ?? null;
+  const name = conversation.rider?.name ?? "Rider";
+  const avatarUrl = conversation.rider?.avatar ?? null;
 
   return (
     <AvatarWithOnlineStatus online={showOnlineDot}>
