@@ -130,8 +130,8 @@ export default function RiderChat() {
   const messageContext = React.useMemo(
     () => ({
       adminUserId: accountId ?? null,
-      riderId: activeThread?.rider.id ?? activeConversation?.rider.id ?? null,
-      customerId: activeThread?.customer.id ?? activeConversation?.customer.id ?? null,
+      riderId: activeThread?.rider?.id ?? activeConversation?.rider?.id ?? null,
+      customerId: activeThread?.customer?.id ?? activeConversation?.customer?.id ?? null,
     }),
     [accountId, activeConversation, activeThread],
   );
@@ -258,7 +258,7 @@ export default function RiderChat() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <p className="font-semibold text-sm text-[#101928] truncate">
-                          {conversation.rider.name}
+                          {conversation.rider?.name ?? "Rider"}
                         </p>
                         <div className="flex items-center gap-1 shrink-0">
                           {conversation.unread_count === 0 ? (
@@ -309,7 +309,7 @@ export default function RiderChat() {
                         activeThread?.order_number || activeConversation?.order_number
                           ? `Order ${activeThread?.order_number ?? activeConversation?.order_number}`
                           : null,
-                        activeThread?.customer.name ?? activeConversation?.customer.name,
+                        activeThread?.customer?.name ?? activeConversation?.customer?.name,
                         headerRider.last_seen_label ?? "last seen recently",
                       ]
                         .filter(Boolean)
