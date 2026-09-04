@@ -5,7 +5,7 @@ export const ORDERS_API = {
   getStatistics: "/api/admin/orders/statistics",
   markInTransit: "/api/admin/orders",
   issueRefund: "/api/admin/orders",
-  assignRider: "/api/admin/orders",
+  assignRider: "/api/admin/plenti/orders",
   getRiders: "/api/admin/riders",
   kwikPickupLocations: "/api/admin/kwik/pickup-locations",
 } as const;

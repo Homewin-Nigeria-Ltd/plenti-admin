@@ -311,6 +311,7 @@ export function OrderDetailsModal({
   };
 
   const broadcastDelivery = async () => {
+    if (!singleOrder?.can_broadcast_to_riders) return;
     const deliveryId = getOrderPlentiDeliveryId(singleOrder);
     if (deliveryId == null) {
       toast.error(
@@ -720,7 +721,7 @@ export function OrderDetailsModal({
                     </p>
                   </div>
 
-                  {canAssignOrderRider && (
+                  {singleOrder?.can_broadcast_to_riders && (
                     <Button
                       type="button"
                       onClick={() => void broadcastDelivery()}
