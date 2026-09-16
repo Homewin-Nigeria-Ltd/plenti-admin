@@ -36,7 +36,48 @@ const NOTIFICATION_MODULES: NotificationModuleRoute[] = [
   { name: "Systems Configuration", href: "/configuration", keywords: ["configuration", "settings", "system"] },
 ];
 
+function asPositiveId(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function parseAdminResourcePath(
+  actionUrl: string | null | undefined,
+): { resource: string; id: number } | null {
+  if (!actionUrl) return null;
+  try {
+    const path = actionUrl.startsWith("http")
+      ? new URL(actionUrl).pathname
+      : actionUrl;
+    const match = path.match(
+      /(?:^|\/)(?:admin\/)?(orders|deliveries|riders)\/(\d+)/i,
+    );
+    if (!match) return null;
+    const id = asPositiveId(match[2]);
+    if (id == null) return null;
+    return { resource: match[1].toLowerCase(), id };
+  } catch {
+    return null;
+  }
+}
+
 export function resolveNotificationActionUrl(n: NotificationApiEntry): string | null {
+  const payload = n.data ?? {};
+  const orderId = asPositiveId(payload.order_id);
+  const riderId = asPositiveId(payload.rider_id);
+  const parsed = parseAdminResourcePath(n.action_url);
+
+  if (parsed?.resource === "orders") return `/order?orderId=${parsed.id}`;
+  if (parsed?.resource === "riders") return `/rider?riderId=${parsed.id}`;
+  if (parsed?.resource === "deliveries") {
+    if (orderId) return `/order?orderId=${orderId}`;
+    if (riderId) return `/rider?riderId=${riderId}`;
+    return "/rider";
+  }
+
+  if (orderId) return `/order?orderId=${orderId}`;
+  if (riderId) return `/rider?riderId=${riderId}`;
+
   const lower = (n.title ?? "").toLowerCase();
   for (const mod of NOTIFICATION_MODULES) {
     if (mod.keywords.some((keyword) => lower.includes(keyword))) {

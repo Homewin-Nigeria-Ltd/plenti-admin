@@ -89,6 +89,7 @@ export type AdminRider = {
   active_order_id?: number | null;
   current_order?: string | RiderActiveOrder | null;
   active_order?: RiderActiveOrder | null;
+  is_assignable?: boolean;
 };
 
 export type RiderApplicationReviewData = {

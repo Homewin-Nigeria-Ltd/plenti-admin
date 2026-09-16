@@ -212,6 +212,8 @@ export function OrderDetailsModal({
     canDeleteOrder,
   } = React.useMemo(() => getOrderPermissions(account), [account]);
 
+  const canAssignThisOrder = Boolean(singleOrder?.can_assign_rider);
+
   const canShowActionMenu =
     canMarkOrderInTransit ||
     canIssueOrderRefund ||
@@ -451,12 +453,14 @@ export function OrderDetailsModal({
 
                       {canAssignOrderRider && (
                         <>
-                          <DropdownMenuItem
-                            className="text-[#D69200] text-[14px] place-self-center"
-                            onSelect={() => setAssignOpen(true)}
-                          >
-                            Assign Rider
-                          </DropdownMenuItem>
+                          {canAssignThisOrder && (
+                            <DropdownMenuItem
+                              className="text-[#D69200] text-[14px] place-self-center"
+                              onSelect={() => setAssignOpen(true)}
+                            >
+                              Assign Rider
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             className="text-[#D69200] text-[14px] place-self-center"
                             onSelect={() => {
@@ -753,7 +757,7 @@ export function OrderDetailsModal({
           </>
         )}
         <AssignRiderModal
-          isOpen={assignOpen && canAssignOrderRider}
+          isOpen={assignOpen && canAssignOrderRider && canAssignThisOrder}
           onClose={() => setAssignOpen(false)}
         />
         <ReassignOrderDeliveryModal

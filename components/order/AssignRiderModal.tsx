@@ -24,6 +24,7 @@ import { ORDERS_API } from "@/data/orders";
 import type { AdminRider } from "@/types/RiderTypes";
 import type { RidersResponse } from "@/types/OrderTypes";
 import api from "@/lib/api";
+import axios from "axios";
 
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat("en-NG", {
@@ -31,6 +32,14 @@ const formatCurrency = (n: number) =>
     currency: "NGN",
     minimumFractionDigits: 2,
   }).format(n);
+
+function getApiErrorMessage(error: unknown): string | null {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { message?: string } | undefined;
+    if (typeof data?.message === "string") return data.message;
+  }
+  return null;
+}
 
 export function AssignRiderModal({
   isOpen,
@@ -48,16 +57,18 @@ export function AssignRiderModal({
   const fetchRiders = React.useCallback(async () => {
     setLoadingRiders(true);
     try {
-      const { data } = await api.get<RidersResponse>(ORDERS_API.getRiders);
+      const { data } = await api.get<RidersResponse>(ORDERS_API.getRiders, {
+        params: { is_assignable: true },
+      });
 
       if (data?.status === "success" && Array.isArray(data?.data)) {
-        setRiders(data.data);
+        setRiders(data.data.filter((rider) => rider.is_assignable !== false));
       } else {
-        toast.error("Failed to fetch riders");
+        toast.error(data?.message || "Failed to fetch riders");
       }
     } catch (error) {
       console.error("Error fetching riders =>", error);
-      toast.error("Failed to fetch riders");
+      toast.error(getApiErrorMessage(error) ?? "Failed to fetch riders");
     } finally {
       setLoadingRiders(false);
     }
@@ -82,19 +93,21 @@ export function AssignRiderModal({
         { rider_id: Number(selectedRiderId) }
       );
 
-      if (data?.status === "success") {
-        toast.success(
-          `Rider has been assigned to order ${singleOrder.order_number ?? ""}`
-        );
-        await fetchSingleOrders(singleOrder.id, { silent: true });
-        onClose();
-        setSelectedRiderId("");
-      } else {
+      if (data?.status === "error" || data?.status === "failed") {
         toast.error(data?.message || "Failed to assign rider");
+        return;
       }
+
+      toast.success(
+        data?.message ||
+          `Rider has been assigned to order ${singleOrder.order_number ?? ""}`,
+      );
+      await fetchSingleOrders(singleOrder.id, { silent: true });
+      onClose();
+      setSelectedRiderId("");
     } catch (error) {
       console.error("Error assigning rider =>", error);
-      toast.error("Failed to assign rider");
+      toast.error(getApiErrorMessage(error) ?? "Failed to assign rider");
     } finally {
       setIsAssigning(false);
     }

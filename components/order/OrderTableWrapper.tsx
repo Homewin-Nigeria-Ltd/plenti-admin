@@ -16,6 +16,7 @@ import { getOrderPermissions } from "@/lib/modulePermissions";
 import { useAccountStore } from "@/store/useAccountStore";
 import { Search } from "lucide-react";
 import { useOrderStore } from "@/store/useOrderStore";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "use-debounce";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -43,6 +44,10 @@ function formatOrderDate(iso: string) {
 
 export default function OrderTableWrapper() {
   const account = useAccountStore((state) => state.account);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const orderIdParam = searchParams.get("orderId");
   const {
     orders,
     loading,
@@ -65,6 +70,13 @@ export default function OrderTableWrapper() {
     () => getOrderPermissions(account),
     [account],
   );
+
+  React.useEffect(() => {
+    const id = Number(orderIdParam);
+    if (!canViewOrderDetails || !Number.isFinite(id) || id <= 0) return;
+    setSelectedId(id);
+    setOpen(true);
+  }, [orderIdParam, canViewOrderDetails]);
 
   React.useEffect(() => {
     if (!canViewOrderList) return;
@@ -311,6 +323,9 @@ export default function OrderTableWrapper() {
               setOpen(false);
               setSingleOrder();
               setSelectedId(null);
+              if (orderIdParam) {
+                router.replace(pathname);
+              }
             }}
           />
         </>
