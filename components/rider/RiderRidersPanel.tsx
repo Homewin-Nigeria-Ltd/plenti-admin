@@ -5,7 +5,7 @@ import RiderSearchBar from "@/components/rider/RiderSearchBar";
 import RidersTable from "@/components/rider/RidersTable";
 import type { AdminRider } from "@/types/RiderTypes";
 import { useRiderStore } from "@/store/useRiderStore";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { useDebounce } from "use-debounce";
 
@@ -16,6 +16,9 @@ const RiderProfileModal = dynamic(
 
 export default function RiderRidersPanel() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const riderIdParam = searchParams.get("riderId");
   const [search, setSearch] = React.useState("");
   const [debouncedSearch] = useDebounce(search, 400);
   const [hasRequested, setHasRequested] = React.useState(false);
@@ -43,6 +46,13 @@ export default function RiderRidersPanel() {
     };
   }, [debouncedSearch, fetchRiders]);
 
+  React.useEffect(() => {
+    const id = Number(riderIdParam);
+    if (!Number.isFinite(id) || id <= 0) return;
+    setSelectedRider((current) => (current?.id === id ? current : { id } as AdminRider));
+    setProfileOpen(true);
+  }, [riderIdParam]);
+
   return (
     <>
       <RiderSearchBar value={search} onChange={setSearch} />
@@ -66,6 +76,9 @@ export default function RiderRidersPanel() {
         onClose={() => {
           setProfileOpen(false);
           setSelectedRider(null);
+          if (riderIdParam) {
+            router.replace(pathname);
+          }
         }}
         riderId={selectedRider?.id ?? null}
         previewRider={selectedRider}

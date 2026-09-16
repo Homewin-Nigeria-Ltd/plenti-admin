@@ -12,6 +12,13 @@ export type NotificationApiEntry = {
   read_at: string | null;
   is_important: boolean;
   action_url: string | null;
+  data?: {
+    order_id?: number;
+    rider_id?: number;
+    delivery_id?: number;
+    order_number?: string;
+    [key: string]: unknown;
+  } | null;
   icon: string | null;
   channel: string;
   delivered_at: string | null;

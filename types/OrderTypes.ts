@@ -114,6 +114,7 @@ export type Order = {
     rider_name?: string | null;
   } | null;
   can_broadcast_to_riders?: boolean;
+  can_assign_rider?: boolean;
   order_assignment?: {
     id?: number;
     delivery_id?: number | null;
