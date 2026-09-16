@@ -234,3 +234,28 @@ export function getInitialsFromName(name: string): string {
   const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
   return (first + last).toUpperCase() || "R";
 }
+
+function riderBankValue(
+  rider: AdminRider,
+  key: "bank_name" | "bank_account_number" | "bank_account_name",
+): string {
+  const raw = rider[key];
+  return typeof raw === "string" && raw.trim() ? raw.trim() : RIDER_EMPTY;
+}
+
+export function getRiderBankName(rider: AdminRider): string {
+  return riderBankValue(rider, "bank_name");
+}
+
+export function getRiderBankAccountNumber(rider: AdminRider): string {
+  return riderBankValue(rider, "bank_account_number");
+}
+
+export function getRiderBankAccountName(rider: AdminRider): string {
+  return riderBankValue(rider, "bank_account_name");
+}
+
+export function getRiderHasBankAccount(rider: AdminRider): string {
+  if (typeof rider.has_bank_account !== "boolean") return RIDER_EMPTY;
+  return rider.has_bank_account ? "Yes" : "No";
+}

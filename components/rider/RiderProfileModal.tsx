@@ -13,6 +13,10 @@ import {
   formatRiderStatusLabel,
   getCompletedRides,
   getRiderActiveOrderNumber,
+  getRiderBankAccountName,
+  getRiderBankAccountNumber,
+  getRiderBankName,
+  getRiderHasBankAccount,
   getRiderJoinedDate,
   getRiderLocation,
   getRiderPhone,
@@ -211,6 +215,22 @@ export function RiderProfileModal({
                 />
                 <InfoCell label="Location" value={getRiderLocation(rider)} />
                 <InfoCell label="Date Joined" value={getRiderJoinedDate(rider)} />
+                <InfoCell
+                  label="Bank Name"
+                  value={getRiderBankName(rider)}
+                />
+                <InfoCell
+                  label="Account Number"
+                  value={getRiderBankAccountNumber(rider)}
+                />
+                <InfoCell
+                  label="Account Name"
+                  value={getRiderBankAccountName(rider)}
+                />
+                <InfoCell
+                  label="Has Bank Account"
+                  value={getRiderHasBankAccount(rider)}
+                />
               </div>
             </div>
 

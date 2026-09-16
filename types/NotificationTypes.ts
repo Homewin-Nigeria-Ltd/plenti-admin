@@ -196,3 +196,27 @@ export type SendNotificationPayload = {
   title: string;
   message: string;
 };
+
+/** GET/PUT {{admin_url}}/notifications/settings */
+export type NotificationLoginAttemptSettings = {
+  email: boolean;
+  push: boolean;
+  sms: boolean;
+};
+
+export type NotificationPushSettings = {
+  do_not_notify: boolean;
+  all_reminders: boolean;
+};
+
+export type NotificationReminderSettings = {
+  do_not_notify: boolean;
+  important_reminders_only: boolean;
+  all_reminders: boolean;
+};
+
+export type NotificationPreferenceSettings = {
+  login_attempts: NotificationLoginAttemptSettings;
+  push_notifications: NotificationPushSettings;
+  reminders: NotificationReminderSettings;
+};
