@@ -72,6 +72,8 @@ export type MarketingState = {
   createPromoCodeError: string | null;
   updatingPromoCode: boolean;
   updatePromoCodeError: string | null;
+  deletingPromoCode: boolean;
+  deletePromoCodeError: string | null;
 
   // FAQs
   faqs: Faq[];
@@ -99,6 +101,7 @@ export type MarketingState = {
     id: number,
     payload: CreatePromoCodeRequest
   ) => Promise<boolean>;
+  deletePromoCode: (id: number) => Promise<boolean>;
   fetchFaqs: (search?: string) => Promise<boolean>;
   createFaq: (payload: CreateFaqRequest) => Promise<boolean>;
   updateFaq: (id: number, payload: CreateFaqRequest) => Promise<boolean>;
