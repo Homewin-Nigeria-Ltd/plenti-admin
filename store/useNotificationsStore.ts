@@ -7,6 +7,7 @@ import type {
   CreateTemplateRequest,
   NotificationApiEntry,
   NotificationData,
+  NotificationPreferenceSettings,
   NotificationsResponse,
   NotificationStatsResponse,
   NotificationTemplate,
@@ -16,6 +17,7 @@ import {
   getNotificationPaginationMeta,
   getNotificationRows,
   getUnreadNotificationCount,
+  NOTIFICATION_SETTINGS_ENDPOINT,
   NOTIFICATIONS_ENDPOINT,
   NOTIFICATIONS_UNREAD_ENDPOINT,
 } from "@/lib/notification";
@@ -36,6 +38,10 @@ type NotificationsStore = {
   creatingTemplate: boolean;
   templates: NotificationTemplate[];
   campaigns: Campaign[] | null;
+  notificationSettings: NotificationPreferenceSettings | null;
+  loadingNotificationSettings: boolean;
+  savingNotificationSettings: boolean;
+  notificationSettingsError: string | null;
 
   setActiveTab: (tab: NotificationTab) => void;
   fetchNotifications: (options?: {
@@ -55,6 +61,10 @@ type NotificationsStore = {
   deleteCampaign: (campaignId: string) => Promise<boolean>;
   getCampaigns: () => Promise<void>;
   sendNotification: (payload: SendNotificationPayload) => Promise<boolean>;
+  fetchNotificationSettings: () => Promise<boolean>;
+  updateNotificationSettings: (
+    payload: NotificationPreferenceSettings
+  ) => Promise<boolean>;
 };
 
 export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
@@ -70,6 +80,10 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
   creatingTemplate: false,
   templates: [] as NotificationTemplate[],
   campaigns: null,
+  notificationSettings: null,
+  loadingNotificationSettings: false,
+  savingNotificationSettings: false,
+  notificationSettingsError: null,
 
   setActiveTab: (tab) => {
     set({ activeTab: tab });
@@ -435,4 +449,128 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
       return false;
     }
   },
+
+  fetchNotificationSettings: async () => {
+    set({
+      loadingNotificationSettings: true,
+      notificationSettingsError: null,
+    });
+    try {
+      const { data } = await api.get<{
+        status?: string;
+        success?: boolean;
+        message?: string;
+        data?: NotificationPreferenceSettings;
+      }>(NOTIFICATION_SETTINGS_ENDPOINT);
+
+      if (data?.status && data.status !== "success") {
+        const message =
+          typeof data.message === "string"
+            ? data.message
+            : "Failed to load notification settings";
+        set({ notificationSettingsError: message });
+        return false;
+      }
+
+      const settings = parseNotificationSettings(data?.data ?? data);
+      if (!settings) {
+        set({
+          notificationSettingsError: "Failed to load notification settings",
+        });
+        return false;
+      }
+
+      set({ notificationSettings: settings });
+      return true;
+    } catch (error: unknown) {
+      const message =
+        getNotificationSettingsError(error) ??
+        "Failed to load notification settings";
+      console.error("Error fetching notification settings =>", error);
+      set({ notificationSettingsError: message });
+      return false;
+    } finally {
+      set({ loadingNotificationSettings: false });
+    }
+  },
+
+  updateNotificationSettings: async (payload) => {
+    set({ savingNotificationSettings: true, notificationSettingsError: null });
+    try {
+      const { data } = await api.put<{
+        status?: string;
+        success?: boolean;
+        message?: string;
+        data?: NotificationPreferenceSettings;
+      }>(NOTIFICATION_SETTINGS_ENDPOINT, payload);
+
+      if (data?.status && data.status !== "success") {
+        const message =
+          typeof data.message === "string"
+            ? data.message
+            : "Failed to save notification settings";
+        toast.error(message);
+        set({ notificationSettingsError: message });
+        return false;
+      }
+
+      const settings =
+        parseNotificationSettings(data?.data ?? data) ?? payload;
+      set({ notificationSettings: settings });
+      return true;
+    } catch (error: unknown) {
+      const message =
+        getNotificationSettingsError(error) ??
+        "Failed to save notification settings";
+      console.error("Error updating notification settings =>", error);
+      toast.error(message);
+      set({ notificationSettingsError: message });
+      return false;
+    } finally {
+      set({ savingNotificationSettings: false });
+    }
+  },
 }));
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function asBoolean(value: unknown, fallback = false): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function parseNotificationSettings(
+  raw: unknown
+): NotificationPreferenceSettings | null {
+  if (!isRecord(raw)) return null;
+  const login = raw.login_attempts;
+  const push = raw.push_notifications;
+  const reminders = raw.reminders;
+  if (!isRecord(login) || !isRecord(push) || !isRecord(reminders)) return null;
+  return {
+    login_attempts: {
+      email: asBoolean(login.email),
+      push: asBoolean(login.push),
+      sms: asBoolean(login.sms),
+    },
+    push_notifications: {
+      do_not_notify: asBoolean(push.do_not_notify),
+      all_reminders: asBoolean(push.all_reminders),
+    },
+    reminders: {
+      do_not_notify: asBoolean(reminders.do_not_notify),
+      important_reminders_only: asBoolean(reminders.important_reminders_only),
+      all_reminders: asBoolean(reminders.all_reminders),
+    },
+  };
+}
+
+function getNotificationSettingsError(err: unknown): string | null {
+  if (!isRecord(err)) return null;
+  const response = err.response;
+  if (!isRecord(response)) return null;
+  const data = response.data;
+  if (!isRecord(data)) return null;
+  return typeof data.message === "string" ? data.message : null;
+}

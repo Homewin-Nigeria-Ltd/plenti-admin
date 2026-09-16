@@ -6,6 +6,7 @@ import type {
 
 export const NOTIFICATIONS_ENDPOINT = "/api/admin/notifications";
 export const NOTIFICATIONS_UNREAD_ENDPOINT = `${NOTIFICATIONS_ENDPOINT}/unread`;
+export const NOTIFICATION_SETTINGS_ENDPOINT = `${NOTIFICATIONS_ENDPOINT}/settings`;
 
 type NotificationModuleRoute = {
   name: string;

@@ -90,6 +90,10 @@ export type AdminRider = {
   current_order?: string | RiderActiveOrder | null;
   active_order?: RiderActiveOrder | null;
   is_assignable?: boolean;
+  bank_name?: string | null;
+  bank_account_number?: string | null;
+  bank_account_name?: string | null;
+  has_bank_account?: boolean;
 };
 
 export type RiderApplicationReviewData = {
