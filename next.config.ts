@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "plenti-laravel.staging-api.motopayng.com",
+      },
+      {
+        protocol: "https",
         hostname: "plenti-laravel.plentinig.com",
       },
       {
