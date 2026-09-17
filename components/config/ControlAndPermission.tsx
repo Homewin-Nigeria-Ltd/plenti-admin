@@ -2,7 +2,17 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { useRolesStore } from "@/store/useRolesStore";
 import type { Role } from "@/types/RoleTypes";
 import {
@@ -28,7 +38,8 @@ function roleToPreviewPermissions(role: Role): Permission[] {
 }
 
 export default function ControlAndPermission() {
-  const { roles, loadingRoles, rolesError, fetchRoles } = useRolesStore();
+  const { roles, loadingRoles, rolesError, fetchRoles, deleteRole, deletingRole } =
+    useRolesStore();
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = React.useState(false);
   const [previewRoleData, setPreviewRoleData] = React.useState<RoleData | null>(
@@ -36,6 +47,7 @@ export default function ControlAndPermission() {
   );
   const [selectedRole, setSelectedRole] = React.useState<Role | null>(null);
   const [editingRole, setEditingRole] = React.useState<Role | null>(null);
+  const [roleToDelete, setRoleToDelete] = React.useState<Role | null>(null);
 
   React.useEffect(() => {
     fetchRoles();
@@ -80,6 +92,16 @@ export default function ControlAndPermission() {
     setEditingRole(null);
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!roleToDelete) return;
+    const success = await deleteRole(roleToDelete.id);
+    if (success) {
+      toast.success(`${roleToDelete.name} has been deleted`);
+      if (selectedRole?.id === roleToDelete.id) closePreview();
+      setRoleToDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-end">
@@ -118,9 +140,21 @@ export default function ControlAndPermission() {
                 }}
                 className="bg-white rounded-lg border border-[#EAECF0] p-4 sm:p-6 cursor-pointer hover:border-[#0B1E66]/30 transition-colors text-left h-fit"
               >
-                <h3 className="font-semibold text-primary-700 text-base sm:text-lg mb-2">
-                  {role.name}
-                </h3>
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <h3 className="font-semibold text-primary-700 text-base sm:text-lg">
+                    {role.name}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRoleToDelete(role);
+                    }}
+                    className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
+                  >
+                    Delete
+                  </button>
+                </div>
                 <p className="text-xs sm:text-sm text-neutral-500 mb-3 sm:mb-4">
                   {role.description}
                 </p>
@@ -160,6 +194,49 @@ export default function ControlAndPermission() {
           onEdit={() => selectedRole && openEditModal(selectedRole)}
         />
       )}
+
+      <AlertDialog
+        open={roleToDelete != null}
+        onOpenChange={(open) => {
+          if (!open && deletingRole) return;
+          if (!open) setRoleToDelete(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-[12px] border-0 p-6 sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-[#0B1E66] text-[18px]">
+              Delete {roleToDelete?.name}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="sr-only">
+              Confirm role deletion
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row gap-3 sm:justify-center">
+            <AlertDialogCancel
+              disabled={deletingRole}
+              className="rounded-[8px] h-12 border border-[#0B1E66] bg-transparent text-[#0B1E66] hover:bg-gray-50"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deletingRole}
+              className="rounded-[8px] h-12"
+              onClick={() => void handleDeleteConfirm()}
+            >
+              {deletingRole ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin" />
+                  Deleting…
+                </span>
+              ) : (
+                "Delete Role"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

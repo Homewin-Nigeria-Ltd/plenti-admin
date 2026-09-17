@@ -52,5 +52,10 @@ export type RolesState = {
   roles: Role[];
   loadingRoles: boolean;
   rolesError: string | null;
+  deletingRole: boolean;
+  deleteRoleError: string | null;
   fetchRoles: () => Promise<boolean>;
+  createRole: (payload: CreateRoleRequest) => Promise<boolean>;
+  updateRole: (id: number, payload: UpdateRoleRequest) => Promise<boolean>;
+  deleteRole: (id: number) => Promise<boolean>;
 };

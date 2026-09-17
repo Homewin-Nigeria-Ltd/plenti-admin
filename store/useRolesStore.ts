@@ -5,6 +5,7 @@ import type {
   Role,
   UpdateRoleRequest,
 } from "@/types/RoleTypes";
+import { toast } from "sonner";
 import { create } from "zustand";
 
 function getApiErrorMessage(err: unknown): string | null {
@@ -24,6 +25,9 @@ export const useRolesStore = create<{
   fetchRoles: () => Promise<boolean>;
   createRole: (payload: CreateRoleRequest) => Promise<boolean>;
   updateRole: (id: number, payload: UpdateRoleRequest) => Promise<boolean>;
+  deleteRole: (id: number) => Promise<boolean>;
+  deletingRole: boolean;
+  deleteRoleError: string | null;
   permissionsByModule: PermissionsByModule;
   loadingPermissions: boolean;
   permissionsError: string | null;
@@ -32,6 +36,8 @@ export const useRolesStore = create<{
   roles: [],
   loadingRoles: false,
   rolesError: null,
+  deletingRole: false,
+  deleteRoleError: null,
   permissionsByModule: {},
   loadingPermissions: false,
   permissionsError: null,
@@ -116,6 +122,40 @@ export const useRolesStore = create<{
     } catch (error: unknown) {
       console.error("Error updating role =>", error);
       return false;
+    }
+  },
+
+  deleteRole: async (id: number) => {
+    set({ deletingRole: true, deleteRoleError: null });
+    try {
+      const { data } = await api.delete<{
+        status?: string;
+        message?: string;
+        data?: null;
+      }>(`/api/admin/roles/${id}`);
+
+      if (data?.status && data.status !== "success") {
+        const message =
+          typeof data.message === "string"
+            ? data.message
+            : "Failed to delete role";
+        toast.error(message);
+        set({ deleteRoleError: message });
+        return false;
+      }
+
+      set({
+        roles: get().roles.filter((r) => r.id !== id),
+      });
+      return true;
+    } catch (error: unknown) {
+      const message = getApiErrorMessage(error) ?? "Failed to delete role";
+      console.error("Error deleting role =>", error);
+      toast.error(message);
+      set({ deleteRoleError: message });
+      return false;
+    } finally {
+      set({ deletingRole: false });
     }
   },
 
