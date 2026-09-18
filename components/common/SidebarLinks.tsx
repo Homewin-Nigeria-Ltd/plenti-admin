@@ -94,6 +94,10 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
   const router = useRouter();
   const account = useAccountStore((state) => state.account);
   const {
+    canViewDashboard,
+    canViewNotifications,
+    canViewUserManagement,
+    canViewConfiguration,
     canViewProductManagement,
     canViewInventoryManagement,
     canViewSalesManagement,
@@ -107,6 +111,9 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
   const visibleLinks = React.useMemo(
     () =>
       links.filter((link) => {
+        if (link.href === "/dashboard") return canViewDashboard;
+        if (link.href === "/notification") return canViewNotifications;
+        if (link.href.startsWith("/user")) return canViewUserManagement;
         if (link.href === "/product") return canViewProductManagement;
         if (link.href === "/inventory") return canViewInventoryManagement;
         if (link.href === "/sales") return canViewSalesManagement;
@@ -118,6 +125,9 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
         return true;
       }),
     [
+      canViewDashboard,
+      canViewNotifications,
+      canViewUserManagement,
       canViewProductManagement,
       canViewInventoryManagement,
       canViewSalesManagement,
@@ -218,33 +228,35 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
                 )}
               </li>
             )}
-            <li
-              className={cn(
-                configActive
-                  ? "bg-primary text-white rounded-lg"
-                  : "text-[#98A2B3]",
-                linkBaseClass,
-              )}
-              data-href="/configuration"
-              onClick={handleNav}
-              title={collapsed ? "Systems Configuration" : undefined}
-            >
-              <span className="shrink-0">
-                <Image
-                  src={
-                    configActive
-                      ? "/sidebarIcons/setting.png"
-                      : "/sidebarIcons/setting-grey.png"
-                  }
-                  alt="System Configuration"
-                  width={24}
-                  height={24}
-                />
-              </span>
-              {!collapsed && (
-                <span className="min-w-0 truncate">Systems Configuration</span>
-              )}
-            </li>
+            {canViewConfiguration && (
+              <li
+                className={cn(
+                  configActive
+                    ? "bg-primary text-white rounded-lg"
+                    : "text-[#98A2B3]",
+                  linkBaseClass,
+                )}
+                data-href="/configuration"
+                onClick={handleNav}
+                title={collapsed ? "Systems Configuration" : undefined}
+              >
+                <span className="shrink-0">
+                  <Image
+                    src={
+                      configActive
+                        ? "/sidebarIcons/setting.png"
+                        : "/sidebarIcons/setting-grey.png"
+                    }
+                    alt="System Configuration"
+                    width={24}
+                    height={24}
+                  />
+                </span>
+                {!collapsed && (
+                  <span className="min-w-0 truncate">Systems Configuration</span>
+                )}
+              </li>
+            )}
           </>
         );
       })()}
