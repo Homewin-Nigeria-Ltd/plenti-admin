@@ -127,7 +127,7 @@ export type CreateUserRequest = {
   department: string;
   position: string;
   phone: string;
-  role: "admin" | "customer";
+  role: string;
   password: string;
 };
 
