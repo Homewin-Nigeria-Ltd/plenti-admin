@@ -158,6 +158,9 @@ export default function ControlAndPermission() {
                 <p className="text-xs sm:text-sm text-neutral-500 mb-3 sm:mb-4">
                   {role.description}
                 </p>
+                <p className="text-xs text-neutral-500 mb-3">
+                  Users with this role ({role.users_count ?? 0})
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {shown.map((name, index) => (
                     <span key={index} className="badge badge-secondary">
@@ -190,7 +193,7 @@ export default function ControlAndPermission() {
           roleName={previewRoleData.roleName}
           description={previewRoleData.description}
           permissions={previewRoleData.permissions}
-          userCount={0}
+          userCount={selectedRole?.users_count ?? 0}
           onEdit={() => selectedRole && openEditModal(selectedRole)}
         />
       )}

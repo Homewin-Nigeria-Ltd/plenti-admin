@@ -42,7 +42,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
     department: "",
     position: "",
     phone: "",
-    role: "admin" as "admin" | "customer",
+    role: "",
     password: "",
   });
   const [showPassword, setShowPassword] = React.useState(false);
@@ -91,7 +91,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
       department: "",
       position: "",
       phone: "",
-      role: "admin",
+      role: "",
       password: "",
     });
     setFieldErrors({});
@@ -240,11 +240,11 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
 
             <div className="space-y-2">
               <Select
-                value={formData.role}
+                value={formData.role || undefined}
                 onValueChange={(value) =>
                   setFormData((prev) => ({
                     ...prev,
-                    role: value as "admin" | "customer",
+                    role: value,
                   }))
                 }
               >

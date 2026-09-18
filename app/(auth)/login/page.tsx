@@ -27,9 +27,12 @@ const LoginPage = () => {
         </Suspense>
         <p className="text-[16px] font-normal text-secondary/50 text-center mt-3">
           Forgot Password?{" "}
-          <span className="underline text-primary cursor-pointer">
+          <a
+            href="mailto:sales@plentinig.com"
+            className="underline text-primary cursor-pointer"
+          >
             Reach to Admin
-          </span>
+          </a>
         </p>
       </div>
     </div>
