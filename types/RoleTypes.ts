@@ -29,6 +29,7 @@ export type Role = {
   slug: string;
   description: string;
   is_system: boolean;
+  users_count?: number;
   created_at: string;
   updated_at: string;
   permissions: RolePermission[];
