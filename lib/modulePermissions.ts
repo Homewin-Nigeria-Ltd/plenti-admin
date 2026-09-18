@@ -4,6 +4,25 @@ type AccountLike = Parameters<typeof hasAnyRole>[0];
 
 export function getSidebarPermissions(account: AccountLike) {
   return {
+    canViewDashboard:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["dashboard.view"]),
+    canViewNotifications:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, [
+        "notifications.view",
+        "notification.view",
+      ]),
+    canViewUserManagement:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, ["users.view", "user.view"]),
+    canViewConfiguration:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, [
+        "configuration.view",
+        "settings.view",
+        "config.view",
+      ]),
     canViewProductManagement:
       hasAnyRole(account, ["admin", "super-admin"]) ||
       hasAnyPermission(account, ["products.view", "product.view"]),
