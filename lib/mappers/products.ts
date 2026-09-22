@@ -30,6 +30,13 @@ export function mapAdminProductsToUi(
         ? bulkPriceRaw
         : price;
 
+    const discountPercentRaw =
+      typeof p.discount_percent === "string"
+        ? Number(p.discount_percent)
+        : typeof p.discount_percent === "number"
+          ? p.discount_percent
+          : null;
+
     const images =
       Array.isArray(p.images) && p.images.length > 0
         ? p.images.filter((u): u is string => typeof u === "string" && !!u)
@@ -53,6 +60,11 @@ export function mapAdminProductsToUi(
       bulkPriceRaw:
         typeof bulkPriceRaw === "number" && Number.isFinite(bulkPriceRaw)
           ? bulkPriceRaw
+          : null,
+      discountPercent:
+        typeof discountPercentRaw === "number" &&
+        Number.isFinite(discountPercentRaw)
+          ? discountPercentRaw
           : null,
       category: (p.category?.name ?? "Uncategorized") as ProductCategory,
       categoryId: p.category?.id ?? p.category_id ?? null,

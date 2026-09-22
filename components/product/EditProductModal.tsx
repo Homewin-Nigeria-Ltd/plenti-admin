@@ -78,6 +78,7 @@ export function EditProductModal({
   const [initialStock, setInitialStock] = React.useState("");
   const [minBulkQuantity, setMinBulkQuantity] = React.useState("");
   const [bulkPrice, setBulkPrice] = React.useState("");
+  const [discountPercent, setDiscountPercent] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [uploadingImage, setUploadingImage] = React.useState(false);
@@ -126,6 +127,9 @@ export function EditProductModal({
       );
       setMinBulkQuantity(
         product.minBulkQuantity == null ? "" : String(product.minBulkQuantity)
+      );
+      setDiscountPercent(
+        product.discountPercent == null ? "" : String(product.discountPercent)
       );
       setSelectedFile(null);
       setCropImageSrc(null);
@@ -250,6 +254,24 @@ export function EditProductModal({
         return;
       }
       if (bulk !== originalBulk) patch.bulk_price = bulk;
+    }
+
+    const discountRaw = discountPercent.trim();
+    const originalDiscount =
+      typeof product.discountPercent === "number"
+        ? product.discountPercent
+        : null;
+    if (discountRaw === "") {
+      if (originalDiscount !== null && originalDiscount !== 0) {
+        patch.discount_percent = 0;
+      }
+    } else {
+      const discount = Number(discountRaw);
+      if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
+        toast.error("Please enter a valid discount percent (0–100)");
+        return;
+      }
+      if (discount !== originalDiscount) patch.discount_percent = discount;
     }
 
     // Upload image only if user selected a new one
@@ -525,6 +547,21 @@ export function EditProductModal({
                 className="form-control"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-discountPercent">Discount Percent</Label>
+            <Input
+              id="edit-discountPercent"
+              type="number"
+              min={0}
+              max={100}
+              step="0.01"
+              placeholder="Discount Percent"
+              value={discountPercent}
+              onChange={(e) => setDiscountPercent(e.target.value)}
+              className="form-control"
+            />
           </div>
 
           <div className="space-y-2">

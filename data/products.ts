@@ -16,6 +16,7 @@ export type Product = {
   bulkPrice: number;
   minBulkQuantity?: number | null;
   bulkPriceRaw?: number | null;
+  discountPercent?: number | null;
   category: ProductCategory;
   categoryId?: number | null;
   subCategory: string;
