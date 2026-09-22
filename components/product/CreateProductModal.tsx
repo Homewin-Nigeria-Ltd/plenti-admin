@@ -26,6 +26,11 @@ import { useInventoryStore } from "@/store/useInventoryStore";
 import { useFilePreview } from "@/lib/useFilePreview";
 import { uploadImage } from "@/lib/upload";
 import { ImageCropDialog } from "@/components/common/ImageCropDialog";
+import {
+  BulkTiersFields,
+  emptyBulkTierRow,
+  parseBulkTierRows,
+} from "@/components/product/BulkTiersFields";
 
 type CreateProductModalProps = {
   isOpen: boolean;
@@ -54,8 +59,7 @@ export function CreateProductModal({
   const [selectedWarehouseId, setSelectedWarehouseId] = React.useState<
     number | null
   >(null);
-  const [minBulkQuantity, setMinBulkQuantity] = React.useState("");
-  const [bulkPrice, setBulkPrice] = React.useState("");
+  const [bulkTiers, setBulkTiers] = React.useState([emptyBulkTierRow()]);
   const [discountPercent, setDiscountPercent] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -129,8 +133,7 @@ export function CreateProductModal({
 
     const price = Number(amount);
     const stock = Number(initialStock);
-    const minBulk = Number(minBulkQuantity);
-    const bulk = Number(bulkPrice);
+    const parsedTiers = parseBulkTierRows(bulkTiers);
 
     if (!Number.isFinite(price) || price <= 0) {
       toast.error("Please enter a valid price");
@@ -140,12 +143,12 @@ export function CreateProductModal({
       toast.error("Please enter a valid stock quantity");
       return;
     }
-    if (!Number.isFinite(minBulk) || minBulk <= 0) {
-      toast.error("Please enter a valid min bulk quantity");
+    if (!parsedTiers.ok) {
+      toast.error(parsedTiers.message);
       return;
     }
-    if (!Number.isFinite(bulk) || bulk <= 0) {
-      toast.error("Please enter a valid bulk price");
+    if (parsedTiers.tiers.length === 0) {
+      toast.error("Please add at least one bulk tier");
       return;
     }
 
@@ -181,8 +184,7 @@ export function CreateProductModal({
       category_id: resolvedCategoryId,
       is_active: true,
       image_urls: [uploadResult.url],
-      min_bulk_quantity: minBulk,
-      bulk_price: bulk,
+      bulk_tiers: parsedTiers.tiers,
       discount_percent: discount,
       warehouses: [
         {
@@ -205,8 +207,7 @@ export function CreateProductModal({
     setAmount("");
     setInitialStock("");
     setSelectedWarehouseId(null);
-    setMinBulkQuantity("");
-    setBulkPrice("");
+    setBulkTiers([emptyBulkTierRow()]);
     setDiscountPercent("");
     setSelectedFile(null);
     setCropImageSrc(null);
@@ -393,33 +394,11 @@ export function CreateProductModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="minBulkQuantity">Min Bulk Quantity</Label>
-                <Input
-                  id="minBulkQuantity"
-                  type="number"
-                  placeholder="Min Bulk Quantity"
-                  value={minBulkQuantity}
-                  onChange={(e) => setMinBulkQuantity(e.target.value)}
-                  className="form-control"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bulkPrice">Bulk Price</Label>
-                <Input
-                  id="bulkPrice"
-                  type="number"
-                  placeholder="Bulk Price"
-                  value={bulkPrice}
-                  onChange={(e) => setBulkPrice(e.target.value)}
-                  className="form-control"
-                  required
-                />
-              </div>
-            </div>
+            <BulkTiersFields
+              idPrefix="create-bulk"
+              value={bulkTiers}
+              onChange={setBulkTiers}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="discountPercent">Discount Percent</Label>

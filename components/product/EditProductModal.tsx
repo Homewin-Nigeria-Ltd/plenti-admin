@@ -25,6 +25,12 @@ import type { Product } from "@/data/products";
 import { useProductStore } from "@/store/useProductStore";
 import { useFilePreview } from "@/lib/useFilePreview";
 import { ImageCropDialog } from "@/components/common/ImageCropDialog";
+import {
+  BulkTiersFields,
+  bulkTiersEqual,
+  parseBulkTierRows,
+  productToBulkTierRows,
+} from "@/components/product/BulkTiersFields";
 import type {
   UpdateProductRequest,
   UploadImageResponse,
@@ -76,8 +82,7 @@ export function EditProductModal({
   const [subCategoryId, setSubCategoryId] = React.useState<number | null>(null);
   const [amount, setAmount] = React.useState("");
   const [initialStock, setInitialStock] = React.useState("");
-  const [minBulkQuantity, setMinBulkQuantity] = React.useState("");
-  const [bulkPrice, setBulkPrice] = React.useState("");
+  const [bulkTiers, setBulkTiers] = React.useState(productToBulkTierRows({}));
   const [discountPercent, setDiscountPercent] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -122,12 +127,7 @@ export function EditProductModal({
       setDescription(product.description);
       setAmount(String(product.price ?? ""));
       setInitialStock(String(product.stockLevel ?? ""));
-      setBulkPrice(
-        product.bulkPriceRaw == null ? "" : String(product.bulkPriceRaw)
-      );
-      setMinBulkQuantity(
-        product.minBulkQuantity == null ? "" : String(product.minBulkQuantity)
-      );
+      setBulkTiers(productToBulkTierRows(product));
       setDiscountPercent(
         product.discountPercent == null ? "" : String(product.discountPercent)
       );
@@ -224,36 +224,16 @@ export function EditProductModal({
       patch.category_id = resolvedCategoryId;
     }
 
-    // min_bulk_quantity: allow blank -> null (and only send if it changed)
-    const minBulkRaw = minBulkQuantity.trim();
-    const originalMinBulk =
-      typeof product.minBulkQuantity === "number"
-        ? product.minBulkQuantity
-        : null;
-    if (minBulkRaw === "") {
-      if (originalMinBulk !== null) patch.min_bulk_quantity = null;
-    } else {
-      const minBulk = Number(minBulkRaw);
-      if (!Number.isFinite(minBulk) || minBulk <= 0) {
-        toast.error("Please enter a valid min bulk quantity");
-        return;
-      }
-      if (minBulk !== originalMinBulk) patch.min_bulk_quantity = minBulk;
+    const parsedTiers = parseBulkTierRows(bulkTiers);
+    if (!parsedTiers.ok) {
+      toast.error(parsedTiers.message);
+      return;
     }
-
-    // bulk_price: allow blank -> null (and only send if it changed)
-    const bulkRaw = bulkPrice.trim();
-    const originalBulk =
-      typeof product.bulkPriceRaw === "number" ? product.bulkPriceRaw : null;
-    if (bulkRaw === "") {
-      if (originalBulk !== null) patch.bulk_price = null;
-    } else {
-      const bulk = Number(bulkRaw);
-      if (!Number.isFinite(bulk) || bulk <= 0) {
-        toast.error("Please enter a valid bulk price");
-        return;
-      }
-      if (bulk !== originalBulk) patch.bulk_price = bulk;
+    const originalTiers = productToBulkTierRows(product);
+    const originalParsed = parseBulkTierRows(originalTiers);
+    const originalBulkTiers = originalParsed.ok ? originalParsed.tiers : [];
+    if (!bulkTiersEqual(parsedTiers.tiers, originalBulkTiers)) {
+      patch.bulk_tiers = parsedTiers.tiers;
     }
 
     const discountRaw = discountPercent.trim();
@@ -523,31 +503,11 @@ export function EditProductModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-minBulkQuantity">Min Bulk Quantity</Label>
-              <Input
-                id="edit-minBulkQuantity"
-                type="number"
-                placeholder="Min Bulk Quantity"
-                value={minBulkQuantity}
-                onChange={(e) => setMinBulkQuantity(e.target.value)}
-                className="form-control"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-bulkPrice">Bulk Price</Label>
-              <Input
-                id="edit-bulkPrice"
-                type="number"
-                placeholder="Bulk Price"
-                value={bulkPrice}
-                onChange={(e) => setBulkPrice(e.target.value)}
-                className="form-control"
-              />
-            </div>
-          </div>
+          <BulkTiersFields
+            idPrefix="edit-bulk"
+            value={bulkTiers}
+            onChange={setBulkTiers}
+          />
 
           <div className="space-y-2">
             <Label htmlFor="edit-discountPercent">Discount Percent</Label>
