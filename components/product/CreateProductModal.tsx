@@ -56,6 +56,7 @@ export function CreateProductModal({
   >(null);
   const [minBulkQuantity, setMinBulkQuantity] = React.useState("");
   const [bulkPrice, setBulkPrice] = React.useState("");
+  const [discountPercent, setDiscountPercent] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [uploadingImage, setUploadingImage] = React.useState(false);
@@ -148,6 +149,16 @@ export function CreateProductModal({
       return;
     }
 
+    const discountRaw = discountPercent.trim();
+    let discount = 0;
+    if (discountRaw !== "") {
+      discount = Number(discountRaw);
+      if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
+        toast.error("Please enter a valid discount percent (0–100)");
+        return;
+      }
+    }
+
     if (!selectedWarehouseId) {
       toast.error("Please select a warehouse");
       return;
@@ -172,6 +183,7 @@ export function CreateProductModal({
       image_urls: [uploadResult.url],
       min_bulk_quantity: minBulk,
       bulk_price: bulk,
+      discount_percent: discount,
       warehouses: [
         {
           warehouse_id: selectedWarehouseId,
@@ -195,6 +207,7 @@ export function CreateProductModal({
     setSelectedWarehouseId(null);
     setMinBulkQuantity("");
     setBulkPrice("");
+    setDiscountPercent("");
     setSelectedFile(null);
     setCropImageSrc(null);
     setIsCropOpen(false);
@@ -406,6 +419,21 @@ export function CreateProductModal({
                   required
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="discountPercent">Discount Percent</Label>
+              <Input
+                id="discountPercent"
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                placeholder="Discount Percent"
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(e.target.value)}
+                className="form-control"
+              />
             </div>
 
             <div className="space-y-2">
