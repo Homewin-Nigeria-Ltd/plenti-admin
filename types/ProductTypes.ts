@@ -1,4 +1,4 @@
-import type { Product } from "@/data/products";
+import type { Product, ProductBulkTier } from "@/data/products";
 
 export type AdminCategory = {
   id: number;
@@ -26,8 +26,7 @@ export type CreateProductRequest = {
   category_id: number;
   is_active: boolean;
   image_urls: string[];
-  min_bulk_quantity: number;
-  bulk_price: number;
+  bulk_tiers: ProductBulkTier[];
   discount_percent?: number;
   warehouses?: Array<{
     warehouse_id: number;
@@ -48,6 +47,7 @@ export type CreateProductResponse = {
     stock: number;
     min_bulk_quantity: number | null;
     bulk_price: number | null;
+    bulk_tiers?: ProductBulkTier[];
     category_id: number | null;
     image_url: string | null;
     images: string[];
@@ -74,8 +74,7 @@ export type UpdateProductRequest = {
   category_id?: number;
   is_active?: boolean;
   image_urls?: string[];
-  min_bulk_quantity?: number | null;
-  bulk_price?: number | null;
+  bulk_tiers?: ProductBulkTier[];
   discount_percent?: number | null;
 };
 
@@ -92,6 +91,7 @@ export type UpdateProductResponse = {
     stock: number;
     min_bulk_quantity: number | null;
     bulk_price: number | null;
+    bulk_tiers?: ProductBulkTier[];
     image_url: string | null;
     images: string[] | null;
     is_active: boolean;
@@ -153,6 +153,7 @@ export type AdminProductsResponse = {
       stock: number | null;
       min_bulk_quantity?: number | null;
       bulk_price?: number | string | null;
+      bulk_tiers?: ProductBulkTier[];
       discount_percent?: number | string | null;
       low_stock_threshold: number | null;
       image_url: string | null;

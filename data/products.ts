@@ -8,6 +8,11 @@ export type ProductStatus =
   | "OutOfStock"
   | "LowStock";
 
+export type ProductBulkTier = {
+  min_qty: number;
+  price: number;
+};
+
 export type Product = {
   id: string | number;
   name: string;
@@ -16,6 +21,7 @@ export type Product = {
   bulkPrice: number;
   minBulkQuantity?: number | null;
   bulkPriceRaw?: number | null;
+  bulkTiers?: ProductBulkTier[];
   discountPercent?: number | null;
   category: ProductCategory;
   categoryId?: number | null;
