@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import type { Product, ProductStatus } from "@/data/products";
+import { resolveCategoryLabels } from "@/lib/mappers/categories";
 import { useProductStore } from "@/store/useProductStore";
 import { Ellipsis } from "lucide-react";
 import Image from "next/image";
@@ -32,11 +33,24 @@ export default function ProductCard({
   canDeleteProducts,
   canPublishProducts,
 }: ProductCardProps) {
-  const { toggleProductStatus, togglingStatusById } = useProductStore();
+  const { toggleProductStatus, togglingStatusById, categoriesTree } =
+    useProductStore();
+  const categoryLabels = resolveCategoryLabels(
+    typeof product.categoryId === "number" ? product.categoryId : null,
+    product.category,
+    categoriesTree
+  );
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
   const isToggling = !!togglingStatusById[String(product.id)];
   const isActive = product.status !== "Unavailable";
+  const discountPercent =
+    typeof product.discountPercent === "number" &&
+    Number.isFinite(product.discountPercent) &&
+    product.discountPercent > 0
+      ? product.discountPercent
+      : null;
+  const bulkTiers = product.bulkTiers ?? [];
 
   const getStatusBadgeClass = (status: ProductStatus) => {
     switch (status) {
@@ -55,10 +69,13 @@ export default function ProductCard({
 
   return (
     <div className="bg-white rounded-xl border border-neutral-100 shadow-xs relative overflow-hidden">
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
         <span className={`badge ${getStatusBadgeClass(product.status)}`}>
           {product.status}
         </span>
+        {discountPercent !== null && (
+          <span className="badge badge-danger">{discountPercent}% off</span>
+        )}
       </div>
 
       {/* Top Right Action Buttons */}
@@ -152,24 +169,43 @@ export default function ProductCard({
             </span>
           </div>
 
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-neutral-500">Bulk (10+):</span>
-            <span className="font-semibold text-primary">
-              {formatCurrency(product.bulkPrice)}
-            </span>
-          </div>
+          {discountPercent !== null && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-neutral-500">Discount:</span>
+              <span className="font-semibold text-[#DD900D]">
+                {discountPercent}%
+              </span>
+            </div>
+          )}
+
+          {bulkTiers.length > 0 && (
+            <div className="space-y-1.5">
+              <span className="text-neutral-500 text-sm">Bulk Tiers:</span>
+              {bulkTiers.map((tier) => (
+                <div
+                  key={`${tier.min_qty}-${tier.price}`}
+                  className="flex justify-between items-center text-sm"
+                >
+                  <span className="text-neutral-500">{tier.min_qty}+ qty</span>
+                  <span className="font-semibold text-primary">
+                    {formatCurrency(tier.price)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex justify-between items-center text-sm">
             <span className="text-neutral-500">Category:</span>
             <span className="font-semibold text-primary">
-              {product.category}
+              {categoryLabels.category}
             </span>
           </div>
 
           <div className="flex justify-between items-center text-sm">
             <span className="text-neutral-500">Sub-category:</span>
             <span className="font-semibold text-primary">
-              {product.subCategory || "-"}
+              {categoryLabels.subCategory || "-"}
             </span>
           </div>
 

@@ -1,5 +1,6 @@
 import type { Product, ProductBulkTier, ProductCategory } from "@/data/products";
-import type { AdminProductsResponse } from "@/types/ProductTypes";
+import type { AdminCategory, AdminProductsResponse } from "@/types/ProductTypes";
+import { resolveCategoryLabels } from "@/lib/mappers/categories";
 
 function parseBulkTiers(raw: unknown): ProductBulkTier[] {
   if (!Array.isArray(raw)) return [];
@@ -18,7 +19,8 @@ function parseBulkTiers(raw: unknown): ProductBulkTier[] {
 }
 
 export function mapAdminProductsToUi(
-  products: AdminProductsResponse["data"]["data"]
+  products: AdminProductsResponse["data"]["data"],
+  categoriesTree: AdminCategory[] = []
 ): Product[] {
   return products.map((p) => {
     const stock = typeof p.stock === "number" ? p.stock : 0;
@@ -79,6 +81,13 @@ export function mapAdminProductsToUi(
         ? images[0]
         : p.image_url ?? "https://picsum.photos/seed/product/300/300";
 
+    const categoryId = p.category?.id ?? p.category_id ?? null;
+    const labels = resolveCategoryLabels(
+      categoryId,
+      p.category?.name ?? "Uncategorized",
+      categoriesTree
+    );
+
     return {
       id: p.id,
       name: p.name,
@@ -96,9 +105,9 @@ export function mapAdminProductsToUi(
         Number.isFinite(discountPercentRaw)
           ? discountPercentRaw
           : null,
-      category: (p.category?.name ?? "Uncategorized") as ProductCategory,
-      categoryId: p.category?.id ?? p.category_id ?? null,
-      subCategory: "",
+      category: labels.category as ProductCategory,
+      categoryId,
+      subCategory: labels.subCategory,
       stockLevel: stock,
       status,
       imageUrl,
