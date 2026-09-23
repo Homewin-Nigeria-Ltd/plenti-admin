@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 
 type RefundRequest = {
-  refundId: string;
+  refundId: number | string;
   customerName: string;
   amount: number;
 };
@@ -15,6 +15,9 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  confirming?: boolean;
+  confirmLabel?: string;
+  description?: string;
   refund: RefundRequest | null;
 };
 
@@ -22,6 +25,9 @@ export function RefundApprovalConfirmModal({
   isOpen,
   onClose,
   onConfirm,
+  confirming,
+  confirmLabel,
+  description,
   refund,
 }: Props) {
   const formatCurrency = (amount: number) => {
@@ -53,8 +59,8 @@ export function RefundApprovalConfirmModal({
           <div className="flex-1 space-y-4">
             <div>
               <DialogTitle className="text-[#0B1E66] text-base font-normal">
-                You are about to approve {formatCurrency(refund.amount)} refund
-                to {refund.customerName}. This action cannot be undone.
+                {description ??
+                  `You are about to approve ${formatCurrency(refund.amount)} refund to ${refund.customerName}. This action cannot be undone.`}
               </DialogTitle>
             </div>
           </div>
@@ -64,10 +70,11 @@ export function RefundApprovalConfirmModal({
         <div className="flex items-center gap-3 pt-2">
           <Button
             onClick={onConfirm}
+            disabled={confirming}
             variant="outline"
             className="flex-1 h-[52px] rounded-[8px] border-[#0B1E66] text-[#0B1E66] bg-white hover:bg-[#0B1E66]/10"
           >
-            Approve Refund
+            {confirming ? "Please wait…" : confirmLabel ?? "Approve Refund"}
           </Button>
           <Button
             onClick={onClose}

@@ -13,24 +13,24 @@ import { X } from "lucide-react";
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (reason: string) => void;
-  refundId: string | null;
+  onConfirm: (reason: string) => void | Promise<void>;
+  confirming?: boolean;
+  refundId: number | string | null;
 };
 
 export function RejectRefundModal({
   isOpen,
   onClose,
   onConfirm,
+  confirming,
   refundId,
 }: Props) {
   const [rejectionReason, setRejectionReason] = React.useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rejectionReason.trim()) {
-      onConfirm(rejectionReason);
-      setRejectionReason("");
-    }
+    if (!rejectionReason.trim()) return;
+    await onConfirm(rejectionReason);
   };
 
   const handleClose = () => {
@@ -50,11 +50,9 @@ export function RejectRefundModal({
             <DialogTitle className="text-[#101928] text-[24px] font-semibold">
               Reject Refund Request
             </DialogTitle>
-            <DialogDescription>
-              <p className="text-[#667085] text-sm">
-                Provide a reason for rejecting{" "}
-                <span className="font-medium">{refundId || "this refund"}</span>
-              </p>
+            <DialogDescription className="text-[#667085] text-sm">
+              Provide a reason for rejecting{" "}
+              <span className="font-medium">{refundId || "this refund"}</span>
             </DialogDescription>
             <button
               aria-label="Close"
@@ -102,10 +100,10 @@ export function RejectRefundModal({
               </Button>
               <Button
                 type="submit"
-                disabled={!rejectionReason.trim()}
+                disabled={!rejectionReason.trim() || confirming}
                 className="flex-1 h-[52px] text-white rounded-[8px] bg-[#D42620] disabled:bg-[#FBEAE9] hover:bg-[#D42620]/90"
               >
-                Reject Refund
+                {confirming ? "Rejecting…" : "Reject Refund"}
               </Button>
             </div>
           </form>

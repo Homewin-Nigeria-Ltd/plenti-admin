@@ -5,262 +5,220 @@ import DataTable from "@/components/common/DataTable";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { RefundDetailsModal } from "./RefundDetailsModal";
+import {
+  RefundDetailsModal,
+  type RefundDetailsView,
+} from "./RefundDetailsModal";
 import { RefundApprovalConfirmModal } from "./RefundApprovalConfirmModal";
 import { RejectRefundModal } from "./RejectRefundModal";
 import { toast } from "sonner";
 import { useFinanceStore } from "@/store/useFinanceStore";
+import { formatCurrency } from "@/lib/format";
+import { getFinancePermissions } from "@/lib/modulePermissions";
+import { useAccountStore } from "@/store/useAccountStore";
+import type { Refund, RefundFilter, RefundMetrics } from "@/types/FinanceTypes";
 
-type RefundStatus = "Approved" | "Processing" | "Rejected";
-
-type RefundRequest = {
-  refundDate: string;
-  refundId: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  amount: number;
-  orderAmount?: number;
-  orderId?: string;
-  transactionId?: string;
-  paymentMethod?: string;
-  paymentGateway?: string;
-  orderStatus: string;
-  orderStatusDescription: string;
-  status: RefundStatus;
-};
-
-// Mock data - replace with actual data source
-const mockRefunds: RefundRequest[] = [
+const FILTERS: Array<{
+  key: RefundFilter;
+  label: string;
+  countKey: keyof RefundMetrics;
+}> = [
+  { key: "all", label: "All Refunds", countKey: "total" },
   {
-    refundDate: "Apr 12, 2023 09:32AM",
-    refundId: "REF-2024-001",
-    customerName: "Adebayo Johnson",
-    customerEmail: "adebayo.j@email.com",
-    customerPhone: "+234 801 234 5678",
-    amount: 45200.0,
-    orderAmount: 45200.0,
-    orderId: "ORD-2841",
-    transactionId: "TXN-8901",
-    paymentMethod: "Card",
-    paymentGateway: "Paystack",
-    orderStatus: "Order Not Delivered",
-    orderStatusDescription:
-      "Order was not delivered after 5 days. Customer wants full refund.",
-    status: "Approved",
+    key: "awaiting-approval",
+    label: "Awaiting Approval",
+    countKey: "awaiting_approval",
   },
   {
-    refundDate: "Apr 12, 2023 09:32AM",
-    refundId: "#0002",
-    customerName: "John Doe",
-    customerEmail: "johndoe@email.com",
-    customerPhone: "+234 802 345 6789",
-    amount: 1500.0,
-    orderAmount: 1500.0,
-    orderId: "ORD-2842",
-    transactionId: "TXN-8902",
-    paymentMethod: "Card",
-    paymentGateway: "Paystack",
-    orderStatus: "Product Defective/Damaged",
-    orderStatusDescription:
-      "One item in the order arrived damaged. Partial refund for that item.",
-    status: "Processing",
+    key: "awaiting-processing",
+    label: "Awaiting Processing",
+    countKey: "awaiting_processing",
   },
-  {
-    refundDate: "Apr 12, 2023 09:32AM",
-    refundId: "#0003",
-    customerName: "Jane Smith",
-    customerEmail: "janesmith@email.com",
-    customerPhone: "+234 803 456 7890",
-    amount: 3200.0,
-    orderAmount: 3200.0,
-    orderId: "ORD-2843",
-    transactionId: "TXN-8903",
-    paymentMethod: "Wallet",
-    paymentGateway: "Flutterwave",
-    orderStatus: "Payment Error",
-    orderStatusDescription:
-      "Payment failed but amount was debited from customer account.",
-    status: "Rejected",
-  },
-  {
-    refundDate: "Apr 12, 2023 09:32AM",
-    refundId: "#0004",
-    customerName: "Alice Johnson",
-    customerEmail: "alice@email.com",
-    customerPhone: "+234 804 567 8901",
-    amount: 1800.0,
-    orderAmount: 1800.0,
-    orderId: "ORD-2844",
-    transactionId: "TXN-8904",
-    paymentMethod: "Bank Transfer",
-    paymentGateway: "Paystack",
-    orderStatus: "Customer Request",
-    orderStatusDescription: "Customer changed mind before delivery.",
-    status: "Processing",
-  },
-  {
-    refundDate: "Apr 12, 2023 09:32AM",
-    refundId: "#0005",
-    customerName: "Bob Williams",
-    customerEmail: "bob@email.com",
-    customerPhone: "+234 805 678 9012",
-    amount: 4500.0,
-    orderAmount: 4500.0,
-    orderId: "ORD-2845",
-    transactionId: "TXN-8905",
-    paymentMethod: "Card",
-    paymentGateway: "Paystack",
-    orderStatus: "Duplicate Payment",
-    orderStatusDescription: "Customer was charged twice for the same order.",
-    status: "Rejected",
-  },
-  {
-    refundDate: "Apr 12, 2023 09:32AM",
-    refundId: "#0006",
-    customerName: "Charlie Brown",
-    customerEmail: "charlie@email.com",
-    customerPhone: "+234 806 789 0123",
-    amount: 2100.0,
-    orderAmount: 2100.0,
-    orderId: "ORD-2846",
-    transactionId: "TXN-8906",
-    paymentMethod: "Card",
-    paymentGateway: "Paystack",
-    orderStatus: "Payment Error",
-    orderStatusDescription:
-      "Payment failed but amount was debited from customer account.",
-    status: "Approved",
-  },
+  { key: "rejected", label: "Rejected Refund", countKey: "rejected" },
 ];
 
-type RefundFilter =
-  | "all"
-  | "awaiting-approval"
-  | "rejected"
-  | "awaiting-processing";
+function formatRefundDate(iso?: string) {
+  if (!iso) return "-";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function statusChip(status: string) {
+  const value = status.trim().toLowerCase();
+  let className = "bg-gray-100 text-gray-700";
+  if (value.includes("reject")) className = "bg-[#FEF6F7] text-[#E71D36]";
+  else if (value.includes("approved") && !value.includes("awaiting"))
+    className = "bg-[#ECFDF3] text-green-700";
+  else if (value.includes("process") || value.includes("awaiting") || value === "pending")
+    className = "bg-[#FFFBF5] text-[#FF9500]";
+
+  return (
+    <span
+      className={`px-3 w-fit py-1 rounded-full text-center text-xs font-medium ${className}`}
+    >
+      {status || "-"}
+    </span>
+  );
+}
+
+function toDetailsView(
+  refund: Refund,
+  detail?: {
+    id?: number | string;
+    customer_name?: string;
+    customer_email?: string;
+    order_number?: string;
+    amount?: number;
+    status?: string;
+    reason?: string;
+    created_at?: string;
+  } | null
+): RefundDetailsView {
+  return {
+    refundId: detail?.id ?? refund.refundId,
+    customerName: detail?.customer_name || refund.customerName,
+    customerEmail: detail?.customer_email || refund.customerEmail,
+    amount: detail?.amount ?? refund.amount,
+    orderId: detail?.order_number || refund.orderId,
+    status: detail?.status || refund.status,
+    reason: detail?.reason || refund.reason,
+    requestedAt: detail?.created_at || refund.requestedAt,
+  };
+}
 
 export function RefundRequestTable() {
-  const { refunds, loadingRefunds, refundPagination } = useFinanceStore();
+  const account = useAccountStore((state) => state.account);
+  const { canManageFinanceRefunds } = React.useMemo(
+    () => getFinancePermissions(account),
+    [account]
+  );
 
-  // LOCAL STATES
+  const {
+    refunds,
+    loadingRefunds,
+    refundPagination,
+    refundMetrics,
+    selectedRefundDetail,
+    loadingRefundDetail,
+    refundActionLoading,
+    fetchRefunds,
+    fetchRefundMetrics,
+    fetchRefundDetail,
+    approveRefund,
+    rejectRefund,
+    markRefundProcessed,
+  } = useFinanceStore();
+
   const [filter, setFilter] = React.useState<RefundFilter>("all");
   const [page, setPage] = React.useState(1);
-  const [selectedRefund, setSelectedRefund] =
-    React.useState<RefundRequest | null>(null);
+  const [selectedRefund, setSelectedRefund] = React.useState<Refund | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [showConfirmModal, setShowConfirmModal] = React.useState(false);
   const [showRejectModal, setShowRejectModal] = React.useState(false);
+  const [processConfirm, setProcessConfirm] = React.useState(false);
   const isOpeningConfirmModal = React.useRef(false);
   const isOpeningRejectModal = React.useRef(false);
-  const pageSize = 6;
+  const pageSize = 10;
 
-  // FETCH ALL REFUNDS ON MOUNT
-  // React.useEffect(() => {
-  //   // FETCH ONLY WHEN THERE ARE NOT REFUNDS
-  //   if (refunds.length === 0) {
-  //     fetchRefunds(1);
-  //   }
-  // }, [fetchRefunds, refunds]);
+  React.useEffect(() => {
+    fetchRefunds(page, pageSize, filter);
+  }, [page, filter, fetchRefunds]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  React.useEffect(() => {
+    fetchRefundMetrics();
+  }, [fetchRefundMetrics]);
 
-  const statusChip = (status: RefundStatus) => {
-    const colorMap = {
-      Approved: "bg-[#ECFDF3] text-green-700",
-      Processing: "bg-[#FFFBF5] text-[#FF9500]",
-      Rejected: "bg-[#FEF6F7] text-[#E71D36]",
-    };
-    return (
-      <span
-        className={`px-3 w-fit py-1 rounded-full text-center text-xs font-medium ${colorMap[status]}`}
-      >
-        {status}
-      </span>
-    );
-  };
+  const refreshRefunds = React.useCallback(async () => {
+    await Promise.all([
+      fetchRefunds(page, pageSize, filter),
+      fetchRefundMetrics(),
+    ]);
+  }, [fetchRefunds, fetchRefundMetrics, page, filter]);
 
-  // Filter refunds based on selected filter
-  const filteredRefunds = React.useMemo(() => {
-    if (filter === "all") return mockRefunds;
-    if (filter === "awaiting-approval")
-      return mockRefunds.filter((r) => r.status === "Processing");
-    if (filter === "rejected")
-      return mockRefunds.filter((r) => r.status === "Rejected");
-    if (filter === "awaiting-processing")
-      return mockRefunds.filter((r) => r.status === "Approved");
-    return mockRefunds;
-  }, [filter]);
+  const detailsView = selectedRefund
+    ? toDetailsView(selectedRefund, selectedRefundDetail)
+    : null;
 
-  // Paginate filtered refunds
-  const paginatedRefunds = React.useMemo(() => {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    return filteredRefunds.slice(start, end);
-  }, [filteredRefunds, page]);
-
-  const columns = [
-    { key: "refundDate", label: "Refund Date" },
-    { key: "refundId", label: "Refund ID" },
-    { key: "customer", label: "Customer Name" },
-    { key: "amount", label: "Amount" },
-    { key: "orderStatus", label: "Order Status" },
-    { key: "status", label: "Status" },
-  ];
-
-  const handleRowClick = (
+  const handleRowClick = async (
     _row: Record<string, React.ReactNode>,
     index: number
   ) => {
-    const clickedRefund = paginatedRefunds[index];
-    if (clickedRefund) {
-      setSelectedRefund(clickedRefund);
-      setIsModalOpen(true);
-    }
+    const clickedRefund = refunds[index];
+    if (!clickedRefund) return;
+    setSelectedRefund(clickedRefund);
+    setIsModalOpen(true);
+    await fetchRefundDetail(clickedRefund.refundId);
   };
 
   const handleApproveClick = () => {
     isOpeningConfirmModal.current = true;
     setIsModalOpen(false);
-    // Use setTimeout to ensure state update happens after modal closes
     setTimeout(() => {
       setShowConfirmModal(true);
       isOpeningConfirmModal.current = false;
     }, 100);
   };
 
+  const handleMarkProcessedClick = () => {
+    isOpeningConfirmModal.current = true;
+    setIsModalOpen(false);
+    setTimeout(() => {
+      setProcessConfirm(true);
+      isOpeningConfirmModal.current = false;
+    }, 100);
+  };
+
   const handleCloseDetailsModal = () => {
     setIsModalOpen(false);
-    // Only clear selectedRefund if we're not opening the confirmation or reject modal
     if (!isOpeningConfirmModal.current && !isOpeningRejectModal.current) {
       setSelectedRefund(null);
     }
   };
 
-  const handleConfirmApprove = () => {
-    if (selectedRefund) {
-      toast.success(`Refund approved`);
+  const handleConfirmApprove = async () => {
+    if (!selectedRefund) return;
+    const ok = await approveRefund(selectedRefund.refundId);
+    if (ok) {
+      toast.success("Refund approved");
       setShowConfirmModal(false);
       setSelectedRefund(null);
+      await refreshRefunds();
+      return;
     }
+    toast.error("Failed to approve refund");
+  };
+
+  const handleConfirmProcessed = async () => {
+    if (!selectedRefund) return;
+    const ok = await markRefundProcessed(selectedRefund.refundId);
+    if (ok) {
+      toast.success("Refund marked as processed");
+      setProcessConfirm(false);
+      setSelectedRefund(null);
+      await refreshRefunds();
+      return;
+    }
+    toast.error("Failed to mark refund as processed");
   };
 
   const handleCloseConfirmModal = () => {
     setShowConfirmModal(false);
+    setProcessConfirm(false);
     setSelectedRefund(null);
   };
 
   const handleRejectClick = () => {
     isOpeningRejectModal.current = true;
     setIsModalOpen(false);
-    // Use setTimeout to ensure state update happens after modal closes
     setTimeout(() => {
       setShowRejectModal(true);
       isOpeningRejectModal.current = false;
@@ -272,18 +230,32 @@ export function RefundRequestTable() {
     setSelectedRefund(null);
   };
 
-  const handleConfirmReject = () => {
-    if (selectedRefund) {
-      toast.error(`Refund rejected`);
+  const handleConfirmReject = async (reason: string) => {
+    if (!selectedRefund) return;
+    const ok = await rejectRefund(selectedRefund.refundId, reason);
+    if (ok) {
+      toast.success("Refund rejected");
       setShowRejectModal(false);
       setSelectedRefund(null);
+      await refreshRefunds();
+      return;
     }
+    toast.error("Failed to reject refund");
   };
 
-  const rows = paginatedRefunds.map((refund) => {
+  const columns = [
+    { key: "refundDate", label: "Refund Date" },
+    { key: "refundId", label: "Refund ID" },
+    { key: "customer", label: "Customer Name" },
+    { key: "amount", label: "Amount" },
+    { key: "reason", label: "Reason" },
+    { key: "status", label: "Status" },
+  ];
+
+  const rows = refunds.map((refund) => {
     const initial = refund.customerName?.charAt(0)?.toUpperCase() || "-";
     return {
-      refundDate: refund.refundDate,
+      refundDate: formatRefundDate(refund.requestedAt),
       refundId: refund.refundId,
       customer: (
         <div className="flex items-center gap-3">
@@ -298,11 +270,11 @@ export function RefundRequestTable() {
           </div>
         </div>
       ),
-      amount: formatCurrency(refund.amount),
-      orderStatus: (
-        <div>
-          <p className="text-[#101928] text-sm">{refund.orderStatus}</p>
-        </div>
+      amount: formatCurrency(refund.amount, { minimumFractionDigits: 2 }),
+      reason: (
+        <p className="text-[#101928] text-sm line-clamp-2">
+          {refund.reason || "-"}
+        </p>
       ),
       status: (
         <div className="flex flex-col gap-1">{statusChip(refund.status)}</div>
@@ -310,9 +282,12 @@ export function RefundRequestTable() {
     };
   });
 
+  const total = refundPagination?.totalCount ?? 0;
+  const currentPage = refundPagination?.page || page;
+  const currentPageSize = refundPagination?.pageSize || pageSize;
+
   return (
     <div className="space-y-6">
-      {/* Search Bar */}
       <div className="border border-[#F0F2F5] rounded-xl h-9.5 flex items-center gap-1 p-1 px-4 shadow-sm">
         <Image src={"/icons/search.png"} alt="Search" width={20} height={20} />
         <Input
@@ -321,70 +296,38 @@ export function RefundRequestTable() {
         />
       </div>
 
-      {/* Sub-tabs */}
-      <div className="flex items-center gap-4 border-b border-gray-200">
-        <button
-          onClick={() => {
-            setFilter("all");
-            setPage(1);
-          }}
-          className={
-            filter === "all"
-              ? "text-[#0B1E66] font-medium rounded-[3px] border-b border-primary px-3 py-3"
-              : "text-[#98A2B3] px-3 py-3"
-          }
-        >
-          All Refunds
-        </button>
-        <button
-          onClick={() => {
-            setFilter("awaiting-approval");
-            setPage(1);
-          }}
-          className={
-            filter === "awaiting-approval"
-              ? "text-[#0B1E66] font-medium rounded-[3px] border-b border-primary px-3 py-3"
-              : "text-[#98A2B3] px-3 py-3"
-          }
-        >
-          Awaiting Approval
-        </button>
-        <button
-          onClick={() => {
-            setFilter("rejected");
-            setPage(1);
-          }}
-          className={
-            filter === "rejected"
-              ? "text-[#0B1E66] font-medium rounded-[3px] border-b border-primary px-3 py-3"
-              : "text-[#98A2B3] px-3 py-3"
-          }
-        >
-          Rejected Refund
-        </button>
-        <button
-          onClick={() => {
-            setFilter("awaiting-processing");
-            setPage(1);
-          }}
-          className={
-            filter === "awaiting-processing"
-              ? "text-[#0B1E66] font-medium rounded-[3px] border-b border-primary px-3 py-3"
-              : "text-[#98A2B3] px-3 py-3"
-          }
-        >
-          Awaiting Processing
-        </button>
+      <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto">
+        {FILTERS.map((item) => (
+          <button
+            key={item.key}
+            onClick={() => {
+              setFilter(item.key);
+              setPage(1);
+            }}
+            className={
+              filter === item.key
+                ? "text-[#0B1E66] font-medium rounded-[3px] border-b border-primary px-3 py-3 whitespace-nowrap"
+                : "text-[#98A2B3] px-3 py-3 whitespace-nowrap"
+            }
+          >
+            {item.label}
+            <span className="ml-1.5 text-xs">
+              ({refundMetrics?.[item.countKey] ?? 0})
+            </span>
+          </button>
+        ))}
       </div>
 
-      {/* Table */}
-      {!loadingRefunds && refunds.length > 0 ? (
+      {loadingRefunds && refunds.length === 0 ? (
+        <p className="text-center my-5 text-[#667085]">Loading refunds…</p>
+      ) : refunds.length > 0 ? (
         <DataTable
           columns={columns}
           rows={rows}
-          page={refundPagination?.page || 0}
-          pageSize={refundPagination?.pageSize || 0}
-          total={refundPagination?.totalCount || 0}
+          page={currentPage}
+          pageSize={currentPageSize}
+          total={total}
+          pageCount={Math.max(1, Math.ceil(total / currentPageSize))}
           onPageChange={setPage}
           onRowClick={handleRowClick}
         />
@@ -392,37 +335,46 @@ export function RefundRequestTable() {
         <p className="text-center my-5">No Refunds Available</p>
       )}
 
-      {/* Refund Details Modal */}
       <RefundDetailsModal
         isOpen={isModalOpen}
         onClose={handleCloseDetailsModal}
-        refund={selectedRefund}
+        refund={detailsView}
+        loading={loadingRefundDetail}
+        canManage={canManageFinanceRefunds}
+        actionLoading={refundActionLoading}
         onApprove={handleApproveClick}
         onReject={handleRejectClick}
+        onMarkProcessed={handleMarkProcessedClick}
       />
 
-      {/* Confirmation Modal */}
       <RefundApprovalConfirmModal
-        isOpen={showConfirmModal}
+        isOpen={showConfirmModal || processConfirm}
         onClose={handleCloseConfirmModal}
-        onConfirm={handleConfirmApprove}
+        onConfirm={processConfirm ? handleConfirmProcessed : handleConfirmApprove}
+        confirming={refundActionLoading}
+        confirmLabel={processConfirm ? "Mark processed" : "Approve Refund"}
+        description={
+          processConfirm && detailsView
+            ? `You are about to mark ${formatCurrency(detailsView.amount, { minimumFractionDigits: 2 })} refund to ${detailsView.customerName} as processed. This action cannot be undone.`
+            : undefined
+        }
         refund={
-          selectedRefund
+          detailsView
             ? {
-                refundId: selectedRefund.refundId,
-                customerName: selectedRefund.customerName,
-                amount: selectedRefund.amount,
+                refundId: detailsView.refundId,
+                customerName: detailsView.customerName,
+                amount: detailsView.amount,
               }
             : null
         }
       />
 
-      {/* Reject Refund Modal */}
       <RejectRefundModal
         isOpen={showRejectModal}
         onClose={handleCloseRejectModal}
         onConfirm={handleConfirmReject}
-        refundId={selectedRefund?.refundId || null}
+        confirming={refundActionLoading}
+        refundId={selectedRefund?.refundId ?? null}
       />
     </div>
   );
