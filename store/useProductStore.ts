@@ -11,7 +11,7 @@ import type {
 } from "@/types/ProductTypes";
 import { create } from "zustand";
 import { mapAdminProductsToUi } from "@/lib/mappers/products";
-import { flattenCategoryOptions } from "@/lib/mappers/categories";
+import { flattenCategoryOptions, resolveCategoryLabels } from "@/lib/mappers/categories";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -79,6 +79,18 @@ export const useProductStore = create<ProductState>((set, get) => ({
           ...state,
           categoriesTree: categories,
           categoryOptions: Array.from(optionsMap.values()),
+          products: state.products.map((p) => {
+            const labels = resolveCategoryLabels(
+              typeof p.categoryId === "number" ? p.categoryId : null,
+              String(p.category),
+              categories
+            );
+            return {
+              ...p,
+              category: labels.category as Product["category"],
+              subCategory: labels.subCategory,
+            };
+          }),
         };
       });
 
@@ -176,7 +188,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
         }
       );
 
-      const mapped = mapAdminProductsToUi(data.data.data);
+      const mapped = mapAdminProductsToUi(
+        data.data.data,
+        get().categoriesTree
+      );
 
       const nextState: Partial<ProductState> = {
         products: mapped,
@@ -194,7 +209,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
           if (typeof p.categoryId === "number") {
             optionsMap.set(p.categoryId, {
               id: p.categoryId,
-              name: String(p.category),
+              name: p.subCategory || String(p.category),
             });
           }
         }

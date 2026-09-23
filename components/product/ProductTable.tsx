@@ -15,6 +15,7 @@ import DataTable from "@/components/common/DataTable";
 import { EditProductModal } from "./EditProductModal";
 import { DeleteProductModal } from "./DeleteProductModal";
 import { toast } from "sonner";
+import { resolveCategoryLabels } from "@/lib/mappers/categories";
 import { useProductStore } from "@/store/useProductStore";
 
 type ProductTableProps = {
@@ -42,7 +43,8 @@ export default function ProductTable({
   onPageChange,
   formatCurrency,
 }: ProductTableProps) {
-  const { toggleProductStatus, togglingStatusById } = useProductStore();
+  const { toggleProductStatus, togglingStatusById, categoriesTree } =
+    useProductStore();
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(
     null,
   );
@@ -58,13 +60,21 @@ export default function ProductTable({
     { key: "category", label: "Category" },
     { key: "subCategory", label: "Sub category" },
     { key: "amount", label: "Amount" },
-    { key: "bulkAmount", label: "Bulk Amount" },
+    { key: "discount", label: "Discount" },
+    { key: "bulkAmount", label: "Bulk Tiers" },
     { key: "stockLevel", label: "Stock Level" },
     { key: "actions", label: "Actions" },
   ];
 
   const tableRows = React.useMemo(() => {
-    return products.map((product) => ({
+    return products.map((product) => {
+      const categoryLabels = resolveCategoryLabels(
+        typeof product.categoryId === "number" ? product.categoryId : null,
+        product.category,
+        categoriesTree
+      );
+
+      return {
       brandName: (
         <div className="flex items-center gap-3">
           <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
@@ -103,19 +113,44 @@ export default function ProductTable({
           </span>
         );
       })(),
-      category: <span className="text-primary-700">{product.category}</span>,
+      category: (
+        <span className="text-primary-700">{categoryLabels.category}</span>
+      ),
       subCategory: (
-        <span className="text-primary-700">{product.subCategory}</span>
+        <span className="text-primary-700">
+          {categoryLabels.subCategory || "-"}
+        </span>
       ),
       amount: (
         <span className="font-semibold text-primary-700">
           {formatCurrency(product.price)}
         </span>
       ),
-      bulkAmount: (
+      discount: (
         <span className="font-semibold text-primary-700">
-          {formatCurrency(product.bulkPrice)}
+          {typeof product.discountPercent === "number" &&
+          product.discountPercent > 0
+            ? `${product.discountPercent}%`
+            : "-"}
         </span>
+      ),
+      bulkAmount: (
+        <div className="space-y-1">
+          {(product.bulkTiers ?? []).length > 0 ? (
+            (product.bulkTiers ?? []).map((tier) => (
+              <p
+                key={`${product.id}-${tier.min_qty}-${tier.price}`}
+                className="font-semibold text-primary-700"
+              >
+                {tier.min_qty}+ · {formatCurrency(tier.price)}
+              </p>
+            ))
+          ) : (
+            <span className="font-semibold text-primary-700">
+              {formatCurrency(product.bulkPrice)}
+            </span>
+          )}
+        </div>
       ),
       stockLevel: (
         <span
@@ -185,9 +220,11 @@ export default function ProductTable({
         ) : (
           <span className="text-neutral-400">-</span>
         ),
-    }));
+      };
+    });
   }, [
     products,
+    categoriesTree,
     formatCurrency,
     toggleProductStatus,
     togglingStatusById,
