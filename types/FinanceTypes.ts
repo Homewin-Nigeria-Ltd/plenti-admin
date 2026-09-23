@@ -5,28 +5,44 @@ export type RefundStatus =
   | "Rejected"
   | "pending"
   | "approved"
+  | "rejected"
+  | (string & {});
+
+export type RefundFilter =
+  | "all"
+  | "awaiting-approval"
+  | "awaiting-processing"
   | "rejected";
 
+export type RefundMetrics = {
+  awaiting_approval: number;
+  awaiting_processing: number;
+  approved: number;
+  rejected: number;
+  total: number;
+};
+
 export type Refund = {
-  id?: number | string;
-  refundDate: string;
-  refundId: string;
+  refundId: number | string;
+  orderId?: string;
   customerName: string;
   customerEmail: string;
-  customerPhone?: string;
   amount: number;
-  orderAmount?: number;
-  orderId?: string;
-  transactionId?: string;
-  paymentMethod?: string;
-  paymentGateway?: string;
-  orderStatus: string;
-  orderStatusDescription?: string;
-  status: RefundStatus;
-  /** API may use snake_case; add as needed */
+  status: string;
+  reason?: string;
+  requestedAt?: string;
+};
+
+export type RefundDetail = {
+  id: number | string;
+  order_id?: number | string;
+  order_number?: string;
+  customer_name?: string;
+  customer_email?: string;
+  amount: number;
+  status: string;
+  reason?: string;
   created_at?: string;
-  updated_at?: string;
-  [key: string]: unknown;
 };
 
 /** Pagination for refunds list */
@@ -56,8 +72,27 @@ export type RevenueTrend = {
 
 /** Payment method distribution */
 export type PaymentDistribution = {
-  payment_method: string;
-  total: string;
+  method: string;
+  amount: number;
+  percentage?: number;
+};
+
+/** Transaction row from GET /api/admin/finance/transactions */
+export type FinanceTransaction = {
+  orderDate: string;
+  transactionId: string;
+  customerName: string;
+  customerEmail: string;
+  customerInitials?: string;
+  amount: number;
+  paymentMethod: string;
+  orderStatus: string;
+};
+
+export type FinanceTransactionPagination = {
+  page: number;
+  pageSize: number;
+  totalCount: number;
 };
 
 /** Transaction from finance overview */
@@ -123,14 +158,37 @@ export type FinanceState = {
   refundPagination: RefundPagination | null;
   loadingRefunds: boolean;
   refundsError: string | null;
+  refundMetrics: RefundMetrics | null;
+  loadingRefundMetrics: boolean;
+  selectedRefundDetail: RefundDetail | null;
+  loadingRefundDetail: boolean;
+  refundActionLoading: boolean;
 
   /** Finance overview data */
   overview: FinanceOverview | null;
   loadingOverview: boolean;
   overviewError: string | null;
 
-  fetchRefunds: (page?: number, pageSize?: number) => Promise<boolean>;
+  /** Finance transactions list */
+  financeTransactions: FinanceTransaction[];
+  financeTransactionPagination: FinanceTransactionPagination | null;
+  loadingTransactions: boolean;
+  transactionsError: string | null;
+  exportingTransactions: boolean;
+
+  fetchRefunds: (
+    page?: number,
+    pageSize?: number,
+    filter?: RefundFilter
+  ) => Promise<boolean>;
+  fetchRefundMetrics: () => Promise<boolean>;
+  fetchRefundDetail: (id: number | string) => Promise<RefundDetail | null>;
+  approveRefund: (id: number | string) => Promise<boolean>;
+  rejectRefund: (id: number | string, reason: string) => Promise<boolean>;
+  markRefundProcessed: (id: number | string) => Promise<boolean>;
   fetchFinanceOverview: (
     filter?: "month" | "week" | "year"
   ) => Promise<boolean>;
+  fetchTransactions: (page?: number, pageSize?: number) => Promise<boolean>;
+  exportTransactions: () => Promise<boolean>;
 };

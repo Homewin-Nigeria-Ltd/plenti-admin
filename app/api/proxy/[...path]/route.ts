@@ -77,16 +77,40 @@ async function handleRequest(
       }
     }
 
+    const isExport = path.endsWith("/export");
+
     // Forward the request to the backend
     const response = await fetch(fullUrl, {
       method,
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
+        Accept: isExport
+          ? "text/csv, application/octet-stream, */*"
+          : "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: body ? JSON.stringify(body) : undefined,
     });
+
+    const contentType = response.headers.get("content-type") ?? "";
+    const isJson =
+      contentType.includes("application/json") ||
+      contentType.includes("text/json") ||
+      contentType.includes("+json");
+
+    if (isExport && !isJson) {
+      const buffer = await response.arrayBuffer();
+      const headers = new Headers();
+      headers.set("Content-Type", contentType || "text/csv");
+      const disposition = response.headers.get("content-disposition");
+      if (disposition) headers.set("Content-Disposition", disposition);
+      if (response.status === 401) {
+        const res = new NextResponse(buffer, { status: 401, headers });
+        res.cookies.delete("token");
+        return res;
+      }
+      return new NextResponse(buffer, { status: response.status, headers });
+    }
 
     const data = await response.json();
 

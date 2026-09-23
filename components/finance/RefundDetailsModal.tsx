@@ -8,64 +8,80 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/format";
 import { X } from "lucide-react";
 
-type RefundRequest = {
-  refundDate: string;
-  refundId: string;
+export type RefundDetailsView = {
+  refundId: number | string;
   customerName: string;
   customerEmail: string;
-  customerPhone?: string;
   amount: number;
-  orderAmount?: number;
   orderId?: string;
-  transactionId?: string;
-  paymentMethod?: string;
-  paymentGateway?: string;
-  orderStatus: string;
-  orderStatusDescription: string;
-  status: "Approved" | "Processing" | "Rejected";
+  status: string;
+  reason?: string;
+  requestedAt?: string;
 };
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  refund: RefundRequest | null;
+  refund: RefundDetailsView | null;
+  loading?: boolean;
+  canManage?: boolean;
+  actionLoading?: boolean;
   onApprove?: () => void;
   onReject?: () => void;
+  onMarkProcessed?: () => void;
 };
+
+function normalizeStatus(status: string) {
+  return status.trim().toLowerCase().replace(/_/g, " ");
+}
+
+export function canApproveRefund(status: string) {
+  const value = normalizeStatus(status);
+  return value.includes("awaiting approval") || value === "pending";
+}
+
+export function canMarkRefundProcessed(status: string) {
+  const value = normalizeStatus(status);
+  return value.includes("awaiting processing") || value === "processing";
+}
+
+export function canRejectRefund(status: string) {
+  return canApproveRefund(status) || canMarkRefundProcessed(status);
+}
+
+function formatDate(iso?: string) {
+  if (!iso) return "-";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
 
 export function RefundDetailsModal({
   isOpen,
   onClose,
   refund,
+  loading,
+  canManage,
+  actionLoading,
   onApprove,
   onReject,
+  onMarkProcessed,
 }: Props) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  if (!refund && !loading) return null;
 
-  const handleApproveClick = () => {
-    if (onApprove) {
-      onApprove();
-    }
-    onClose(); // Close the refund details modal
-  };
-
-  const handleRejectClick = () => {
-    if (onReject) {
-      onReject();
-    }
-    onClose(); // Close the refund details modal
-  };
-
-  if (!refund) return null;
+  const status = refund?.status ?? "";
+  const showApprove = !!canManage && canApproveRefund(status);
+  const showProcessed = !!canManage && canMarkRefundProcessed(status);
+  const showReject = !!canManage && canRejectRefund(status);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -74,11 +90,10 @@ export function RefundDetailsModal({
         showCloseButton={false}
       >
         <div className="relative">
-          {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div>
               <DialogTitle className="text-[#101928] text-[24px] font-semibold">
-                Refund Details - {refund.refundId}
+                Refund Details{refund ? ` - ${refund.refundId}` : ""}
               </DialogTitle>
               <DialogDescription className="text-[#667085] mt-1">
                 Complete information about this refund request
@@ -93,123 +108,117 @@ export function RefundDetailsModal({
             </button>
           </div>
 
-          {/* Content */}
-          <div className="space-y-6">
-            {/* Customer Information and Order & Payment Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Customer Information */}
-              <div className="space-y-4 bg-[#F8F9FB] p-5 rounded-[8px]">
-                <h3 className="text-[#0B1E66] text-[20px] font-semibold">
-                  Customer Information
-                </h3>
-                <div className="space-y-3 flex flex-col justify-between">
-                  <div>
-                    <p className="text-black text-sm mb-1">Customer Name</p>
-                    <p className="text-[#909090] text-base font-medium">
-                      {refund.customerName}
-                    </p>
+          {loading && !refund ? (
+            <p className="text-center text-[#667085] py-8">
+              Loading refund details…
+            </p>
+          ) : refund ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4 bg-[#F8F9FB] p-5 rounded-[8px]">
+                  <h3 className="text-[#0B1E66] text-[20px] font-semibold">
+                    Customer Information
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-black text-sm mb-1">Customer Name</p>
+                      <p className="text-[#909090] text-base font-medium">
+                        {refund.customerName || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-black text-sm mb-1">Email Address</p>
+                      <p className="text-[#909090] text-base font-medium">
+                        {refund.customerEmail || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-black text-sm mb-1">Requested At</p>
+                      <p className="text-[#909090] text-base font-medium">
+                        {formatDate(refund.requestedAt)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-black text-sm mb-1">Email Address</p>
-                    <p className="text-[#909090] text-base font-medium">
-                      {refund.customerEmail}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-black text-sm mb-1">Phone Number</p>
-                    <p className="text-[#909090] text-base font-medium">
-                      {refund.customerPhone || "+234 801 234 5678"}
-                    </p>
+                </div>
+
+                <div className="space-y-4 bg-[#F8F9FB] p-5 rounded-[8px]">
+                  <h3 className="text-[#0B1E66] text-lg font-semibold">
+                    Order & Refund Details
+                  </h3>
+                  <div className="space-y-3 grid grid-cols-2 gap-5">
+                    <div>
+                      <p className="text-black text-sm mb-1">Order ID</p>
+                      <p className="text-[#909090] text-base font-medium">
+                        {refund.orderId || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-black text-sm mb-1">Refund ID</p>
+                      <p className="text-[#909090] text-base font-medium">
+                        {refund.refundId}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-black text-sm mb-1">Refund Amount</p>
+                      <p className="text-[#909090] text-base font-medium">
+                        {formatCurrency(refund.amount, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-black text-sm mb-1">Status</p>
+                      <p className="text-[#909090] text-base font-medium">
+                        {refund.status || "-"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Order & Payment Details */}
               <div className="space-y-4 bg-[#F8F9FB] p-5 rounded-[8px]">
                 <h3 className="text-[#0B1E66] text-lg font-semibold">
-                  Order & Payment Details
+                  Refund Reason
                 </h3>
-                <div className="space-y-3 grid grid-cols-2 gap-5">
-                  <div>
-                    <p className="text-black text-sm mb-1">Order ID</p>
-                    <p className="text-[#909090] text-base font-medium">
-                      {refund.orderId || "ORD-2841"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-black text-sm mb-1">Transaction ID</p>
-                    <p className="text-[#909090] text-base font-medium">
-                      {refund.transactionId || "TXN-8901"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-black text-sm mb-1">Order Amount</p>
-                    <p className="text-[#909090] text-base font-medium">
-                      {refund.orderAmount
-                        ? formatCurrency(refund.orderAmount)
-                        : formatCurrency(refund.amount)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-black text-sm mb-1">Refund Amount</p>
-                    <p className="text-[#909090] text-base font-medium">
-                      {formatCurrency(refund.amount)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-black text-sm mb-1">Payment Method</p>
-                    <p className="text-[#909090] text-base font-medium">
-                      {refund.paymentMethod || "Card"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-black text-sm mb-1">Payment Gateway</p>
-                    <p className="text-[#909090] text-base font-medium">
-                      {refund.paymentGateway || "Paystack"}
-                    </p>
-                  </div>
-                </div>
+                <p className="text-[#909090] text-base">
+                  {refund.reason || "-"}
+                </p>
               </div>
             </div>
+          ) : null}
 
-            {/* Refund Reason */}
-            <div className="space-y-4 bg-[#F8F9FB] p-5 rounded-[8px]">
-              <h3 className="text-[#0B1E66] text-lg font-semibold">
-                Refund Reason
-              </h3>
-              <div className="space-y-3 grid grid-cols-2 gap-5">
-                <div>
-                  <p className="text-black text-sm mb-1">Category</p>
-                  <p className="text-[#909090] text-base font-medium">
-                    {refund.orderStatus}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-black text-sm mb-1">Details</p>
-                  <p className="text-[#909090] text-base">
-                    {refund.orderStatusDescription}
-                  </p>
-                </div>
-              </div>
+          {(showApprove || showProcessed || showReject) && (
+            <div className="flex items-center gap-4 mt-8 pt-6 border-t border-[#EEF1F6]">
+              {showReject && (
+                <Button
+                  onClick={onReject}
+                  disabled={actionLoading}
+                  variant="outline"
+                  className="flex-1 h-[52px] rounded-[8px] border-[#0B1E66] text-[#0B1E66] hover:bg-[#0B1E66]/10"
+                >
+                  Reject
+                </Button>
+              )}
+              {showApprove && (
+                <Button
+                  onClick={onApprove}
+                  disabled={actionLoading}
+                  className="flex-1 h-[52px] rounded-[8px] bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90"
+                >
+                  Approve
+                </Button>
+              )}
+              {showProcessed && (
+                <Button
+                  onClick={onMarkProcessed}
+                  disabled={actionLoading}
+                  className="flex-1 h-[52px] rounded-[8px] bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90"
+                >
+                  Mark processed
+                </Button>
+              )}
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-4 mt-8 pt-6 border-t border-[#EEF1F6]">
-            <Button
-              onClick={handleRejectClick}
-              variant="outline"
-              className="flex-1 h-[52px] rounded-[8px] border-[#0B1E66] text-[#0B1E66] hover:bg-[#0B1E66]/10"
-            >
-              Reject
-            </Button>
-            <Button
-              onClick={handleApproveClick}
-              className="flex-1 h-[52px] rounded-[8px] bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90"
-            >
-              Approve
-            </Button>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -8,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Image from "next/image";
 import * as React from "react";
 import { useFinanceStore } from "@/store/useFinanceStore";
 
@@ -47,9 +46,10 @@ export function PaymentMethodDistribution() {
   const paymentData = React.useMemo(() => {
     if (!overview?.charts?.payment_distribution) return [];
     return overview.charts.payment_distribution.map((item) => ({
-      name: item.payment_method,
-      value: parseFloat(item.total),
-      color: paymentColors[item.payment_method] || "#E5E7EB",
+      name: item.method,
+      value: item.amount,
+      percentage: item.percentage,
+      color: paymentColors[item.method] || "#E5E7EB",
     }));
   }, [overview]);
 
@@ -93,17 +93,6 @@ export function PaymentMethodDistribution() {
               <p className="text-[#0B1E66] text-2xl font-semibold">
                 {formatCurrency(totalAmount)}
               </p>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="inline-flex items-center gap-1 text-[#1DBF73] text-[12px] font-medium">
-                  32.1%
-                  <Image
-                    src="/icons/circle-up.png"
-                    alt="arrow-up"
-                    width={13}
-                    height={13}
-                  />
-                </span>
-              </div>
             </div>
 
             {/* Legend */}
@@ -121,6 +110,9 @@ export function PaymentMethodDistribution() {
                   </div>
                   <p className="text-[#101928] text-[14px] font-medium">
                     {formatCurrency(item.value)}
+                    {typeof item.percentage === "number"
+                      ? ` (${item.percentage}%)`
+                      : ""}
                   </p>
                 </div>
               ))}

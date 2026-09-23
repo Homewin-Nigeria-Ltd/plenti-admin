@@ -121,6 +121,17 @@ export function getFinancePermissions(account: AccountLike) {
         "finance.view.refunds",
         "finances.refunds.view",
       ]),
+    canManageFinanceRefunds:
+      hasAnyRole(account, ["admin", "super-admin"]) ||
+      hasAnyPermission(account, [
+        "finance.refunds.write",
+        "finance.refund.write",
+        "finance.refunds.approve",
+        "finance.refund.approve",
+        "finance.refunds.update",
+        "finance.refund.update",
+        "finances.refunds.write",
+      ]),
   };
 }
 
