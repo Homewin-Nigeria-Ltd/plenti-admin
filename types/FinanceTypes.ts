@@ -23,6 +23,7 @@ export type RefundMetrics = {
 };
 
 export type Refund = {
+  id: number | string;
   refundId: number | string;
   orderId?: string;
   customerName: string;
@@ -35,13 +36,18 @@ export type Refund = {
 
 export type RefundDetail = {
   id: number | string;
+  refund_id?: string;
   order_id?: number | string;
   order_number?: string;
   customer_name?: string;
   customer_email?: string;
+  customer_phone?: string;
   amount: number;
   status: string;
   reason?: string;
+  description?: string;
+  payment_method?: string;
+  gateway?: string;
   created_at?: string;
 };
 
@@ -179,7 +185,8 @@ export type FinanceState = {
   fetchRefunds: (
     page?: number,
     pageSize?: number,
-    filter?: RefundFilter
+    filter?: RefundFilter,
+    search?: string
   ) => Promise<boolean>;
   fetchRefundMetrics: () => Promise<boolean>;
   fetchRefundDetail: (id: number | string) => Promise<RefundDetail | null>;

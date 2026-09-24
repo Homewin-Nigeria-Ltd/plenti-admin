@@ -18,6 +18,7 @@ import {
   CheckCheck,
   Loader2,
   Mic,
+  Send,
   MoreVertical,
   Paperclip,
   Phone,
@@ -456,6 +457,8 @@ export default function RiderChat() {
                   >
                     {sendingMessage ? (
                       <Loader2 className="size-5 animate-spin" />
+                    ) : draft.trim() ? (
+                      <Send className="size-5" />
                     ) : (
                       <Mic className="size-5" />
                     )}

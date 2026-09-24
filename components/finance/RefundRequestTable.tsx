@@ -17,6 +17,7 @@ import { formatCurrency } from "@/lib/format";
 import { getFinancePermissions } from "@/lib/modulePermissions";
 import { useAccountStore } from "@/store/useAccountStore";
 import type { Refund, RefundFilter, RefundMetrics } from "@/types/FinanceTypes";
+import { useDebounce } from "use-debounce";
 
 const FILTERS: Array<{
   key: RefundFilter;
@@ -71,24 +72,32 @@ function statusChip(status: string) {
 function toDetailsView(
   refund: Refund,
   detail?: {
-    id?: number | string;
+    refund_id?: string;
     customer_name?: string;
     customer_email?: string;
+    customer_phone?: string;
     order_number?: string;
     amount?: number;
     status?: string;
     reason?: string;
+    description?: string;
+    payment_method?: string;
+    gateway?: string;
     created_at?: string;
   } | null
 ): RefundDetailsView {
   return {
-    refundId: detail?.id ?? refund.refundId,
+    refundId: detail?.refund_id || refund.refundId,
     customerName: detail?.customer_name || refund.customerName,
     customerEmail: detail?.customer_email || refund.customerEmail,
+    customerPhone: detail?.customer_phone,
     amount: detail?.amount ?? refund.amount,
     orderId: detail?.order_number || refund.orderId,
     status: detail?.status || refund.status,
     reason: detail?.reason || refund.reason,
+    description: detail?.description,
+    paymentMethod: detail?.payment_method,
+    gateway: detail?.gateway,
     requestedAt: detail?.created_at || refund.requestedAt,
   };
 }
@@ -117,6 +126,8 @@ export function RefundRequestTable() {
   } = useFinanceStore();
 
   const [filter, setFilter] = React.useState<RefundFilter>("all");
+  const [search, setSearch] = React.useState("");
+  const [debouncedSearch] = useDebounce(search, 400);
   const [page, setPage] = React.useState(1);
   const [selectedRefund, setSelectedRefund] = React.useState<Refund | null>(
     null
@@ -130,8 +141,12 @@ export function RefundRequestTable() {
   const pageSize = 10;
 
   React.useEffect(() => {
-    fetchRefunds(page, pageSize, filter);
-  }, [page, filter, fetchRefunds]);
+    setPage(1);
+  }, [debouncedSearch]);
+
+  React.useEffect(() => {
+    fetchRefunds(page, pageSize, filter, debouncedSearch);
+  }, [page, filter, debouncedSearch, fetchRefunds]);
 
   React.useEffect(() => {
     fetchRefundMetrics();
@@ -139,10 +154,10 @@ export function RefundRequestTable() {
 
   const refreshRefunds = React.useCallback(async () => {
     await Promise.all([
-      fetchRefunds(page, pageSize, filter),
+      fetchRefunds(page, pageSize, filter, debouncedSearch),
       fetchRefundMetrics(),
     ]);
-  }, [fetchRefunds, fetchRefundMetrics, page, filter]);
+  }, [fetchRefunds, fetchRefundMetrics, page, filter, debouncedSearch]);
 
   const detailsView = selectedRefund
     ? toDetailsView(selectedRefund, selectedRefundDetail)
@@ -156,7 +171,7 @@ export function RefundRequestTable() {
     if (!clickedRefund) return;
     setSelectedRefund(clickedRefund);
     setIsModalOpen(true);
-    await fetchRefundDetail(clickedRefund.refundId);
+    await fetchRefundDetail(clickedRefund.id);
   };
 
   const handleApproveClick = () => {
@@ -186,7 +201,7 @@ export function RefundRequestTable() {
 
   const handleConfirmApprove = async () => {
     if (!selectedRefund) return;
-    const ok = await approveRefund(selectedRefund.refundId);
+    const ok = await approveRefund(selectedRefund.id);
     if (ok) {
       toast.success("Refund approved");
       setShowConfirmModal(false);
@@ -199,7 +214,7 @@ export function RefundRequestTable() {
 
   const handleConfirmProcessed = async () => {
     if (!selectedRefund) return;
-    const ok = await markRefundProcessed(selectedRefund.refundId);
+    const ok = await markRefundProcessed(selectedRefund.id);
     if (ok) {
       toast.success("Refund marked as processed");
       setProcessConfirm(false);
@@ -232,7 +247,7 @@ export function RefundRequestTable() {
 
   const handleConfirmReject = async (reason: string) => {
     if (!selectedRefund) return;
-    const ok = await rejectRefund(selectedRefund.refundId, reason);
+    const ok = await rejectRefund(selectedRefund.id, reason);
     if (ok) {
       toast.success("Refund rejected");
       setShowRejectModal(false);
@@ -291,6 +306,8 @@ export function RefundRequestTable() {
       <div className="border border-[#F0F2F5] rounded-xl h-9.5 flex items-center gap-1 p-1 px-4 shadow-sm">
         <Image src={"/icons/search.png"} alt="Search" width={20} height={20} />
         <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
           className="w-full placeholder:text-[#253B4B] border-0 outline-none focus-visible:ring-0 shadow-none"
           placeholder="Search"
         />

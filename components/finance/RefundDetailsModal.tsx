@@ -15,10 +15,14 @@ export type RefundDetailsView = {
   refundId: number | string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
   amount: number;
   orderId?: string;
   status: string;
   reason?: string;
+  description?: string;
+  paymentMethod?: string;
+  gateway?: string;
   requestedAt?: string;
 };
 
@@ -133,6 +137,12 @@ export function RefundDetailsModal({
                       </p>
                     </div>
                     <div>
+                      <p className="text-black text-sm mb-1">Phone</p>
+                      <p className="text-[#909090] text-base font-medium">
+                        {refund.customerPhone || "-"}
+                      </p>
+                    </div>
+                    <div>
                       <p className="text-black text-sm mb-1">Requested At</p>
                       <p className="text-[#909090] text-base font-medium">
                         {formatDate(refund.requestedAt)}
@@ -172,6 +182,18 @@ export function RefundDetailsModal({
                         {refund.status || "-"}
                       </p>
                     </div>
+                    <div>
+                      <p className="text-black text-sm mb-1">Payment Method</p>
+                      <p className="text-[#909090] text-base font-medium capitalize">
+                        {refund.paymentMethod || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-black text-sm mb-1">Gateway</p>
+                      <p className="text-[#909090] text-base font-medium">
+                        {refund.gateway || "-"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -183,6 +205,9 @@ export function RefundDetailsModal({
                 <p className="text-[#909090] text-base">
                   {refund.reason || "-"}
                 </p>
+                {refund.description ? (
+                  <p className="text-[#909090] text-base">{refund.description}</p>
+                ) : null}
               </div>
             </div>
           ) : null}

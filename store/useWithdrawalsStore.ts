@@ -33,7 +33,7 @@ export interface CommissionStats {
 
 export interface Withdrawal {
   id: number;
-  user: WithdrawalUser;
+  user: WithdrawalUser | null;
   team: any;
   amount: string;
   description: string;
