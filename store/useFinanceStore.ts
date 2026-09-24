@@ -87,10 +87,11 @@ function mapPaymentDistribution(raw: unknown): PaymentDistribution[] {
 
 function mapRefund(raw: unknown): Refund | null {
   if (!isRecord(raw)) return null;
-  const refundId = raw.refundId ?? raw.id;
-  if (refundId == null) return null;
+  if (raw.id == null) return null;
+  const displayId = raw.refundId ?? raw.refund_id ?? raw.id;
   return {
-    refundId: refundId as number | string,
+    id: raw.id as number | string,
+    refundId: displayId as number | string,
     orderId:
       typeof raw.orderId === "string"
         ? raw.orderId
@@ -110,54 +111,68 @@ function mapRefund(raw: unknown): Refund | null {
           ? raw.customer_email
           : "",
     amount: Number(raw.amount) || 0,
-    status: typeof raw.status === "string" ? raw.status : "",
-    reason: typeof raw.reason === "string" ? raw.reason : undefined,
+    status:
+      typeof raw.backend_status === "string"
+        ? raw.backend_status
+        : typeof raw.status === "string"
+          ? raw.status
+          : "",
+    reason:
+      typeof raw.reason === "string"
+        ? raw.reason
+        : typeof raw.orderStatus === "string"
+          ? raw.orderStatus
+          : undefined,
     requestedAt:
       typeof raw.requestedAt === "string"
         ? raw.requestedAt
-        : typeof raw.created_at === "string"
-          ? raw.created_at
-          : undefined,
+        : typeof raw.refundDate === "string"
+          ? raw.refundDate
+          : typeof raw.created_at === "string"
+            ? raw.created_at
+            : undefined,
   };
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value : undefined;
 }
 
 function mapRefundDetail(raw: unknown): RefundDetail | null {
   if (!isRecord(raw)) return null;
-  const id = raw.id ?? raw.refundId;
-  if (id == null) return null;
+
+  const refund = isRecord(raw.refund) ? raw.refund : raw;
+  const customer = isRecord(raw.customer_info) ? raw.customer_info : null;
+  const orderDetails = isRecord(raw.order_details) ? raw.order_details : null;
+  const user = isRecord(refund.user) ? refund.user : null;
+  const order = isRecord(refund.order) ? refund.order : null;
+
+  if (refund.id == null) return null;
+
   return {
-    id: id as number | string,
+    id: refund.id as number | string,
+    refund_id: asString(refund.refund_id) ?? asString(refund.refundId),
     order_id:
-      typeof raw.order_id === "number" || typeof raw.order_id === "string"
-        ? raw.order_id
-        : undefined,
+      typeof refund.order_id === "number" || typeof refund.order_id === "string"
+        ? refund.order_id
+        : typeof order?.id === "number" || typeof order?.id === "string"
+          ? order.id
+          : undefined,
     order_number:
-      typeof raw.order_number === "string"
-        ? raw.order_number
-        : typeof raw.orderId === "string"
-          ? raw.orderId
-          : undefined,
-    customer_name:
-      typeof raw.customer_name === "string"
-        ? raw.customer_name
-        : typeof raw.customerName === "string"
-          ? raw.customerName
-          : undefined,
-    customer_email:
-      typeof raw.customer_email === "string"
-        ? raw.customer_email
-        : typeof raw.customerEmail === "string"
-          ? raw.customerEmail
-          : undefined,
-    amount: Number(raw.amount) || 0,
-    status: typeof raw.status === "string" ? raw.status : "",
-    reason: typeof raw.reason === "string" ? raw.reason : undefined,
+      asString(orderDetails?.order_id) ?? asString(order?.order_number),
+    customer_name: asString(customer?.name) ?? asString(user?.name),
+    customer_email: asString(customer?.email) ?? asString(user?.email),
+    customer_phone: asString(customer?.phone) ?? asString(user?.phone),
+    amount: toNumber(
+      orderDetails?.refund_amount ?? refund.amount ?? orderDetails?.amount
+    ),
+    status: asString(refund.status) ?? "",
+    reason: asString(refund.reason),
+    description: asString(refund.description),
+    payment_method: asString(orderDetails?.payment_method),
+    gateway: asString(orderDetails?.gateway),
     created_at:
-      typeof raw.created_at === "string"
-        ? raw.created_at
-        : typeof raw.requestedAt === "string"
-          ? raw.requestedAt
-          : undefined,
+      asString(refund.requested_at) ?? asString(refund.created_at),
   };
 }
 
@@ -182,10 +197,19 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   transactionsError: null,
   exportingTransactions: false,
 
-  fetchRefunds: async (page = 1, pageSize = 10, filter: RefundFilter = "all") => {
+  fetchRefunds: async (
+    page = 1,
+    pageSize = 10,
+    filter: RefundFilter = "all",
+    search = ""
+  ) => {
     set({ loadingRefunds: true, refundsError: null });
     try {
-      const params: Record<string, string | number> = { page, size: pageSize };
+      const params: Record<string, string | number> = {
+        page,
+        size: pageSize,
+        search: search.trim(),
+      };
       if (filter && filter !== "all") params.filter = filter;
 
       const { data } = await api.get<{
@@ -263,7 +287,10 @@ export const useFinanceStore = create<FinanceState>((set) => ({
       set({ selectedRefundDetail: detail });
       return detail;
     } catch (error: unknown) {
-      console.error("Error fetching refund detail =>", error);
+      console.error(
+        "Error fetching refund detail =>",
+        getApiErrorMessage(error) ?? "Failed to fetch refund detail"
+      );
       set({ selectedRefundDetail: null });
       return null;
     } finally {

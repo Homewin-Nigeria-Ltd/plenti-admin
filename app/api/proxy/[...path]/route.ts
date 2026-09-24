@@ -114,9 +114,9 @@ async function handleRequest(
 
     const data = await response.json();
 
-    if (response.status === 401 || response.status === 500) {
+    if (response.status === 401) {
       const res = NextResponse.json(data, { status: 401 });
-      res.cookies.delete("token"); // remove token cookie
+      res.cookies.delete("token");
       return res;
     }
 
