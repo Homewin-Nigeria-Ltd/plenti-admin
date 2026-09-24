@@ -41,12 +41,22 @@ export default function CartMetrics({
     <div className="bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-[#0B1E66] text-lg font-semibold">Cart</h3>
-        <button
-          className="w-6 h-6 rounded-full bg-[#E8EEFF] flex items-center justify-center hover:bg-[#E8EEFF]/80 transition-colors"
-          title="Cart abandonment metrics"
-        >
-          <Info className="w-4 h-4 text-[#0B1E66]" />
-        </button>
+        <div className="relative group">
+          <button
+            type="button"
+            className="w-6 h-6 rounded-full bg-[#E8EEFF] flex items-center justify-center hover:bg-[#E8EEFF]/80 transition-colors"
+            aria-label="Cart abandonment metrics"
+          >
+            <Info className="w-4 h-4 text-[#0B1E66]" />
+          </button>
+          <div
+            role="tooltip"
+            className="pointer-events-none absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-[#EEF1F6] bg-white px-3 py-2 text-xs leading-5 text-[#667085] shadow-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+          >
+            Share of carts left unpaid, plus abandoned cart count and lost
+            revenue.
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col items-center justify-center mb-6">
