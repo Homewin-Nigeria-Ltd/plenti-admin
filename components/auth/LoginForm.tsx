@@ -13,7 +13,6 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Raleway } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
@@ -27,11 +26,6 @@ const loginFormSchema = z.object({
 });
 
 type LoginFormSchema = z.infer<typeof loginFormSchema>;
-
-const raleway = Raleway({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
 
 const LoginForm = () => {
   const { login, loading } = useAuthStore();
@@ -73,7 +67,7 @@ const LoginForm = () => {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className={`text-[#878787] ${raleway.className}`}>
+              <FormLabel className="text-[#878787]">
                 Email Address
               </FormLabel>
               <FormControl>
@@ -95,7 +89,7 @@ const LoginForm = () => {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className={`text-[#878787] ${raleway.className}`}>
+              <FormLabel className="text-[#878787]">
                 Password
               </FormLabel>
               <FormControl>

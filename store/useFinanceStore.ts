@@ -50,9 +50,11 @@ function mapRevenueTrend(raw: unknown): RevenueTrend[] {
   }
 
   if (isRecord(raw) && Array.isArray(raw.labels) && Array.isArray(raw.values)) {
-    return raw.labels.map((label, index) => ({
+    const labels = raw.labels;
+    const values = raw.values;
+    return labels.map((label, index) => ({
       label: String(label ?? ""),
-      value: toNumber(raw.values[index]),
+      value: toNumber(values[index]),
     }));
   }
 
@@ -61,27 +63,26 @@ function mapRevenueTrend(raw: unknown): RevenueTrend[] {
 
 function mapPaymentDistribution(raw: unknown): PaymentDistribution[] {
   if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item) => {
-      if (!isRecord(item)) return null;
-      const method =
-        typeof item.method === "string"
-          ? item.method
-          : typeof item.payment_method === "string"
-            ? item.payment_method
-            : "";
-      if (!method) return null;
-      const percentage =
-        typeof item.percentage === "number" && Number.isFinite(item.percentage)
-          ? item.percentage
-          : undefined;
-      return {
-        method,
-        amount: toNumber(item.amount ?? item.total),
-        percentage,
-      };
-    })
-    .filter((item): item is PaymentDistribution => item !== null);
+  const items: PaymentDistribution[] = [];
+  for (const item of raw) {
+    if (!isRecord(item)) continue;
+    const method =
+      typeof item.method === "string"
+        ? item.method
+        : typeof item.payment_method === "string"
+          ? item.payment_method
+          : "";
+    if (!method) continue;
+    const mapped: PaymentDistribution = {
+      method,
+      amount: toNumber(item.amount ?? item.total),
+    };
+    if (typeof item.percentage === "number" && Number.isFinite(item.percentage)) {
+      mapped.percentage = item.percentage;
+    }
+    items.push(mapped);
+  }
+  return items;
 }
 
 function mapRefund(raw: unknown): Refund | null {
