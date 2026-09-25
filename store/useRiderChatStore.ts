@@ -294,9 +294,9 @@ export const useRiderChatStore = create<RiderChatState>((set, get) => ({
           `/api/proxy${riderChatMessagesPath(deliveryId)}`,
           { method: "POST", body: form },
         );
-        data = (await response.json().catch(() => null)) as
+        data = (await response.json().catch(() => undefined)) as
           | RiderChatMessagesResponse
-          | null;
+          | undefined;
         if (!response.ok || data?.status === "error") {
           throw new Error(data?.message ?? "Failed to send attachment");
         }
