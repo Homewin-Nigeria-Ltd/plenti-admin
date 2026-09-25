@@ -20,11 +20,17 @@ export type RiderChatConversation = {
 export type RiderChatMessage = {
   id: number;
   sender_type: string;
-  sender_id: number;
+  sender_id: number | null;
   sender_name: string;
+  sent_by_admin?: boolean;
+  delivered_as_rider?: boolean;
   message_type: string;
   message: string;
   image_url: string | null;
+  media_url?: string | null;
+  media_mime?: string | null;
+  media_filename?: string | null;
+  duration_seconds?: number | null;
   is_read: boolean;
   read_at: string | null;
   sent_at: string;
@@ -141,7 +147,12 @@ export type RiderChatState = {
   fetchStaff: (params?: { page?: number; search?: string }) => Promise<boolean>;
   fetchMessages: (deliveryId: number) => Promise<boolean>;
   openRiderChat: (riderId: number) => Promise<boolean>;
-  sendMessage: (deliveryId: number, message: string) => Promise<boolean>;
+  sendMessage: (
+    deliveryId: number,
+    message?: string,
+    file?: File,
+    durationSeconds?: number,
+  ) => Promise<boolean>;
   setActiveDeliveryId: (deliveryId: number | null) => void;
   clearChat: () => void;
 };

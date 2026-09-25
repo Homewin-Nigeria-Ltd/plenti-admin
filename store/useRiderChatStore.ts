@@ -73,6 +73,38 @@ function isStaffMember(value: unknown): value is RiderChatStaffMember {
   );
 }
 
+function messageTypeFromFile(file: File): string {
+  const mime = file.type.toLowerCase();
+  const name = file.name.toLowerCase();
+  if (mime.startsWith("image/")) return "image";
+  if (mime === "application/pdf" || name.endsWith(".pdf")) return "pdf";
+  if (
+    mime.startsWith("audio/") ||
+    mime === "video/mp4" ||
+    /\.(m4a|mp3|wav|webm|ogg|aac)$/.test(name)
+  ) {
+    return "voice";
+  }
+  return "file";
+}
+
+function audioDurationSeconds(file: File): Promise<number | undefined> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const audio = document.createElement("audio");
+    audio.preload = "metadata";
+    const finish = (value?: number) => {
+      URL.revokeObjectURL(url);
+      resolve(value);
+    };
+    audio.onloadedmetadata = () => {
+      finish(Number.isFinite(audio.duration) ? Math.round(audio.duration) : undefined);
+    };
+    audio.onerror = () => finish(undefined);
+    audio.src = url;
+  });
+}
+
 function getStaffFromResponse(data: RiderChatStaffResponse): RiderChatStaffMember[] {
   const raw = data.data;
   if (Array.isArray(raw)) return raw;
@@ -236,18 +268,52 @@ export const useRiderChatStore = create<RiderChatState>((set, get) => ({
     }
   },
 
-  sendMessage: async (deliveryId, message) => {
-    const trimmed = message.trim();
-    if (!trimmed) return false;
+  sendMessage: async (deliveryId, message, file, durationSeconds) => {
+    const trimmed = message?.trim() ?? "";
+    if (!file && !trimmed) return false;
 
     set({ sendingMessage: true });
     try {
-      const { data } = await api.post<RiderChatMessagesResponse>(
-        riderChatMessagesPath(deliveryId),
-        { message: trimmed },
-      );
+      let data: RiderChatMessagesResponse | undefined;
 
-      const created = data.data?.messages?.data?.[0] ?? data.data;
+      if (file) {
+        const type = messageTypeFromFile(file);
+        const form = new FormData();
+        form.append("message_type", type);
+        form.append("message", trimmed);
+        form.append("file", file, file.name);
+        if (type === "image") form.append("image", file, file.name);
+        if (type === "voice") {
+          form.append("audio", file, file.name);
+          const duration =
+            durationSeconds ?? (await audioDurationSeconds(file));
+          if (duration != null) form.append("duration_seconds", String(duration));
+        }
+
+        const response = await fetch(
+          `/api/proxy${riderChatMessagesPath(deliveryId)}`,
+          { method: "POST", body: form },
+        );
+        data = (await response.json().catch(() => null)) as
+          | RiderChatMessagesResponse
+          | null;
+        if (!response.ok || data?.status === "error") {
+          throw new Error(data?.message ?? "Failed to send attachment");
+        }
+      } else {
+        const posted = await api.post<RiderChatMessagesResponse>(
+          riderChatMessagesPath(deliveryId),
+          { message: trimmed },
+        );
+        data = posted.data;
+      }
+
+      if (file) {
+        await get().fetchMessages(deliveryId);
+        return true;
+      }
+
+      const created = data?.data?.messages?.data?.[0] ?? data?.data;
       const optimistic: RiderChatMessage =
         created && typeof created === "object" && "message" in created
           ? (created as RiderChatMessage)

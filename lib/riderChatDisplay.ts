@@ -40,11 +40,18 @@ export function isAdminChatMessage(
   message: RiderChatMessage,
   context?: AdminMessageContext,
 ): boolean {
+  if (message.is_outgoing === true || message.sent_by_admin === true) return true;
+  if (message.is_outgoing === false) return false;
+
   const senderType = message.sender_type?.toLowerCase() ?? "";
   if (senderType === "admin" || senderType === "support" || senderType === "system") {
     return true;
   }
-  if (context?.adminUserId != null && message.sender_id === context.adminUserId) {
+  if (
+    context?.adminUserId != null &&
+    message.sender_id != null &&
+    message.sender_id === context.adminUserId
+  ) {
     return true;
   }
   if (senderType === "customer") return false;
@@ -52,6 +59,10 @@ export function isAdminChatMessage(
   if (senderType === "rider") return false;
   if (context?.riderId != null && message.sender_id === context.riderId) return false;
   return true;
+}
+
+export function chatMediaUrl(message: RiderChatMessage): string | null {
+  return message.media_url || message.image_url || null;
 }
 
 export function getActiveChatThread(

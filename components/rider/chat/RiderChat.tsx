@@ -1,5 +1,7 @@
 "use client";
 
+import { ChatEmojiPicker } from "@/components/rider/chat/ChatEmojiPicker";
+import { ChatMessageBody } from "@/components/rider/chat/ChatMessageBody";
 import { ConversationAvatar } from "@/components/rider/chat/ConversationAvatar";
 import { StaffMemberAvatar } from "@/components/rider/chat/StaffMemberAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,10 +25,9 @@ import {
   Paperclip,
   Phone,
   Search,
-  Smile,
   Star,
+  X,
 } from "lucide-react";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
@@ -40,6 +41,16 @@ export default function RiderChat() {
   const [search, setSearch] = React.useState("");
   const [debouncedSearch] = useDebounce(search, 400);
   const [draft, setDraft] = React.useState("");
+  const [emojiOpen, setEmojiOpen] = React.useState(false);
+  const draftInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = React.useRef<MediaStream | null>(null);
+  const voiceChunksRef = React.useRef<Blob[]>([]);
+  const recordStartedAtRef = React.useRef(0);
+  const recordTimerRef = React.useRef<number | null>(null);
+  const [isRecording, setIsRecording] = React.useState(false);
+  const [recordSeconds, setRecordSeconds] = React.useState(0);
   const hasAutoSelectedConversation = React.useRef(false);
 
   const fetchAccountSettings = useAccountStore((s) => s.fetchAccountSettings);
@@ -127,6 +138,12 @@ export default function RiderChat() {
 
   const messages =
     activeDeliveryId != null ? (messagesByDeliveryId[activeDeliveryId] ?? []) : [];
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const lastMessage = messages[messages.length - 1];
+
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [activeDeliveryId, messages.length, lastMessage?.id, lastMessage?.sent_at]);
 
   const messageContext = React.useMemo(
     () => ({
@@ -140,6 +157,111 @@ export default function RiderChat() {
   const handleSelectConversation = (deliveryId: number) => {
     setActiveDeliveryId(deliveryId);
   };
+
+  const insertEmoji = (emoji: string) => {
+    const input = draftInputRef.current;
+    const start = input?.selectionStart ?? draft.length;
+    const end = input?.selectionEnd ?? draft.length;
+    const next = `${draft.slice(0, start)}${emoji}${draft.slice(end)}`;
+    setDraft(next);
+    setEmojiOpen(false);
+    requestAnimationFrame(() => {
+      input?.focus();
+      const cursor = start + emoji.length;
+      input?.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  const stopRecordTimer = () => {
+    if (recordTimerRef.current != null) {
+      window.clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+  };
+
+  const stopMediaTracks = () => {
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+  };
+
+  const cancelRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder) recorder.onstop = null;
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+    mediaRecorderRef.current = null;
+    stopMediaTracks();
+    stopRecordTimer();
+    voiceChunksRef.current = [];
+    setIsRecording(false);
+    setRecordSeconds(0);
+  };
+
+  const startRecording = async () => {
+    if (activeDeliveryId == null || sendingMessage || isRecording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+      const mimeType = types.find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) voiceChunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        void (async () => {
+          const blob = new Blob(voiceChunksRef.current, {
+            type: recorder.mimeType || "audio/webm",
+          });
+          stopMediaTracks();
+          mediaRecorderRef.current = null;
+          if (blob.size < 1 || activeDeliveryId == null) return;
+          const extension = blob.type.includes("mp4") ? "m4a" : "webm";
+          const file = new File([blob], `voice-note.${extension}`, {
+            type: blob.type || "audio/webm",
+          });
+          const duration = Math.max(
+            1,
+            Math.round((Date.now() - recordStartedAtRef.current) / 1000),
+          );
+          const ok = await sendMessage(activeDeliveryId, undefined, file, duration);
+          if (!ok) toast.error("Failed to send voice message");
+        })();
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      recordStartedAtRef.current = Date.now();
+      setRecordSeconds(0);
+      setIsRecording(true);
+      recordTimerRef.current = window.setInterval(() => {
+        setRecordSeconds(
+          Math.floor((Date.now() - recordStartedAtRef.current) / 1000),
+        );
+      }, 250);
+    } catch {
+      toast.error("Microphone access is required to record a voice note");
+    }
+  };
+
+  const stopRecordingAndSend = () => {
+    stopRecordTimer();
+    setIsRecording(false);
+    setRecordSeconds(0);
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      if (recorder.state === "recording") recorder.requestData();
+      recorder.stop();
+    }
+  };
+
+  React.useEffect(() => {
+    return () => {
+      cancelRecording();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSend = async () => {
     if (activeDeliveryId == null || !draft.trim() || sendingMessage) return;
@@ -155,7 +277,7 @@ export default function RiderChat() {
   const headerRider = activeThread?.rider ?? activeConversation?.rider;
 
   return (
-    <div className="bg-white rounded-xl border border-[#EAECF0] overflow-hidden flex flex-col h-[calc(100vh-180px)] min-h-[720px]">
+    <div className="bg-white rounded-xl border border-[#EAECF0] overflow-hidden flex flex-col h-[calc(100dvh-14.5rem)]">
       <div className="flex flex-1 min-h-0 h-full">
         <div className="w-full max-w-[340px] shrink-0 border-r border-[#EAECF0] flex flex-col min-h-0 h-full">
           <div className="p-4 border-b border-[#EAECF0]">
@@ -362,7 +484,7 @@ export default function RiderChat() {
                       <div key={message.id} className="flex justify-end">
                         <div className="max-w-[75%]">
                           <div className="bg-[#6F91F6] text-white rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed">
-                            {message.message}
+                            <ChatMessageBody message={message} outgoing />
                           </div>
                           <div className="flex items-center justify-end gap-1.5 mt-1 pr-1">
                             <span className="text-[11px] text-[#98A2B3]">
@@ -397,18 +519,7 @@ export default function RiderChat() {
                             {message.sender_name}
                           </p>
                           <div className="bg-[#F2F4F7] text-[#101928] rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed">
-                            {message.image_url ? (
-                              <Image
-                                src={message.image_url}
-                                alt="Chat attachment"
-                                width={320}
-                                height={240}
-                                unoptimized
-                                className="max-w-full h-auto rounded-lg"
-                              />
-                            ) : (
-                              message.message
-                            )}
+                            <ChatMessageBody message={message} />
                           </div>
                           <p className="text-[11px] text-[#98A2B3] mt-1 ml-1">
                             {formatChatSentAt(message.sent_at)}
@@ -418,6 +529,7 @@ export default function RiderChat() {
                     );
                   })
                 )}
+                <div ref={messagesEndRef} />
               </div>
 
               <div className="px-5 py-4 border-t border-[#EAECF0] shrink-0 bg-white">
@@ -428,41 +540,104 @@ export default function RiderChat() {
                     void handleSend();
                   }}
                 >
-                  <button
-                    type="button"
-                    aria-label="Attach file"
-                    className="text-[#667085] hover:text-primary shrink-0"
-                  >
-                    <Paperclip className="size-5" />
-                  </button>
-                  <Input
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    placeholder="Write a message..."
-                    disabled={sendingMessage}
-                    className="border-0 shadow-none h-9 flex-1 focus-visible:ring-0 placeholder:text-[#98A2B3] px-0"
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,application/pdf,audio/*,.m4a,.mp3,.wav,.webm"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (!file || activeDeliveryId == null || sendingMessage) return;
+                      const ok = await sendMessage(
+                        activeDeliveryId,
+                        draft.trim() || undefined,
+                        file,
+                      );
+                      if (ok) setDraft("");
+                      else toast.error("Failed to send attachment");
+                    }}
                   />
                   <button
                     type="button"
-                    aria-label="Emoji"
-                    className="text-[#667085] hover:text-primary shrink-0"
-                  >
-                    <Smile className="size-5" />
-                  </button>
-                  <button
-                    type="submit"
-                    aria-label="Send message"
-                    disabled={!draft.trim() || sendingMessage}
+                    aria-label="Attach file"
+                    disabled={sendingMessage || isRecording}
                     className="text-[#667085] hover:text-primary shrink-0 disabled:opacity-50"
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    {sendingMessage ? (
-                      <Loader2 className="size-5 animate-spin" />
-                    ) : draft.trim() ? (
-                      <Send className="size-5" />
-                    ) : (
-                      <Mic className="size-5" />
-                    )}
+                    <Paperclip className="size-5" />
                   </button>
+                  {isRecording ? (
+                    <p className="flex-1 text-sm text-[#E71D36] font-medium">
+                      Recording {Math.floor(recordSeconds / 60)}:
+                      {String(recordSeconds % 60).padStart(2, "0")}
+                    </p>
+                  ) : (
+                    <Input
+                      ref={draftInputRef}
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      placeholder="Write a message..."
+                      disabled={sendingMessage}
+                      className="border-0 shadow-none h-9 flex-1 focus-visible:ring-0 placeholder:text-[#98A2B3] px-0"
+                    />
+                  )}
+                  {isRecording ? (
+                    <button
+                      type="button"
+                      aria-label="Cancel recording"
+                      className="text-[#667085] hover:text-[#E71D36] shrink-0"
+                      onClick={cancelRecording}
+                    >
+                      <X className="size-5" />
+                    </button>
+                  ) : (
+                    <ChatEmojiPicker
+                      open={emojiOpen}
+                      onOpenChange={setEmojiOpen}
+                      disabled={sendingMessage}
+                      onSelect={insertEmoji}
+                    />
+                  )}
+                  {draft.trim() && !isRecording ? (
+                    <button
+                      type="submit"
+                      aria-label="Send message"
+                      disabled={sendingMessage}
+                      className="text-[#667085] hover:text-primary shrink-0 disabled:opacity-50"
+                    >
+                      {sendingMessage ? (
+                        <Loader2 className="size-5 animate-spin" />
+                      ) : (
+                        <Send className="size-5" />
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label={
+                        isRecording ? "Stop and send voice note" : "Record voice note"
+                      }
+                      disabled={sendingMessage}
+                      className={`shrink-0 disabled:opacity-50 ${
+                        isRecording
+                          ? "text-[#E71D36]"
+                          : "text-[#667085] hover:text-primary"
+                      }`}
+                      onClick={() => {
+                        if (isRecording) stopRecordingAndSend();
+                        else void startRecording();
+                      }}
+                    >
+                      {sendingMessage ? (
+                        <Loader2 className="size-5 animate-spin" />
+                      ) : isRecording ? (
+                        <Send className="size-5" />
+                      ) : (
+                        <Mic className="size-5" />
+                      )}
+                    </button>
+                  )}
                 </form>
               </div>
             </>
