@@ -66,31 +66,58 @@ async function handleRequest(
     // Get query parameters from the request
     const searchParams = request.nextUrl.searchParams.toString();
     const fullUrl = searchParams ? `${url}?${searchParams}` : url;
-
-    // Get request body if it exists
-    let body = null;
-    if (method !== "GET" && method !== "DELETE") {
-      try {
-        body = await request.json();
-      } catch {
-        // No body or invalid JSON
-      }
-    }
-
+    const isMultipart = (request.headers.get("content-type") ?? "").includes(
+      "multipart/form-data",
+    );
     const isExport = path.endsWith("/export");
 
-    // Forward the request to the backend
-    const response = await fetch(fullUrl, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        Accept: isExport
-          ? "text/csv, application/octet-stream, */*"
-          : "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    let response: Response;
+
+    if (isMultipart && method !== "GET" && method !== "DELETE") {
+      const incoming = await request.formData();
+      const outgoing = new FormData();
+      for (const [key, value] of incoming.entries()) {
+        if (value instanceof File) {
+          const bytes = await value.arrayBuffer();
+          outgoing.append(
+            key,
+            new File([bytes], value.name, { type: value.type }),
+          );
+        } else {
+          outgoing.append(key, value);
+        }
+      }
+
+      response = await fetch(fullUrl, {
+        method,
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: outgoing,
+      });
+    } else {
+      let body = null;
+      if (method !== "GET" && method !== "DELETE") {
+        try {
+          body = await request.json();
+        } catch {
+          // No body or invalid JSON
+        }
+      }
+
+      response = await fetch(fullUrl, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: isExport
+            ? "text/csv, application/octet-stream, */*"
+            : "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    }
 
     const contentType = response.headers.get("content-type") ?? "";
     const isJson =
