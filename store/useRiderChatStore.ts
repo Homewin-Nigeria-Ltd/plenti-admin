@@ -177,12 +177,14 @@ export const useRiderChatStore = create<RiderChatState>((set, get) => ({
     }
   },
 
-  fetchMessages: async (deliveryId) => {
+  fetchMessages: async (deliveryId, search) => {
     set({ loadingMessages: true, messagesError: null });
     try {
       await ensureAccountLoaded();
+      const query = search?.trim() ?? "";
       const { data } = await api.get<RiderChatMessagesResponse>(
         riderChatMessagesPath(deliveryId),
+        query ? { params: { search: query } } : undefined,
       );
       const thread = data.data?.conversation ?? null;
       const messages = data.data?.messages?.data ?? [];

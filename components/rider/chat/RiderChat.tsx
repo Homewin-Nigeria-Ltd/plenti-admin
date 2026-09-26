@@ -16,12 +16,12 @@ import {
 import { cn } from "@/lib/utils";
 import { useAccountStore } from "@/store/useAccountStore";
 import { useRiderChatStore } from "@/store/useRiderChatStore";
+import { useRiderStore } from "@/store/useRiderStore";
 import {
   CheckCheck,
   Loader2,
   Mic,
   Send,
-  MoreVertical,
   Paperclip,
   Phone,
   Search,
@@ -40,6 +40,9 @@ export default function RiderChat() {
 
   const [search, setSearch] = React.useState("");
   const [debouncedSearch] = useDebounce(search, 400);
+  const [messageSearchOpen, setMessageSearchOpen] = React.useState(false);
+  const [messageSearch, setMessageSearch] = React.useState("");
+  const [debouncedMessageSearch] = useDebounce(messageSearch, 400);
   const [draft, setDraft] = React.useState("");
   const [emojiOpen, setEmojiOpen] = React.useState(false);
   const draftInputRef = React.useRef<HTMLInputElement>(null);
@@ -55,6 +58,9 @@ export default function RiderChat() {
 
   const fetchAccountSettings = useAccountStore((s) => s.fetchAccountSettings);
   const accountId = useAccountStore((s) => s.account?.id);
+  const riders = useRiderStore((s) => s.riders);
+  const singleRider = useRiderStore((s) => s.singleRider);
+  const fetchRiderDetail = useRiderStore((s) => s.fetchRiderDetail);
 
   const {
     conversations,
@@ -106,21 +112,41 @@ export default function RiderChat() {
 
     hasAutoSelectedConversation.current = true;
     setActiveDeliveryId(first.plenti_delivery_id);
-    void fetchMessages(first.plenti_delivery_id);
   }, [
     activeDeliveryId,
     conversations,
-    fetchMessages,
     loadingConversations,
     riderIdParam,
     setActiveDeliveryId,
   ]);
 
+  const lastMessageQueryRef = React.useRef<{
+    deliveryId: number | null;
+    search: string;
+  }>({ deliveryId: null, search: "" });
+
   React.useEffect(() => {
     if (activeDeliveryId == null || accountId == null) return;
-    if (messagesByDeliveryId[activeDeliveryId]) return;
-    void fetchMessages(activeDeliveryId);
-  }, [activeDeliveryId, accountId, fetchMessages, messagesByDeliveryId]);
+    const query = messageSearchOpen ? debouncedMessageSearch.trim() : "";
+    const last = lastMessageQueryRef.current;
+    const cached = messagesByDeliveryId[activeDeliveryId];
+    if (
+      cached &&
+      last.deliveryId === activeDeliveryId &&
+      last.search === query
+    ) {
+      return;
+    }
+    lastMessageQueryRef.current = { deliveryId: activeDeliveryId, search: query };
+    void fetchMessages(activeDeliveryId, query);
+  }, [
+    activeDeliveryId,
+    accountId,
+    fetchMessages,
+    messagesByDeliveryId,
+    messageSearchOpen,
+    debouncedMessageSearch,
+  ]);
 
   const activeConversation = React.useMemo(() => {
     if (activeDeliveryId == null) return conversations[0] ?? null;
@@ -155,6 +181,8 @@ export default function RiderChat() {
   );
 
   const handleSelectConversation = (deliveryId: number) => {
+    setMessageSearch("");
+    setMessageSearchOpen(false);
     setActiveDeliveryId(deliveryId);
   };
 
@@ -275,6 +303,37 @@ export default function RiderChat() {
   };
 
   const headerRider = activeThread?.rider ?? activeConversation?.rider;
+  const listedRider = riders.find((rider) => rider.id === headerRider?.id);
+  const detailPhone =
+    singleRider && headerRider && singleRider.id === headerRider.id
+      ? (singleRider.phone ?? singleRider.phone_number)
+      : undefined;
+  const riderPhone =
+    headerRider?.phone ??
+    headerRider?.phone_number ??
+    detailPhone ??
+    listedRider?.phone ??
+    listedRider?.phone_number;
+  const telHref = riderPhone
+    ? `tel:${String(riderPhone).replace(/[^\d+]/g, "")}`
+    : undefined;
+
+  React.useEffect(() => {
+    if (!headerRider?.id) return;
+    if (
+      singleRider?.id === headerRider.id &&
+      (singleRider.phone || singleRider.phone_number)
+    ) {
+      return;
+    }
+    void fetchRiderDetail(headerRider.id);
+  }, [
+    headerRider?.id,
+    singleRider?.id,
+    singleRider?.phone,
+    singleRider?.phone_number,
+    fetchRiderDetail,
+  ]);
 
   return (
     <div className="bg-white rounded-xl border border-[#EAECF0] overflow-hidden flex flex-col h-[calc(100dvh-14.5rem)]">
@@ -441,29 +500,66 @@ export default function RiderChat() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-[#667085]">
-                  <button
-                    type="button"
-                    aria-label="Call"
-                    className="size-10 rounded-full hover:bg-[#F2F4F7] flex items-center justify-center"
+                  <a
+                    href={telHref}
+                    aria-label="Call rider"
+                    aria-disabled={!telHref}
+                    className={`size-10 rounded-full hover:bg-[#F2F4F7] flex items-center justify-center ${
+                      telHref ? "" : "pointer-events-none opacity-40"
+                    }`}
                   >
                     <Phone className="size-5" />
-                  </button>
+                  </a>
                   <button
                     type="button"
-                    aria-label="Search in conversation"
-                    className="size-10 rounded-full hover:bg-[#F2F4F7] flex items-center justify-center"
+                    aria-label={messageSearchOpen ? "Close message search" : "Search in conversation"}
+                    aria-pressed={messageSearchOpen}
+                    onClick={() => {
+                      setMessageSearchOpen((open) => {
+                        if (open) setMessageSearch("");
+                        return !open;
+                      });
+                    }}
+                    className={`size-10 rounded-full hover:bg-[#F2F4F7] flex items-center justify-center ${
+                      messageSearchOpen ? "bg-[#F2F4F7] text-[#0B1E66]" : ""
+                    }`}
                   >
                     <Search className="size-5" />
                   </button>
-                  <button
+                  {/* <button
                     type="button"
                     aria-label="More options"
                     className="size-10 rounded-full hover:bg-[#F2F4F7] flex items-center justify-center"
                   >
                     <MoreVertical className="size-5" />
-                  </button>
+                  </button> */}
                 </div>
               </div>
+
+              {messageSearchOpen ? (
+                <div className="px-5 py-3 border-b border-[#EAECF0] shrink-0">
+                  <div className="border border-[#EAECF0] rounded-xl h-11 flex items-center gap-2 px-3 bg-white">
+                    <Search className="size-4 text-[#98A2B3] shrink-0" />
+                    <Input
+                      value={messageSearch}
+                      onChange={(e) => setMessageSearch(e.target.value)}
+                      placeholder="Search messages"
+                      autoFocus
+                      className="border-0 shadow-none h-9 p-0 focus-visible:ring-0 placeholder:text-[#98A2B3]"
+                    />
+                    {messageSearch ? (
+                      <button
+                        type="button"
+                        aria-label="Clear message search"
+                        onClick={() => setMessageSearch("")}
+                        className="size-7 rounded-full hover:bg-[#F2F4F7] flex items-center justify-center text-[#98A2B3]"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="flex-1 overflow-y-auto px-5 py-6 space-y-4 bg-[#FCFCFD]">
                 {loadingMessages ? (
@@ -475,7 +571,9 @@ export default function RiderChat() {
                   <p className="text-sm text-center text-[#667085]">{messagesError}</p>
                 ) : messages.length === 0 ? (
                   <p className="text-sm text-center text-[#667085]">
-                    No messages yet. Start the conversation.
+                    {debouncedMessageSearch.trim()
+                      ? "No matching messages"
+                      : "No messages yet. Start the conversation."}
                   </p>
                 ) : (
                   messages.map((message) => {
