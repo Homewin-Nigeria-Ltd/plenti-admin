@@ -3,6 +3,8 @@ export type RiderChatParticipant = {
   name: string;
   avatar?: string | null;
   last_seen_label?: string | null;
+  phone?: string | null;
+  phone_number?: string | null;
 };
 
 export type RiderChatConversation = {
@@ -145,7 +147,7 @@ export type RiderChatState = {
     per_page?: number;
   }) => Promise<boolean>;
   fetchStaff: (params?: { page?: number; search?: string }) => Promise<boolean>;
-  fetchMessages: (deliveryId: number) => Promise<boolean>;
+  fetchMessages: (deliveryId: number, search?: string) => Promise<boolean>;
   openRiderChat: (riderId: number) => Promise<boolean>;
   sendMessage: (
     deliveryId: number,
