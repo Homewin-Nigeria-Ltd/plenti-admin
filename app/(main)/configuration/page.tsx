@@ -6,7 +6,7 @@ import SystemConfigList from "@/components/config/SystemConfigList";
 
 export default function ConfigurationPage() {
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       <SystemConfigList />
     </div>
   );

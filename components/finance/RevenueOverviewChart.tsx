@@ -106,15 +106,15 @@ export function RevenueOverviewChart() {
   }, [overview]);
 
   return (
-    <div className="bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
-      <div className="flex items-start justify-between mb-6">
-        <div>
+    <div className="min-w-0 bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-6 shadow-xs">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+        <div className="min-w-0">
           <p className="text-[#98A2B3] text-xs font-medium mb-2">
             Revenue Overview
           </p>
           {data && data.length > 0 && (
-            <div className="flex items-end gap-3">
-              <p className="text-[#0B1E66] text-[36px] font-semibold leading-none">
+            <div className="flex flex-wrap items-end gap-3">
+              <p className="text-[#0B1E66] text-[28px] sm:text-[36px] font-semibold leading-none break-words">
                 {totalRevenue}
               </p>
               <div className="flex items-center gap-1 mb-1">
@@ -138,7 +138,7 @@ export function RevenueOverviewChart() {
           )}
         </div>
 
-        <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1">
+        <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1 self-start shrink-0 overflow-x-auto">
           {(["week", "month", "year"] as const).map((r) => {
             const active = range === r;
             return (
@@ -147,8 +147,8 @@ export function RevenueOverviewChart() {
                 onClick={() => setRange(r)}
                 className={
                   active
-                    ? "rounded-full bg-white shadow-sm px-4 py-1.5 text-[#0B1E66] text-sm font-medium transition-all"
-                    : "rounded-full px-4 py-1.5 text-[#9198AD] text-sm font-medium transition-all hover:text-[#667085]"
+                    ? "rounded-full bg-white shadow-sm px-3 sm:px-4 py-1.5 text-[#0B1E66] text-sm font-medium transition-all"
+                    : "rounded-full px-3 sm:px-4 py-1.5 text-[#9198AD] text-sm font-medium transition-all hover:text-[#667085]"
                 }
               >
                 {r[0].toUpperCase() + r.slice(1)}
@@ -159,7 +159,7 @@ export function RevenueOverviewChart() {
       </div>
 
       {data && data.length > 0 ? (
-        <div className="h-75">
+        <div className="h-56 sm:h-75 min-w-0">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}

@@ -30,11 +30,11 @@ const NotificationOverviewStats = () => {
     ];
 
     return (
-        <div className="grid grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 min-w-0">
             {stats.map((stat, idx) => (
                 <div key={idx} className="border border-[#D9D9D9] rounded-xl p-5">
                     <h3 className="text-[#808080] font-medium">{stat.title}</h3>
-                    <p className="text-[#0B1E66] font-semibold text-[32px] my-2">{stat.amount}</p>
+                    <p className="text-[#0B1E66] font-semibold text-2xl sm:text-[32px] my-2 break-words">{stat.amount}</p>
                     <div className="flex gap-2 items-center">
                         <div className={cn(stat.trend === "up" ? "bg-[#E7F6EC] text-[#0F973D]" : "bg-[#FBEAE9] text-[#D42620]", 'font-medium text-[12px] w-fit px-3 rounded-2xl')}>
                             {stat.percentageChange}%

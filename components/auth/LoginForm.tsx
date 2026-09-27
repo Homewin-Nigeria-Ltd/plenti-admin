@@ -105,7 +105,7 @@ const LoginForm = () => {
           )}
         />
 
-        <Button type="submit" className="w-full mt-10" disabled={loading}>
+        <Button type="submit" className="w-full mt-6 lg:mt-10" disabled={loading}>
           {loading ? (
             <span className="inline-flex items-center gap-2">
               <Loader2Icon className="size-4 animate-spin" />

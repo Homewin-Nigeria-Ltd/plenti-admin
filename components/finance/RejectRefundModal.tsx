@@ -41,7 +41,7 @@ export function RejectRefundModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent
-        className="sm:max-w-md min-w-[600px] rounded-[12px]"
+        className="w-full max-w-[calc(100%-2rem)] sm:max-w-md rounded-[12px]"
         showCloseButton={false}
       >
         <div className="relative">

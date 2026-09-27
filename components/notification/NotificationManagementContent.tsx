@@ -66,19 +66,20 @@ const NotificationManagementContent = () => {
   };
 
   return (
-    <>
+    <div className="min-w-0">
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         defaultValue="overview"
+        className="min-w-0"
       >
-        <div className="flex justify-between items-center">
-          <TabsList className="bg-transparent gap-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
+          <TabsList className="bg-transparent gap-2 sm:gap-5 overflow-x-auto justify-start max-w-full h-auto p-0">
             {tabs.map((tab, index) => (
               <TabsTrigger
                 key={index}
                 value={tab.value}
-                className="data-[state=active]:bg-[#E8EEFF]! rounded-none text-[#808080] data-[state=active]:text-[#0B1E66] text-[16px] font-medium px-5 py-3"
+                className="data-[state=active]:bg-[#E8EEFF]! rounded-none text-[#808080] data-[state=active]:text-[#0B1E66] text-[16px] font-medium px-4 sm:px-5 py-3 shrink-0"
               >
                 {tab.title}
               </TabsTrigger>
@@ -86,7 +87,7 @@ const NotificationManagementContent = () => {
           </TabsList>
           {activeTab === "template" && (
             <button
-              className="bg-[#0B1E66] rounded-lg text-white px-4 py-2 flex items-center gap-3 animate-in fade-in duration-300"
+              className="bg-[#0B1E66] rounded-lg text-white px-4 py-2 flex items-center justify-center gap-3 animate-in fade-in duration-300 w-full sm:w-auto"
               onClick={() => setIsAddTemplateModal(true)}
             >
               <Plus size={18} />
@@ -95,7 +96,7 @@ const NotificationManagementContent = () => {
           )}
           {activeTab === "campaign" && (
             <button
-              className="bg-[#0B1E66] rounded-lg text-white px-4 py-2 flex items-center gap-3 animate-in fade-in duration-300"
+              className="bg-[#0B1E66] rounded-lg text-white px-4 py-2 flex items-center justify-center gap-3 animate-in fade-in duration-300 w-full sm:w-auto"
               onClick={() => setIsAddCampaignModal(true)}
             >
               <Plus size={18} />
@@ -130,7 +131,7 @@ const NotificationManagementContent = () => {
         onSubmit={handleCreateCampaign}
         loading={loadingCampaign}
       />
-    </>
+    </div>
   );
 };
 

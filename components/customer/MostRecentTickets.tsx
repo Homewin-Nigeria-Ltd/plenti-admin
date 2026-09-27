@@ -119,7 +119,7 @@ export default function MostRecentTickets() {
   }));
 
   return (
-    <div className="bg-white rounded-xl border border-[#EEF1F6] p-6">
+    <div className="min-w-0 bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-[#0B1E66] text-lg font-semibold">
           Most Recent Tickets

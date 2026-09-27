@@ -126,7 +126,7 @@ export function CreatePromoCodeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[600px]" showCloseButton={false}>
+      <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-[600px]" showCloseButton={false}>
         <DialogHeader className="relative pb-4">
           <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
             Create Discount Code

@@ -76,7 +76,7 @@ export function BannerDetailsModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="min-w-[600px] max-w-[700px]"
+        className="w-full max-w-[calc(100%-2rem)] sm:max-w-[700px]"
         showCloseButton={false}
       >
         <DialogHeader className="relative">

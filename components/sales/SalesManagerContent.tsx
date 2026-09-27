@@ -48,10 +48,10 @@ export default function SalesManagerContent() {
   }, [activeTab, targetsPage, fetchTargets]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       {/* Tabs Navigation */}
-      <div className="flex items-center justify-between rounded-lg p-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
+        <div className="flex items-center gap-2 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -59,7 +59,7 @@ export default function SalesManagerContent() {
                 setActiveTab(tab.id);
                 router.replace(`?tab=${tab.id}`);
               }}
-              className={`px-4 py-2 text-base font-medium rounded-[3px] transition-colors ${
+              className={`px-4 py-2 text-base font-medium rounded-[3px] transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === tab.id
                   ? "text-[#0B1E66] bg-[#E8EEFF]"
                   : "text-[#808080] hover:text-[#0B1E66]"
@@ -73,7 +73,7 @@ export default function SalesManagerContent() {
         {activeTab === "targets" && (
           <button
             onClick={() => setIsAssignTargetModalOpen(true)}
-            className="flex items-center gap-2 bg-[#0B1E66] text-white px-4 py-2.5 rounded-md hover:bg-[#0B1E66]/90 transition-colors"
+            className="flex items-center justify-center gap-2 bg-[#0B1E66] text-white px-4 py-2.5 rounded-md hover:bg-[#0B1E66]/90 transition-colors w-full sm:w-auto shrink-0"
           >
             <Image
               src="/icons/sales/plus-icon.svg"
@@ -120,10 +120,10 @@ export default function SalesManagerContent() {
         {activeTab === "commissions" && (
           <div className="space-y-4">
             {/* Commissions Sub-tabs */}
-            <div className="flex items-center gap-2 border-b border-[#EAECF0]">
+            <div className="flex items-center gap-2 border-b border-[#EAECF0] overflow-x-auto">
               <button
                 onClick={() => setCommissionsSubTab("withdrawal")}
-                className={`px-4 py-3 font-medium transition-colors ${
+                className={`px-4 py-3 font-medium transition-colors whitespace-nowrap ${
                   commissionsSubTab === "withdrawal"
                     ? "text-[#0B1E66] border-b-2 border-[#0B1E66]"
                     : "text-[#808080] hover:text-[#0B1E66]"
@@ -133,7 +133,7 @@ export default function SalesManagerContent() {
               </button>
               <button
                 onClick={() => setCommissionsSubTab("myCommissions")}
-                className={`px-4 py-3 font-medium transition-colors ${
+                className={`px-4 py-3 font-medium transition-colors whitespace-nowrap ${
                   commissionsSubTab === "myCommissions"
                     ? "text-[#0B1E66] border-b-2 border-[#0B1E66]"
                     : "text-[#808080] hover:text-[#0B1E66]"

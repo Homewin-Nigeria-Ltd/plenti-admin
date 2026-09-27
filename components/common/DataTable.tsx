@@ -80,7 +80,7 @@ export default function DataTable<T extends Record<string, React.ReactNode>>({
         </TableBody>
       </Table>
 
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-[#667085]">
           Page {page} of {resolvedPageCount}
         </p>

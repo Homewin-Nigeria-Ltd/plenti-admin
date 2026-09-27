@@ -30,15 +30,15 @@ export function FinanceTabs({
   };
 
   return (
-    <div className={`flex items-center gap-8`}>
+    <div className="flex items-center gap-4 sm:gap-8 overflow-x-auto">
       {tabs.map((tab) => (
         <button
           key={tab}
           onClick={() => setActive(tab)}
           className={
             active === tab
-              ? "text-[#0B1E66] font-medium rounded-[3px] bg-[#E8EEFF] px-3 py-1"
-              : "text-[#808080]"
+              ? "text-[#0B1E66] font-medium rounded-[3px] bg-[#E8EEFF] px-3 py-1 whitespace-nowrap"
+              : "text-[#808080] whitespace-nowrap"
           }
         >
           {TAB_LABELS[tab]}

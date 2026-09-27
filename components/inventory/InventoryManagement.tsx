@@ -88,7 +88,7 @@ export default function InventoryManagement() {
   }, [warehouses]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       {/* <div className="flex items-center justify-end">
             <Button
               onClick={() => setIsAddWarehouseModalOpen(true)}
@@ -140,7 +140,7 @@ export default function InventoryManagement() {
       )}
 
       {!loadingStatistics && (
-        <div className="grid grid-col-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
           <StockLevelCard stockLevel={stockLevel} />
           <RecentlyStockCard recentStocks={recentStocks.slice(0, 4)} />
         </div>

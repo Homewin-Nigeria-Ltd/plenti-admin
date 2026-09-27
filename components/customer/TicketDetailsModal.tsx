@@ -211,7 +211,7 @@ export function TicketDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="md:min-w-[700px]" showCloseButton={false}>
+      <DialogContent className="w-full max-w-[calc(100%-2rem)] md:max-w-[700px]" showCloseButton={false}>
         <DialogHeader className="relative pb-4">
           {loadingSingleTicket ? (
             <>

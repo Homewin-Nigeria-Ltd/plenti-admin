@@ -16,9 +16,9 @@ const NotificationOverview = () => {
   }, [getNotificationStats, notificationStats]);
 
   return (
-    <div>
+    <div className="min-w-0">
       <NotificationOverviewMetricCard metrics={notificationStats} />
-      <div className="grid grid-cols-2 gap-5 ">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 min-w-0">
         <ChannelDeliveryRate
           channel_breakdown={notificationStats?.channel_breakdown ?? []}
           total={notificationStats?.total_notifications}

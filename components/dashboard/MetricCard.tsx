@@ -42,8 +42,8 @@ export default function MetricCard({
         >
           {formattedValue}
         </p>
-        <div className="flex items-center gap-2">
-          <TrendingDown className="w-4 h-4 text-[#0B1E66]" />
+        <div className="flex items-center gap-2 flex-wrap">
+          <TrendingDown className="w-4 h-4 text-[#0B1E66] shrink-0" />
           <span className="text-[#0B1E66] text-xs">{changePercent}%</span>
           <span className="text-[#98A2B3] text-xs">Compared to last month</span>
         </div>

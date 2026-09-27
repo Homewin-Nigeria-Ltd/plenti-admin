@@ -51,14 +51,14 @@ export default function DashboardStatCard({
   return (
     <div
       className={cn(
-        "bg-white rounded-xl border border-[#EEF1F6] p-5 shadow-xs relative overflow-hidden",
+        "min-w-0 bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-5 shadow-xs relative overflow-hidden",
         className
       )}
     >
-      <div className="flex justify-between">
-        <div className="flex-1">
-          <p className="text-[#667085] text-sm font-medium mb-2">{title}</p>
-          <p className="text-[#0B1E66] text-[28px] font-semibold tracking-tight mb-2">
+      <div className="flex justify-between gap-3 min-w-0">
+        <div className="flex-1 min-w-0">
+          <p className="text-[#667085] text-sm font-medium mb-2 truncate">{title}</p>
+          <p className="text-[#0B1E66] text-2xl sm:text-[28px] font-semibold tracking-tight mb-2 break-words">
             {formattedValue}
           </p>
         </div>

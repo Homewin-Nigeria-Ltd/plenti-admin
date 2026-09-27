@@ -99,9 +99,9 @@ export default function FaqContent() {
   }));
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="border border-[#F0F2F5] rounded-[8px] h-[38px] flex items-center gap-1 p-2 px-4 shadow-sm flex-1 max-w-md">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-4 min-w-0">
+        <div className="border border-[#F0F2F5] rounded-[8px] h-[38px] flex items-center gap-1 p-2 px-4 shadow-sm w-full min-w-0 max-w-md">
           <Image
             src={"/icons/search.png"}
             alt="Search"

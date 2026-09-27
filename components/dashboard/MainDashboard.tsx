@@ -84,8 +84,8 @@ const MainDashboard = () => {
 
   if (loadingOverview && !overview) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="min-w-0 space-y-4 sm:space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -94,7 +94,7 @@ const MainDashboard = () => {
           ))}
         </div>
         <div className="h-75 bg-[#EEF1F6] rounded-xl animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -118,9 +118,9 @@ const MainDashboard = () => {
     );
   }
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       <p className="text-sm text-muted-foreground">{displayDate}</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {stats?.map((stat) => (
           <DashboardStatCard
             key={stat.title}
@@ -135,7 +135,7 @@ const MainDashboard = () => {
 
       <RevenueOverviewChart />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {metricCards?.map((m) => (
           <MetricCard
             key={m.title}
@@ -146,7 +146,7 @@ const MainDashboard = () => {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0">
         <TopProducts
           products={topProducts}
           loading={loadingTopProducts}

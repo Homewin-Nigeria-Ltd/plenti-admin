@@ -302,7 +302,7 @@ export function RefundRequestTable() {
   const currentPageSize = refundPagination?.pageSize || pageSize;
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       <div className="border border-[#F0F2F5] rounded-xl h-9.5 flex items-center gap-1 p-1 px-4 shadow-sm">
         <Image src={"/icons/search.png"} alt="Search" width={20} height={20} />
         <Input
