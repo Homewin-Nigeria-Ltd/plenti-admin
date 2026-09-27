@@ -56,11 +56,11 @@ export function PaymentMethodDistribution() {
   const totalAmount = paymentData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 min-w-0">
       {/* Payment Method Distribution Card */}
-      <div className="bg-white rounded-2xl border border-[#E4E7EC] p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
+      <div className="min-w-0 bg-white rounded-2xl border border-[#E4E7EC] p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div className="min-w-0">
             <h3 className="text-[#98A2B3] text-[16px] font-medium">
               Payment Method Distribution
             </h3>
@@ -69,7 +69,7 @@ export function PaymentMethodDistribution() {
             </p>
           </div>
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[120px] bg-[#F8F9FB] border-0">
+            <SelectTrigger className="w-full sm:w-[120px] bg-[#F8F9FB] border-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="border-0">
@@ -80,7 +80,7 @@ export function PaymentMethodDistribution() {
           </Select>
         </div>
 
-        <div className="flex items-center gap-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8 min-w-0">
           {/* Donut Chart */}
           <PaymentMethodChart
             data={paymentData}
@@ -88,9 +88,9 @@ export function PaymentMethodDistribution() {
           />
 
           {/* Total and Legend */}
-          <div className="flex-1 space-y-6">
+          <div className="flex-1 min-w-0 space-y-6">
             <div className="flex items-center justify-between">
-              <p className="text-[#0B1E66] text-2xl font-semibold">
+              <p className="text-[#0B1E66] text-xl sm:text-2xl font-semibold break-words">
                 {formatCurrency(totalAmount)}
               </p>
             </div>
@@ -108,7 +108,7 @@ export function PaymentMethodDistribution() {
                       {item.name}
                     </p>
                   </div>
-                  <p className="text-[#101928] text-[14px] font-medium">
+                  <p className="text-[#101928] text-[14px] font-medium shrink-0">
                     {formatCurrency(item.value)}
                     {typeof item.percentage === "number"
                       ? ` (${item.percentage}%)`
@@ -122,12 +122,12 @@ export function PaymentMethodDistribution() {
       </div>
 
       {/* Metric Cards Grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
         {/* Total Revenue Card */}
         <div className="bg-white rounded-2xl border border-[#E4E7EC] p-2">
           <div className="bg-[#E8EEFF] rounded-xl p-5 h-full flex flex-col justify-between">
             <p className="text-[#98A2B3] text-[14px] mb-2">Total Revenue</p>
-            <p className="text-[#0B1E66] text-[30px] font-semibold mb-2">
+            <p className="text-[#0B1E66] text-xl sm:text-[30px] font-semibold mb-2 break-words">
               {overview?.summary?.total_revenue
                 ? formatCurrency(parseFloat(overview.summary.total_revenue))
                 : formatCurrency(0)}
@@ -140,7 +140,7 @@ export function PaymentMethodDistribution() {
         <div className="bg-white rounded-2xl border border-[#E4E7EC] p-2">
           <div className="bg-[#E8EEFF] rounded-xl p-5 h-full flex flex-col justify-between">
             <p className="text-[#98A2B3] text-[14px] mb-2">Pending Refunds</p>
-            <p className="text-[#0B1E66] text-[30px] font-semibold mb-2">
+            <p className="text-[#0B1E66] text-xl sm:text-[30px] font-semibold mb-2 break-words">
               {overview?.summary?.pending_refunds || 0}
             </p>
             <p className="text-[#98A2B3] text-xs">vs last month</p>
@@ -153,7 +153,7 @@ export function PaymentMethodDistribution() {
             <p className="text-[#98A2B3] text-[14px] mb-2">
               Total Transactions
             </p>
-            <p className="text-[#0B1E66] text-[30px] font-semibold mb-2">
+            <p className="text-[#0B1E66] text-xl sm:text-[30px] font-semibold mb-2 break-words">
               {overview?.summary?.total_transactions
                 ? new Intl.NumberFormat("en-US").format(
                     overview.summary.total_transactions
@@ -168,7 +168,7 @@ export function PaymentMethodDistribution() {
         <div className="bg-white rounded-2xl border border-[#E4E7EC] p-2">
           <div className="bg-[#E8EEFF] rounded-xl p-5 h-full flex flex-col justify-between">
             <p className="text-[#98A2B3] text-[14px] mb-2">Avg Order Value</p>
-            <p className="text-[#0B1E66] text-[30px] font-semibold mb-2">
+            <p className="text-[#0B1E66] text-xl sm:text-[30px] font-semibold mb-2 break-words">
               {overview?.summary?.average_order_value
                 ? formatCurrency(overview.summary.average_order_value)
                 : formatCurrency(0)}

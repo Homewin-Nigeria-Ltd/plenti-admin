@@ -38,7 +38,7 @@ export default function CartMetrics({
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
+    <div className="min-w-0 w-full bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-6 shadow-xs">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-[#0B1E66] text-lg font-semibold">Cart</h3>
         <div className="relative group">
@@ -103,17 +103,17 @@ export default function CartMetrics({
       </div>
 
       <div className="space-y-3">
-        <div className="flex gap-10 flex-row-reverse justify-between">
-          <p className="text-[#0B1E66] font-medium text-[17px]">
+        <div className="flex gap-4 flex-row-reverse justify-between min-w-0">
+          <p className="text-[#0B1E66] font-medium text-base sm:text-[17px] shrink-0">
             {abandonedCart.toLocaleString()}
           </p>
-          <p className="text-[#0B1E66] text-[17px]">Abandoned Cart</p>
+          <p className="text-[#0B1E66] text-base sm:text-[17px] min-w-0">Abandoned Cart</p>
         </div>
-        <div className="flex gap-10 flex-row-reverse justify-between">
-          <p className="text-[#98A2B3] font-medium text-[17px]">
+        <div className="flex gap-4 flex-row-reverse justify-between min-w-0">
+          <p className="text-[#98A2B3] font-medium text-base sm:text-[17px] shrink-0">
             {displayRevenue}
           </p>
-          <p className="text-[#98A2B3] text-[17px]">Abandoned Revenue</p>
+          <p className="text-[#98A2B3] text-base sm:text-[17px] min-w-0">Abandoned Revenue</p>
         </div>
       </div>
     </div>

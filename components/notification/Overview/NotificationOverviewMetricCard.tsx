@@ -51,10 +51,10 @@ const NotificationOverviewMetricCard = ({
             <h3 className="text-[#808080] text-sm font-medium mb-3">
               {metric.title}
             </h3>
-            <div className="text-[32px] font-semibold text-[#0B1E66] mb-3">
+            <div className="text-2xl sm:text-[32px] font-semibold text-[#0B1E66] mb-3 break-words">
               {metric.value}
             </div>
-            <div className="flex items-center gap-1.5 text-sm">
+            <div className="flex flex-wrap items-center gap-1.5 text-sm">
               <span
                 className={`flex items-center gap-0.5 px-3 text-[12px] font-medium rounded-[12px] ${
                   metric.isPositive

@@ -173,7 +173,7 @@ export function EditBannerModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
-        className="max-w-[600px] max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
         showCloseButton={false}
       >
         <DialogHeader className="relative pb-4">

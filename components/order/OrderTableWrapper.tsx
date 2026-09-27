@@ -275,7 +275,7 @@ export default function OrderTableWrapper() {
                 }}
               />
             ) : !hasRequested || loading ? (
-              <div className="min-w-180">
+              <div className="overflow-x-auto">
                 <div className="grid grid-cols-7 gap-4 px-4 py-3 border-b border-neutral-100">
                   {Array.from({ length: 7 }).map((_, i) => (
                     <Skeleton key={i} className="h-4 w-24" />

@@ -47,15 +47,17 @@ export function InventoryLayoutClient() {
   return (
     <div
       className={cn(
-        "items-center justify-between gap-5",
-        pathname.includes("/inventory/warehouse") ? "hidden" : "flex"
+        "items-stretch sm:items-center justify-between gap-3 sm:gap-5 min-w-0",
+        pathname.includes("/inventory/warehouse")
+          ? "hidden"
+          : "flex flex-col sm:flex-row"
       )}
     >
       <InventoryTabNav stockAlertsCount={stockAlertsCount} />
       {isStockTransferPage && (
         <Button
           onClick={() => setIsNewTransferModalOpen(true)}
-          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white shrink-0 h-11.25"
+          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white shrink-0 h-11.25 w-full sm:w-auto"
         >
           <Plus className="size-4 mr-2 " />
           New Transfer
@@ -65,7 +67,7 @@ export function InventoryLayoutClient() {
       {isOverview && (
         <Button
           onClick={() => setIsAddWarehouseModalOpen(true)}
-          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white shrink-0 h-11.25"
+          className="bg-[#0B1E66] hover:bg-[#0B1E66] text-white shrink-0 h-11.25 w-full sm:w-auto"
         >
           <Plus className="size-4 mr-2 " />
           Add Warehouse

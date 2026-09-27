@@ -26,7 +26,15 @@ import { cn } from "@/lib/utils";
 const SIDEBAR_WIDTH_EXPANDED = 340;
 const SIDEBAR_WIDTH_COLLAPSED = 135;
 
-export default function Sidebar() {
+type SidebarProps = {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+};
+
+export default function Sidebar({
+  mobileOpen = false,
+  onMobileClose,
+}: SidebarProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(false);
@@ -73,14 +81,30 @@ export default function Sidebar() {
     }
   }, [router]);
 
-  const collapsed = !isExpanded;
+  const collapsed = mobileOpen ? false : !isExpanded;
 
   return (
+    <>
+      {mobileOpen ? (
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          onClick={onMobileClose}
+        />
+      ) : null}
     <aside
-      className="h-screen max-h-screen flex flex-col justify-between bg-white md:sticky md:top-0 md:left-0 md:z-20 overflow-hidden sm:fixed sm:inset-0 transition-[width] duration-50 ease-in-out shrink-0"
+      className={cn(
+        "h-dvh max-h-dvh flex flex-col justify-between bg-white overflow-hidden shrink-0 transition-[width,transform] duration-200 ease-in-out",
+        "max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-50",
+        mobileOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full",
+        "lg:sticky lg:top-0 lg:z-20 lg:translate-x-0",
+      )}
       style={{
         width: `${
-          isExpanded ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COLLAPSED
+          mobileOpen || isExpanded
+            ? SIDEBAR_WIDTH_EXPANDED
+            : SIDEBAR_WIDTH_COLLAPSED
         }px`,
       }}
       onMouseEnter={handleExpand}
@@ -198,5 +222,6 @@ export default function Sidebar() {
         )}
       </div>
     </aside>
+    </>
   );
 }

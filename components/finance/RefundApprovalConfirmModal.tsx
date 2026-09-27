@@ -44,7 +44,7 @@ export function RefundApprovalConfirmModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="sm:max-w-md rounded-[12px] min-w-[550px]"
+        className="w-full max-w-[calc(100%-2rem)] sm:max-w-md rounded-[12px]"
         showCloseButton={false}
       >
         <div className="flex items-start gap-4">

@@ -57,7 +57,7 @@ export default function SalesRepContent() {
   }, [activeTab, targetsPage, fetchTargets]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       {allowedTabs.length === 0 ? (
         <div className="rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-12 text-center">
           <p className="text-sm text-[#667085]">
@@ -67,8 +67,8 @@ export default function SalesRepContent() {
       ) : (
         <>
           {/* Tabs Navigation */}
-          <div className="flex items-center justify-between rounded-lg p-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
+            <div className="flex items-center gap-2 overflow-x-auto">
               {allowedTabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -76,7 +76,7 @@ export default function SalesRepContent() {
                     setActiveTab(tab.id);
                     router.replace(`?tab=${tab.id}`);
                   }}
-                  className={`px-4 py-2 text-base font-medium rounded-[3px] transition-colors ${
+                  className={`px-4 py-2 text-base font-medium rounded-[3px] transition-colors whitespace-nowrap shrink-0 ${
                     activeTab === tab.id
                       ? "text-[#0B1E66] bg-[#E8EEFF]"
                       : "text-[#808080] hover:text-[#0B1E66]"
@@ -90,7 +90,7 @@ export default function SalesRepContent() {
             {activeTab === "commission" && canRequestWithdrawal && (
               <button
                 onClick={() => setIsWithdrawalModalOpen(true)}
-                className="flex items-center gap-2 bg-[#0B1E66] text-white px-4 py-2.5 rounded-md hover:bg-[#0B1E66]/90 transition-colors"
+                className="flex items-center justify-center gap-2 bg-[#0B1E66] text-white px-4 py-2.5 rounded-md hover:bg-[#0B1E66]/90 transition-colors w-full sm:w-auto shrink-0"
               >
                 <span className="text-lg">+</span>
                 <span className="text-md font-medium">Request Withdrawal</span>

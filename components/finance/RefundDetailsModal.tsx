@@ -90,7 +90,7 @@ export function RefundDetailsModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="sm:max-w-3xl rounded-[12px] max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-[calc(100%-2rem)] sm:max-w-3xl rounded-[12px] max-h-[90vh] overflow-y-auto"
         showCloseButton={false}
       >
         <div className="relative">

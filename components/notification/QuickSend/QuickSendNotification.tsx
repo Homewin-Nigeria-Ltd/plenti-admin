@@ -196,7 +196,7 @@ const QuickSendNotification: React.FC = () => {
           <Label className="text-gray-700 font-medium">
             Notification Channel
           </Label>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {channels.map((channel) => (
               <button
                 key={channel.id}

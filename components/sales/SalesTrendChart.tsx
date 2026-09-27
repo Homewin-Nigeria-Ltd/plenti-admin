@@ -93,12 +93,12 @@ export default function SalesTrendChart({
   };
 
   return (
-    <div className="rounded-4xl border border-[#EAECF0] bg-white p-6">
-      <div className="flex items-start justify-between mb-6">
-        <div>
+    <div className="min-w-0 rounded-4xl border border-[#EAECF0] bg-white p-4 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+        <div className="min-w-0">
           <p className="text-xs font-medium text-[#98A2B3]">Sales Trend</p>
-          <div className="flex items-baseline gap-2">
-            <p className="text-[34px] font-bold text-[#2B3674] leading-tight">
+          <div className="flex flex-wrap items-baseline gap-2">
+            <p className="text-[28px] sm:text-[34px] font-bold text-[#2B3674] leading-tight break-words">
               {trendSummary ? `₦${formatLargeAmount(trendSummary.value)}` : "-"}
             </p>
             <div className="flex items-center gap-2">
@@ -142,7 +142,7 @@ export default function SalesTrendChart({
             ))}
           </select> */}
 
-          <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1">
+          <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1 overflow-x-auto">
             {timePeriods.map((period) => {
               const active = selectedPeriod === period;
               return (
@@ -177,7 +177,7 @@ export default function SalesTrendChart({
           </div>
         </div>
       ) : (
-        <ChartContainer config={chartConfig} className="h-75 w-full">
+        <ChartContainer config={chartConfig} className="h-56 sm:h-75 w-full min-w-0">
           <AreaChart
             data={chartData}
             margin={{ top: 10, right: 10, left: 30, bottom: 0 }}

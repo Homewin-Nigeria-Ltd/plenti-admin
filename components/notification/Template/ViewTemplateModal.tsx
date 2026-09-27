@@ -18,7 +18,7 @@ export const ViewTemplateModal = ({ template, onClose }: Props) => {
         Template Details: {template.name}
       </DialogTitle>
       <DialogContent
-        className="max-w-2xl p-8 rounded-[12px] border-none shadow-2xl"
+        className="w-full max-w-[calc(100%-2rem)] sm:max-w-2xl p-4 sm:p-8 rounded-[12px] border-none shadow-2xl"
         showCloseButton={false}
       >
         <button

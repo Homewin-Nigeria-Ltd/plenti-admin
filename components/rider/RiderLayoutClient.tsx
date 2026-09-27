@@ -19,7 +19,7 @@ export function RiderLayoutClient({ children }: { children: React.ReactNode }) {
   const isChatPage = pathname === "/rider/chat" || pathname.startsWith("/rider/chat/");
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <RiderTabNav />
         {!isChatPage && (

@@ -140,8 +140,8 @@ export function FinanceTransactionTable() {
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="bg-white rounded-xl border border-[#EEF1F6] p-6 space-y-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="min-w-0 bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-6 space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-[#0B1E66] font-semibold text-base">Transactions</h3>
         <Button
           type="button"

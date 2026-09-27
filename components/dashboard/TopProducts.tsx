@@ -42,10 +42,10 @@ export default function TopProducts({
   const list = products && products.length > 0 ? products : [];
 
   return (
-    <div className="bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
-      <div className="flex items-start justify-between mb-4 gap-5">
-        <div>
-          <h3 className="text-[#071D32] text-[20px] font-bold mb-1">
+    <div className="min-w-0 w-full bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-6 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3 sm:gap-5">
+        <div className="min-w-0">
+          <h3 className="text-[#071D32] text-lg sm:text-[20px] font-bold mb-1">
             Top Products
           </h3>
           <p className="text-[#909090] text-sm">
@@ -58,7 +58,7 @@ export default function TopProducts({
             onFilterChange?.(value as TopProductsFilter)
           }
         >
-          <SelectTrigger className="w-30 h-9 border-[#EEF1F6]">
+          <SelectTrigger className="w-full sm:w-30 h-9 border-[#EEF1F6]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -102,7 +102,7 @@ export default function TopProducts({
           list.map((product, index) => (
             <div
               key={`${product.name}-${index}`}
-              className="flex items-center gap-4 py-3 rounded-lg transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-3 rounded-lg transition-colors"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="shrink-0 w-8 h-8 rounded-full bg-[#0B1E66] text-white flex items-center justify-center text-sm font-semibold">
@@ -123,7 +123,7 @@ export default function TopProducts({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[#101928] font-medium text-sm truncate max-w-[200px]">
+                  <p className="text-[#101928] font-medium text-sm truncate">
                     {product.name}
                   </p>
                   <p className="text-[#667085] text-xs">
@@ -131,7 +131,7 @@ export default function TopProducts({
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-6 shrink-0">
+              <div className="flex items-center gap-4 sm:gap-6 sm:shrink-0 pl-11 sm:pl-0">
                 <div className="text-right">
                   <p className="text-[#98A2B3] text-xs">Number Sold</p>
                   <p className="text-[#0A2B4B] font-bold text-[16px]">

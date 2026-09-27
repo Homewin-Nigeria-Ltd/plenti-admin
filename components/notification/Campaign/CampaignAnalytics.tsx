@@ -66,15 +66,15 @@ const CampaignAnalytics: React.FC = () => {
   };
 
   return (
-    <div className="w-full p-6 space-y-6 overflow-y-auto">
+    <div className="w-full min-w-0 p-0 sm:p-6 space-y-4 sm:space-y-6">
       {campaigns && campaigns.length > 0 ? (
         campaigns.map((campaign) => (
           <div
             key={campaign.id}
-            className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
+            className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow duration-200 min-w-0"
           >
             {/* Header */}
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <h3 className="text-lg font-bold text-blue-950">
@@ -169,7 +169,7 @@ const CampaignAnalytics: React.FC = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {/* Recipients */}
               <div className="bg-[#F9FAFB] rounded-lg p-4 text-center">
                 <span className="text-xl font-bold text-black">
