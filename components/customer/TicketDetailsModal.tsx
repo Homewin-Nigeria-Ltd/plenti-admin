@@ -211,33 +211,53 @@ export function TicketDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="w-full max-w-[calc(100%-2rem)] md:max-w-[700px]" showCloseButton={false}>
-        <DialogHeader className="relative pb-4">
+      <DialogContent className="w-[calc(100%-2rem)] md:max-w-[700px] max-h-[90dvh] overflow-hidden flex flex-col" showCloseButton={false}>
+        <DialogHeader className="pb-4 shrink-0">
           {loadingSingleTicket ? (
-            <>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
               <DialogTitle className="sr-only">
                 Loading ticket details
               </DialogTitle>
               <div className="h-8 bg-[#EEF1F6] rounded w-2/3 mb-2 animate-pulse" />
               <div className="h-4 bg-[#EEF1F6] rounded w-1/2 animate-pulse" />
-            </>
+              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                aria-label="Close dialog"
+                className="flex items-center justify-center size-8 bg-[#E8EEFF] rounded-full hover:bg-[#E8EEFF]/80 transition-colors shrink-0"
+              >
+                <X color="#0B1E66" size={18} />
+              </button>
+            </div>
           ) : singleTicketError ? (
-            <>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
               <DialogTitle className="sr-only">Ticket details</DialogTitle>
               <p className="text-[#D42620] text-sm">{singleTicketError}</p>
-            </>
+              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                aria-label="Close dialog"
+                className="flex items-center justify-center size-8 bg-[#E8EEFF] rounded-full hover:bg-[#E8EEFF]/80 transition-colors shrink-0"
+              >
+                <X color="#0B1E66" size={18} />
+              </button>
+            </div>
           ) : ticket ? (
-            <div className="flex items-start justify-between gap-4 pr-12">
-              <div className="flex-1">
-                <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-base sm:text-lg font-bold text-[#101928] mb-2 leading-snug break-words">
                   Ticket — {ticket.ticket_number}
                 </DialogTitle>
-                <p className="text-[#667085] text-sm">
+                <p className="text-[#667085] text-xs sm:text-sm">
                   Created: {formatDate(ticket.created_at)} | Updated:{" "}
                   {formatDate(ticket.updated_at)}
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     asChild
@@ -295,23 +315,33 @@ export function TicketDetailsModal({
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  aria-label="Close dialog"
+                  className="flex items-center justify-center size-8 bg-[#E8EEFF] rounded-full hover:bg-[#E8EEFF]/80 transition-colors"
+                >
+                  <X color="#0B1E66" size={18} />
+                </button>
               </div>
             </div>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={handleClose}
-            aria-label="Close dialog"
-            className="absolute top-0 right-0 flex items-center justify-center size-8 bg-[#E8EEFF] rounded-full hover:bg-[#E8EEFF]/80 transition-colors"
-          >
-            <X color="#0B1E66" size={18} />
-          </button>
+          ) : (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleClose}
+                aria-label="Close dialog"
+                className="flex items-center justify-center size-8 bg-[#E8EEFF] rounded-full hover:bg-[#E8EEFF]/80 transition-colors"
+              >
+                <X color="#0B1E66" size={18} />
+              </button>
+            </div>
+          )}
         </DialogHeader>
 
         {!loadingSingleTicket && !singleTicketError && ticket && (
-          <div className="space-y-6">
-            <div className="max-h-[70vh] overflow-auto space-y-6">
+          <>
+          <div className="space-y-6 flex-1 min-h-0 overflow-y-auto">
               {/* Customer & assignee */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -459,7 +489,7 @@ export function TicketDetailsModal({
               </div>
             </div>
 
-            <DialogFooter className="flex items-center gap-4 pt-4 border-t border-[#EEF1F6]">
+            <DialogFooter className="flex items-center gap-4 pt-4 border-t border-[#EEF1F6] shrink-0">
               {/* <Button
                 variant="outline"
                 className="flex-1 border-[#1F3A78] text-[#1F3A78] hover:bg-[#E8EEFF] h-[48px]"
@@ -474,7 +504,7 @@ export function TicketDetailsModal({
                 Leave Comment
               </Button>
             </DialogFooter>
-          </div>
+          </>
         )}
       </DialogContent>
 

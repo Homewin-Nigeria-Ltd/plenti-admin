@@ -126,12 +126,12 @@ export function CreatePromoCodeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-[600px]" showCloseButton={false}>
-        <DialogHeader className="relative pb-4">
-          <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90dvh] overflow-hidden flex flex-col p-4 sm:p-6" showCloseButton={false}>
+        <DialogHeader className="relative pb-4 shrink-0">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-[#101928] mb-2 pr-10">
             Create Discount Code
           </DialogTitle>
-          <DialogDescription className="text-[#667085] text-base font-normal">
+          <DialogDescription className="text-[#667085] text-sm font-normal pr-10">
             Create a new discount code for customers
           </DialogDescription>
 
@@ -148,7 +148,7 @@ export function CreatePromoCodeModal({
         <form
           id="create-promo-code-form"
           onSubmit={handleSubmit}
-          className="space-y-6 max-h-[60vh] overflow-y-auto pr-1"
+          className="space-y-6 flex-1 min-h-0 overflow-y-auto pr-1"
         >
           <div className="space-y-2">
             <Label
@@ -292,7 +292,7 @@ export function CreatePromoCodeModal({
           </div>
         </form>
 
-        <div className="pt-4">
+        <div className="pt-4 shrink-0">
           <Button
             type="submit"
             form="create-promo-code-form"

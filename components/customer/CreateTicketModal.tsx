@@ -191,12 +191,12 @@ export function CreateTicketModal({ isOpen, onClose }: CreateTicketModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-175" showCloseButton={false}>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-175 max-h-[90dvh] overflow-y-auto" showCloseButton={false}>
         <DialogHeader className="relative pb-4">
-          <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-[#101928] mb-2 pr-10">
             Create New Support Ticket
           </DialogTitle>
-          <DialogDescription className="text-[#667085] text-base font-normal">
+          <DialogDescription className="text-[#667085] text-sm font-normal pr-10">
             Fill in the details below to create a new support ticket
           </DialogDescription>
 

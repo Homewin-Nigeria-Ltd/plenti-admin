@@ -108,21 +108,19 @@ export function PromoCodeDetailsModal({
         className="w-full max-w-[calc(100%-2rem)] sm:max-w-[700px]"
         showCloseButton={false}
       >
-        <DialogHeader className="relative">
-          <div className="flex items-start justify-between gap-4 pr-12">
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="text-2xl font-bold text-[#101928] mb-1">
+        <DialogHeader>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-base sm:text-lg font-bold text-[#101928] mb-1 leading-snug break-words">
                 {promoCode.code}
               </DialogTitle>
               {promoCode.description && (
-                <DialogDescription className="text-[#101928] text-base font-normal">
+                <DialogDescription className="text-[#101928] text-sm font-normal">
                   {promoCode.description}
                 </DialogDescription>
               )}
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 absolute top-0 right-0">
+            <div className="flex items-center gap-2 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -163,6 +161,7 @@ export function PromoCodeDetailsModal({
             >
               <X color="#0B1E66" size={18} />
             </button>
+            </div>
           </div>
         </DialogHeader>
 
