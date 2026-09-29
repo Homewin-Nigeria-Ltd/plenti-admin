@@ -35,7 +35,7 @@ const RevenueOverviewChart = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-75 bg-[#EEF1F6] rounded-xl animate-pulse" />
+      <div className="h-44 bg-[#EEF1F6] rounded-xl animate-pulse" />
     ),
   }
 );
@@ -93,7 +93,7 @@ const MainDashboard = () => {
             />
           ))}
         </div>
-        <div className="h-75 bg-[#EEF1F6] rounded-xl animate-pulse" />
+        <div className="h-44 bg-[#EEF1F6] rounded-xl animate-pulse" />
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
@@ -133,7 +133,7 @@ const MainDashboard = () => {
         ))}
       </div>
 
-      <RevenueOverviewChart />
+      <RevenueOverviewChart compact />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {metricCards?.map((m) => (
