@@ -19,6 +19,7 @@ import { useRiderChatStore } from "@/store/useRiderChatStore";
 import { useRiderStore } from "@/store/useRiderStore";
 import {
   CheckCheck,
+  ChevronLeft,
   Loader2,
   Mic,
   Send,
@@ -28,7 +29,7 @@ import {
   Star,
   X,
 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
@@ -36,6 +37,7 @@ import type { RiderChatStaffMember } from "@/types/RiderChatTypes";
 
 export default function RiderChat() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const riderIdParam = searchParams.get("riderId");
 
   const [search, setSearch] = React.useState("");
@@ -54,6 +56,9 @@ export default function RiderChat() {
   const recordTimerRef = React.useRef<number | null>(null);
   const [isRecording, setIsRecording] = React.useState(false);
   const [recordSeconds, setRecordSeconds] = React.useState(0);
+  const [mobileThreadOpen, setMobileThreadOpen] = React.useState(
+    Boolean(riderIdParam),
+  );
   const hasAutoSelectedConversation = React.useRef(false);
 
   const fetchAccountSettings = useAccountStore((s) => s.fetchAccountSettings);
@@ -99,13 +104,20 @@ export default function RiderChat() {
     const riderId = Number(riderIdParam);
     if (!Number.isFinite(riderId) || riderId <= 0) return;
     void openRiderChat(riderId).then((ok) => {
-      if (!ok) toast.error("Could not open chat for this rider");
+      if (ok) setMobileThreadOpen(true);
+      else toast.error("Could not open chat for this rider");
     });
   }, [riderIdParam, openRiderChat]);
 
   React.useEffect(() => {
     if (hasAutoSelectedConversation.current || loadingConversations) return;
     if (riderIdParam) return;
+    if (
+      typeof window !== "undefined" &&
+      !window.matchMedia("(min-width: 768px)").matches
+    ) {
+      return;
+    }
 
     const first = conversations[0];
     if (!first || activeDeliveryId != null) return;
@@ -149,10 +161,9 @@ export default function RiderChat() {
   ]);
 
   const activeConversation = React.useMemo(() => {
-    if (activeDeliveryId == null) return conversations[0] ?? null;
+    if (activeDeliveryId == null) return null;
     return (
       conversations.find((c) => c.plenti_delivery_id === activeDeliveryId) ??
-      conversations[0] ??
       null
     );
   }, [activeDeliveryId, conversations]);
@@ -184,6 +195,15 @@ export default function RiderChat() {
     setMessageSearch("");
     setMessageSearchOpen(false);
     setActiveDeliveryId(deliveryId);
+    setMobileThreadOpen(true);
+  };
+
+  const handleBackToList = () => {
+    setMobileThreadOpen(false);
+    setMessageSearch("");
+    setMessageSearchOpen(false);
+    setEmojiOpen(false);
+    if (riderIdParam) router.replace("/rider/chat");
   };
 
   const insertEmoji = (emoji: string) => {
@@ -336,9 +356,14 @@ export default function RiderChat() {
   ]);
 
   return (
-    <div className="bg-white rounded-xl border border-[#EAECF0] overflow-hidden flex flex-col h-[calc(100dvh-14.5rem)]">
+    <div className="bg-white rounded-xl border border-[#EAECF0] overflow-hidden flex flex-col h-[calc(100dvh-11rem)] md:h-[calc(100dvh-14.5rem)]">
       <div className="flex flex-1 min-h-0 h-full">
-        <div className="w-full max-w-[340px] shrink-0 border-r border-[#EAECF0] flex flex-col min-h-0 h-full">
+        <div
+          className={cn(
+            "w-full md:max-w-[340px] shrink-0 md:border-r border-[#EAECF0] flex-col min-h-0 h-full",
+            mobileThreadOpen ? "hidden md:flex" : "flex",
+          )}
+        >
           <div className="p-4 border-b border-[#EAECF0]">
             <div className="border border-[#EAECF0] rounded-xl h-11 flex items-center gap-2 px-3 bg-white">
               <Search className="size-4 text-[#98A2B3] shrink-0" />
@@ -469,12 +494,25 @@ export default function RiderChat() {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        <div
+          className={cn(
+            "flex-1 flex-col min-w-0 min-h-0 h-full",
+            mobileThreadOpen ? "flex" : "hidden md:flex",
+          )}
+        >
           {headerRider ? (
             <>
-              <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-[#EAECF0] shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Avatar className="size-11 shrink-0">
+              <div className="flex items-center justify-between gap-2 sm:gap-4 px-3 py-3 sm:px-5 sm:py-4 border-b border-[#EAECF0] shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <button
+                    type="button"
+                    aria-label="Back to conversations"
+                    onClick={handleBackToList}
+                    className="md:hidden size-9 rounded-full hover:bg-[#F2F4F7] flex items-center justify-center shrink-0 -ml-1"
+                  >
+                    <ChevronLeft className="size-5 text-[#101928]" />
+                  </button>
+                  <Avatar className="size-10 sm:size-11 shrink-0">
                     {headerRider.avatar ? (
                       <AvatarImage src={headerRider.avatar} alt={headerRider.name} />
                     ) : null}
@@ -486,7 +524,7 @@ export default function RiderChat() {
                     <p className="font-semibold text-[#101928] truncate">
                       {headerRider.name}
                     </p>
-                    <p className="text-xs text-[#667085]">
+                    <p className="text-xs text-[#667085] truncate">
                       {[
                         activeThread?.order_number || activeConversation?.order_number
                           ? `Order ${activeThread?.order_number ?? activeConversation?.order_number}`
@@ -499,7 +537,7 @@ export default function RiderChat() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-[#667085]">
+                <div className="flex items-center gap-1 sm:gap-2 text-[#667085] shrink-0">
                   <a
                     href={telHref}
                     aria-label="Call rider"
@@ -537,7 +575,7 @@ export default function RiderChat() {
               </div>
 
               {messageSearchOpen ? (
-                <div className="px-5 py-3 border-b border-[#EAECF0] shrink-0">
+                <div className="px-3 py-3 sm:px-5 border-b border-[#EAECF0] shrink-0">
                   <div className="border border-[#EAECF0] rounded-xl h-11 flex items-center gap-2 px-3 bg-white">
                     <Search className="size-4 text-[#98A2B3] shrink-0" />
                     <Input
@@ -561,7 +599,7 @@ export default function RiderChat() {
                 </div>
               ) : null}
 
-              <div className="flex-1 overflow-y-auto px-5 py-6 space-y-4 bg-[#FCFCFD]">
+              <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-5 sm:py-6 space-y-4 bg-[#FCFCFD]">
                 {loadingMessages ? (
                   <div className="flex flex-col items-center justify-center h-full gap-3">
                     <Loader2 className="size-8 animate-spin text-[#0B1E66]" />
@@ -580,8 +618,8 @@ export default function RiderChat() {
                     const outgoing = isAdminChatMessage(message, messageContext);
                     return outgoing ? (
                       <div key={message.id} className="flex justify-end">
-                        <div className="max-w-[75%]">
-                          <div className="bg-[#6F91F6] text-white rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed">
+                        <div className="max-w-[85%] sm:max-w-[75%]">
+                          <div className="bg-[#6F91F6] text-white rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed break-words">
                             <ChatMessageBody message={message} outgoing />
                           </div>
                           <div className="flex items-center justify-end gap-1.5 mt-1 pr-1">
@@ -595,7 +633,7 @@ export default function RiderChat() {
                         </div>
                       </div>
                     ) : (
-                      <div key={message.id} className="flex items-end gap-2 max-w-[85%]">
+                      <div key={message.id} className="flex items-end gap-2 max-w-[85%] min-w-0">
                         <Avatar className="size-8 shrink-0">
                           {message.sender_type === "customer" ? null : headerRider.avatar ? (
                             <AvatarImage src={headerRider.avatar} alt={headerRider.name} />
@@ -612,11 +650,11 @@ export default function RiderChat() {
                               : getInitialsFromName(headerRider.name)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-[11px] font-medium text-[#667085] mb-1 ml-1">
                             {message.sender_name}
                           </p>
-                          <div className="bg-[#F2F4F7] text-[#101928] rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed">
+                          <div className="bg-[#F2F4F7] text-[#101928] rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed break-words">
                             <ChatMessageBody message={message} />
                           </div>
                           <p className="text-[11px] text-[#98A2B3] mt-1 ml-1">
@@ -630,9 +668,9 @@ export default function RiderChat() {
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="px-5 py-4 border-t border-[#EAECF0] shrink-0 bg-white">
+              <div className="px-3 py-3 sm:px-5 sm:py-4 border-t border-[#EAECF0] shrink-0 bg-white">
                 <form
-                  className="flex items-center gap-3 border border-[#EAECF0] rounded-full px-4 py-2 bg-white"
+                  className="flex items-center gap-2 sm:gap-3 border border-[#EAECF0] rounded-full px-3 sm:px-4 py-2 bg-white min-w-0"
                   onSubmit={(e) => {
                     e.preventDefault();
                     void handleSend();
@@ -666,7 +704,7 @@ export default function RiderChat() {
                     <Paperclip className="size-5" />
                   </button>
                   {isRecording ? (
-                    <p className="flex-1 text-sm text-[#E71D36] font-medium">
+                    <p className="flex-1 min-w-0 truncate text-sm text-[#E71D36] font-medium">
                       Recording {Math.floor(recordSeconds / 60)}:
                       {String(recordSeconds % 60).padStart(2, "0")}
                     </p>
@@ -677,7 +715,7 @@ export default function RiderChat() {
                       onChange={(e) => setDraft(e.target.value)}
                       placeholder="Write a message..."
                       disabled={sendingMessage}
-                      className="border-0 shadow-none h-9 flex-1 focus-visible:ring-0 placeholder:text-[#98A2B3] px-0"
+                      className="border-0 shadow-none h-9 min-w-0 flex-1 focus-visible:ring-0 placeholder:text-[#98A2B3] px-0"
                     />
                   )}
                   {isRecording ? (
@@ -740,7 +778,7 @@ export default function RiderChat() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-sm text-[#667085]">
+            <div className="flex-1 flex items-center justify-center px-4 text-sm text-[#667085] text-center">
               {loadingConversations
                 ? "Loading conversations…"
                 : "Select a conversation to start chatting"}

@@ -36,8 +36,8 @@ export function ChatMessageBody({
 
   if ((type === "voice" || type === "audio") && mediaUrl) {
     return (
-      <div className="space-y-2 min-w-[180px]">
-        <audio controls src={mediaUrl} className="w-full max-w-[240px]" />
+      <div className="space-y-2 min-w-0 w-full max-w-[240px]">
+        <audio controls src={mediaUrl} className="w-full max-w-full" />
         {caption ? <p>{caption}</p> : null}
       </div>
     );
