@@ -38,6 +38,31 @@ const formatNaira = (value: string | number) =>
     maximumFractionDigits: 0,
   }).format(typeof value === "string" ? parseFloat(value) || 0 : value);
 
+function formatUserDate(value?: string | null) {
+  if (!value?.trim()) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function displayLocation(user: AdminUser) {
+  return user.location?.trim() || user.address?.trim() || "—";
+}
+
+function displayFirstOrder(user: AdminUser) {
+  return user.first_order_date?.trim() || formatUserDate(user.first_order_at);
+}
+
+function displayLatestOrder(user: AdminUser) {
+  return user.latest_order_date?.trim() || formatUserDate(user.latest_order_at);
+}
+
 // Mock trend data for metric cards (in real app could come from API)
 const mockTrendUp = [1, 1.5, 2, 2.2, 2.5, 2.4, 2.8];
 const mockTrendDown = [3, 2.8, 2.5, 2.2, 2, 1.5, 1.2];
@@ -246,8 +271,8 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
               <MapPin className="size-4 text-[#667085] mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs text-[#98A2B3] font-medium">Location</p>
-                <p className="text-sm text-[#344054]">
-                  24 Idah Market Road, Idah, Kogi
+                <p className="text-sm text-[#344054] break-words">
+                  {displayLocation(user)}
                 </p>
               </div>
             </div>
@@ -258,7 +283,7 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
                   First Order
                 </p>
                 <p className="text-sm text-[#344054]">
-                  September 30, 2019 1:49 PM
+                  {displayFirstOrder(user)}
                 </p>
               </div>
             </div>
@@ -266,10 +291,10 @@ export default function ViewUser({ user, stats }: ViewUserProps) {
               <Calendar className="size-4 text-[#667085] mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs text-[#98A2B3] font-medium">
-                  Latest Orders
+                  Latest Order
                 </p>
                 <p className="text-sm text-[#344054]">
-                  February 14, 2020 7:52 AM
+                  {displayLatestOrder(user)}
                 </p>
               </div>
             </div>

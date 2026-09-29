@@ -86,7 +86,7 @@ const formatYAxisValue = (value: number) => {
   return `${value}`;
 };
 
-export function RevenueOverviewChart() {
+export function RevenueOverviewChart({ compact = false }: { compact?: boolean }) {
   const { overview, fetchFinanceOverview } = useFinanceStore();
   const [range, setRange] = React.useState<Range>("month");
   const data = useChartData(range, overview?.charts?.revenue_trend);
@@ -106,15 +106,32 @@ export function RevenueOverviewChart() {
   }, [overview]);
 
   return (
-    <div className="min-w-0 bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-6 shadow-xs">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+    <div
+      className={cn(
+        "min-w-0 bg-white rounded-xl border border-[#EEF1F6] shadow-xs",
+        compact ? "p-4" : "p-4 sm:p-6",
+      )}
+    >
+      <div
+        className={cn(
+          "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between",
+          compact ? "mb-4" : "mb-6",
+        )}
+      >
         <div className="min-w-0">
           <p className="text-[#98A2B3] text-xs font-medium mb-2">
             Revenue Overview
           </p>
           {data && data.length > 0 && (
             <div className="flex flex-wrap items-end gap-3">
-              <p className="text-[#0B1E66] text-[28px] sm:text-[36px] font-semibold leading-none break-words">
+              <p
+                className={cn(
+                  "text-[#0B1E66] font-semibold leading-none break-words",
+                  compact
+                    ? "text-[22px] sm:text-[28px]"
+                    : "text-[28px] sm:text-[36px]",
+                )}
+              >
                 {totalRevenue}
               </p>
               <div className="flex items-center gap-1 mb-1">
@@ -159,7 +176,7 @@ export function RevenueOverviewChart() {
       </div>
 
       {data && data.length > 0 ? (
-        <div className="h-56 sm:h-75 min-w-0">
+        <div className={cn("min-w-0", compact ? "h-36 sm:h-44" : "h-56 sm:h-75")}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
