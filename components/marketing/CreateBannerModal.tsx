@@ -148,10 +148,10 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
         showCloseButton={false}
       >
         <DialogHeader className="relative pb-4">
-          <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-[#101928] mb-2 pr-10">
             Create New Banner
           </DialogTitle>
-          <DialogDescription className="text-[#667085] text-base font-normal">
+          <DialogDescription className="text-[#667085] text-sm font-normal pr-10">
             Add a promotional banner with link and placement options
           </DialogDescription>
 

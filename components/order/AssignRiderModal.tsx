@@ -124,28 +124,29 @@ export function AssignRiderModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="min-w-[750px]" showCloseButton={false}>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-[750px] max-h-[90dvh] overflow-y-auto p-4 sm:p-6" showCloseButton={false}>
         <DialogHeader className="relative">
-          <DialogTitle className="font-medium text-[24px]">
-            Assign Rider to Order – {singleOrder?.order_number ?? "—"}
-          </DialogTitle>
-          <DialogDescription className="text-[#808080] text-[14px] font-normal">
-            Select a delivery agent for the order
-          </DialogDescription>
-
-          <div className="flex items-center gap-2 absolute top-2 right-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="font-medium text-lg sm:text-[24px] break-words">
+                Assign Rider to Order – {singleOrder?.order_number ?? "—"}
+              </DialogTitle>
+              <DialogDescription className="text-[#808080] text-sm font-normal">
+                Select a delivery agent for the order
+              </DialogDescription>
+            </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+              className="flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full shrink-0"
             >
               <X color="#0B1E66" size={20} cursor="pointer" />
             </button>
           </div>
         </DialogHeader>
 
-        <div className="px-6 pb-6 space-y-6">
+        <div className="space-y-6">
           <div className="space-y-2">
             <p className="text-[14px] text-[#1A1A1A]">Select Rider</p>
             {loadingRiders ? (

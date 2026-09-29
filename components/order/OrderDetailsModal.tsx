@@ -363,34 +363,36 @@ export function OrderDetailsModal({
           </>
         ) : (
           <>
-            <DialogHeader className="relative px-6 pt-6 pb-4 border-b border-neutral-100 shrink-0">
-              <DialogTitle className="font-medium text-[24px]">
-                Order Details – {singleOrder?.order_number ?? selectedId ?? "—"}
-              </DialogTitle>
-              <DialogDescription className="text-[#808080] text-[14px] font-normal">
-                Complete order information and actions
-              </DialogDescription>
-              {singleOrder && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 pr-20">
-                    <span className="text-sm font-medium text-[#101928]">
-                      Order status
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${orderStatusChipClass(
-                        String(singleOrder.status),
-                      )}`}
-                    >
+            <DialogHeader className="relative px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-neutral-100 shrink-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <DialogTitle className="font-medium text-lg sm:text-[24px] break-words">
+                    Order Details – {singleOrder?.order_number ?? selectedId ?? "—"}
+                  </DialogTitle>
+                  <DialogDescription className="text-[#808080] text-sm font-normal">
+                    Complete order information and actions
+                  </DialogDescription>
+                  {singleOrder && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-[#101928]">
+                        Order status
+                      </span>
                       <span
-                        className={`size-2 shrink-0 rounded-full ${orderStatusDotClass(
+                        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${orderStatusChipClass(
                           String(singleOrder.status),
                         )}`}
-                      />
-                      {formatOrderStatusLabel(String(singleOrder.status))}
-                    </span>
-                  </div>
-                )}
-
-              <div className="flex items-center gap-2 absolute top-6 right-6">
+                      >
+                        <span
+                          className={`size-2 shrink-0 rounded-full ${orderStatusDotClass(
+                            String(singleOrder.status),
+                          )}`}
+                        />
+                        {formatOrderStatusLabel(String(singleOrder.status))}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
                 {canShowActionMenu && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -503,10 +505,11 @@ export function OrderDetailsModal({
                 >
                   <X color="#0B1E66" size={20} cursor="pointer" />
                 </button>
+                </div>
               </div>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
               {!canViewOrderDetails ? (
                 <div className="rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-12 text-center mt-4">
                   <p className="text-sm text-[#667085]">
