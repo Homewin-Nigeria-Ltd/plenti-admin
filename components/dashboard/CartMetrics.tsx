@@ -38,15 +38,25 @@ export default function CartMetrics({
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
+    <div className="min-w-0 w-full bg-white rounded-xl border border-[#EEF1F6] p-4 sm:p-6 shadow-xs">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-[#0B1E66] text-lg font-semibold">Cart</h3>
-        <button
-          className="w-6 h-6 rounded-full bg-[#E8EEFF] flex items-center justify-center hover:bg-[#E8EEFF]/80 transition-colors"
-          title="Cart abandonment metrics"
-        >
-          <Info className="w-4 h-4 text-[#0B1E66]" />
-        </button>
+        <div className="relative group">
+          <button
+            type="button"
+            className="w-6 h-6 rounded-full bg-[#E8EEFF] flex items-center justify-center hover:bg-[#E8EEFF]/80 transition-colors"
+            aria-label="Cart abandonment metrics"
+          >
+            <Info className="w-4 h-4 text-[#0B1E66]" />
+          </button>
+          <div
+            role="tooltip"
+            className="pointer-events-none absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-[#EEF1F6] bg-white px-3 py-2 text-xs leading-5 text-[#667085] shadow-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+          >
+            Share of carts left unpaid, plus abandoned cart count and lost
+            revenue.
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col items-center justify-center mb-6">
@@ -93,17 +103,17 @@ export default function CartMetrics({
       </div>
 
       <div className="space-y-3">
-        <div className="flex gap-10 flex-row-reverse justify-between">
-          <p className="text-[#0B1E66] font-medium text-[17px]">
+        <div className="flex gap-4 flex-row-reverse justify-between min-w-0">
+          <p className="text-[#0B1E66] font-medium text-base sm:text-[17px] shrink-0">
             {abandonedCart.toLocaleString()}
           </p>
-          <p className="text-[#0B1E66] text-[17px]">Abandoned Cart</p>
+          <p className="text-[#0B1E66] text-base sm:text-[17px] min-w-0">Abandoned Cart</p>
         </div>
-        <div className="flex gap-10 flex-row-reverse justify-between">
-          <p className="text-[#98A2B3] font-medium text-[17px]">
+        <div className="flex gap-4 flex-row-reverse justify-between min-w-0">
+          <p className="text-[#98A2B3] font-medium text-base sm:text-[17px] shrink-0">
             {displayRevenue}
           </p>
-          <p className="text-[#98A2B3] text-[17px]">Abandoned Revenue</p>
+          <p className="text-[#98A2B3] text-base sm:text-[17px] min-w-0">Abandoned Revenue</p>
         </div>
       </div>
     </div>

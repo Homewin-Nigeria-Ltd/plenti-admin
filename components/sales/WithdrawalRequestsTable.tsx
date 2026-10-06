@@ -55,20 +55,25 @@ function WithdrawalRequestsTable() {
   ];
 
   // Map API data to DataTable rows
-  const rows = withdrawals.map((w) => ({
+  const rows = withdrawals.map((w) => {
+    const staffName = w.user?.name?.trim() || "Unknown staff";
+    const staffEmail = w.user?.email?.trim() || "—";
+    const initial = staffName.charAt(0).toUpperCase() || "?";
+
+    return {
     approved_at: w.approved_at ? new Date(w.approved_at).toLocaleString() : "-",
     user: (
       <div className="flex items-center gap-3">
         <Avatar className="size-8">
           <AvatarFallback className="bg-[#0B1E66] text-xs font-bold text-white">
-            {w.user.name.charAt(0)}
+            {initial}
           </AvatarFallback>
         </Avatar>
         <div className="flex flex-col">
           <span className="text-sm font-medium text-[#101928]">
-            {w.user.name}
+            {staffName}
           </span>
-          <span className="text-xs text-[#667085]">{w.user.email}</span>
+          <span className="text-xs text-[#667085]">{staffEmail}</span>
         </div>
       </div>
     ),
@@ -92,7 +97,8 @@ function WithdrawalRequestsTable() {
         Review
       </button>
     ),
-  }));
+    };
+  });
 
   return (
     <div className="rounded-xl bg-white">

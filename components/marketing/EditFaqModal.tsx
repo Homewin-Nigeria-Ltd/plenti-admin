@@ -81,12 +81,12 @@ export function EditFaqModal({ isOpen, onClose, faq }: EditFaqModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[600px]" showCloseButton={false}>
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90dvh] overflow-y-auto" showCloseButton={false}>
         <DialogHeader className="relative pb-4">
-          <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-[#101928] mb-2 pr-10">
             Edit FAQ
           </DialogTitle>
-          <DialogDescription className="text-[#667085] text-base font-normal">
+          <DialogDescription className="text-[#667085] text-sm font-normal pr-10">
             Update this frequently asked question
           </DialogDescription>
 

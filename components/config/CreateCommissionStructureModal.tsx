@@ -154,11 +154,11 @@ export default function CreateCommissionStructureModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="min-w-[90vw] md:min-w-[50vw] rounded-2xl border border-[#EAECF0] p-0"
+        className="w-[calc(100%-2rem)] max-w-3xl max-h-[90dvh] overflow-y-auto rounded-2xl border border-[#EAECF0] p-0"
         showCloseButton={false}
       >
-        <DialogHeader className="relative px-6 pt-6 pb-2 sm:px-8 sm:pt-8">
-          <DialogTitle className="text-[24px] font-medium text-black">
+        <DialogHeader className="relative px-4 pt-5 pb-2 sm:px-8 sm:pt-8">
+          <DialogTitle className="text-lg sm:text-[24px] font-medium text-black pr-10">
             {structure
               ? "Edit Commission Structure"
               : "Create Commission Structure"}
@@ -178,7 +178,7 @@ export default function CreateCommissionStructureModal({
 
         <form
           onSubmit={handleSave}
-          className="space-y-5 px-6 pb-6 sm:px-8 sm:pb-8"
+          className="space-y-5 px-4 pb-5 sm:px-8 sm:pb-8"
         >
           <div className="space-y-2">
             <Label className="text-[16px] font-medium text-[#878787]">

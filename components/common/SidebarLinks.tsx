@@ -41,6 +41,12 @@ export const links: linkType = [
     activeIcon: "/sidebarIcons/shopping-cart.png",
     inactiveIcon: "/sidebarIcons/shopping-cart-grey.png",
   },
+  {
+    name: "Rider Management",
+    href: "/rider",
+    activeIcon: "/sidebarIcons/rider-active.svg",
+    inactiveIcon: "/sidebarIcons/rider-grey.svg",
+  },
   // {
   //   name: "Analytics & Reporting",
   //   href: "/analytics",
@@ -60,9 +66,17 @@ export const links: linkType = [
   {
     name: "Sales Management",
     href: "/sales",
+    activeIcon: "/sidebarIcons/notification-active.png",
+    inactiveIcon: "/sidebarIcons/coin-inactive.png",
+  },
+
+  {
+    name: "Notification Management",
+    href: "/notification",
     activeIcon: "/sidebarIcons/coin-active.png",
     inactiveIcon: "/sidebarIcons/coin-inactive.png",
   },
+
   {
     name: "User Management",
     href: "/user?type=customer",
@@ -80,30 +94,48 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
   const router = useRouter();
   const account = useAccountStore((state) => state.account);
   const {
+    canViewDashboard,
+    canViewNotifications,
+    canViewUserManagement,
+    canViewConfiguration,
     canViewProductManagement,
     canViewInventoryManagement,
     canViewSalesManagement,
     canViewFinanceManagement,
     canViewOrderManagement,
     canViewCustomerSupport,
+    canViewMarketingAndEngagement,
+    canViewRiderManagement,
   } = React.useMemo(() => getSidebarPermissions(account), [account]);
 
   const visibleLinks = React.useMemo(
     () =>
       links.filter((link) => {
+        if (link.href === "/dashboard") return canViewDashboard;
+        if (link.href === "/notification") return canViewNotifications;
+        if (link.href.startsWith("/user")) return canViewUserManagement;
         if (link.href === "/product") return canViewProductManagement;
         if (link.href === "/inventory") return canViewInventoryManagement;
         if (link.href === "/sales") return canViewSalesManagement;
         if (link.href === "/finance") return canViewFinanceManagement;
         if (link.href === "/order") return canViewOrderManagement;
+        if (link.href === "/marketing") return canViewMarketingAndEngagement;
+        if (link.href === "/rider") return canViewRiderManagement;
+        if (link.href === "/customer") return canViewCustomerSupport;
         return true;
       }),
     [
+      canViewDashboard,
+      canViewNotifications,
+      canViewUserManagement,
       canViewProductManagement,
       canViewInventoryManagement,
       canViewSalesManagement,
       canViewFinanceManagement,
       canViewOrderManagement,
+      canViewCustomerSupport,
+      canViewMarketingAndEngagement,
+      canViewRiderManagement,
     ],
   );
 
@@ -196,33 +228,35 @@ export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
                 )}
               </li>
             )}
-            <li
-              className={cn(
-                configActive
-                  ? "bg-primary text-white rounded-lg"
-                  : "text-[#98A2B3]",
-                linkBaseClass,
-              )}
-              data-href="/configuration"
-              onClick={handleNav}
-              title={collapsed ? "Systems Configuration" : undefined}
-            >
-              <span className="shrink-0">
-                <Image
-                  src={
-                    configActive
-                      ? "/sidebarIcons/setting.png"
-                      : "/sidebarIcons/setting-grey.png"
-                  }
-                  alt="System Configuration"
-                  width={24}
-                  height={24}
-                />
-              </span>
-              {!collapsed && (
-                <span className="min-w-0 truncate">Systems Configuration</span>
-              )}
-            </li>
+            {canViewConfiguration && (
+              <li
+                className={cn(
+                  configActive
+                    ? "bg-primary text-white rounded-lg"
+                    : "text-[#98A2B3]",
+                  linkBaseClass,
+                )}
+                data-href="/configuration"
+                onClick={handleNav}
+                title={collapsed ? "Systems Configuration" : undefined}
+              >
+                <span className="shrink-0">
+                  <Image
+                    src={
+                      configActive
+                        ? "/sidebarIcons/setting.png"
+                        : "/sidebarIcons/setting-grey.png"
+                    }
+                    alt="System Configuration"
+                    width={24}
+                    height={24}
+                  />
+                </span>
+                {!collapsed && (
+                  <span className="min-w-0 truncate">Systems Configuration</span>
+                )}
+              </li>
+            )}
           </>
         );
       })()}

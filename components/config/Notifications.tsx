@@ -3,15 +3,119 @@
 import * as React from "react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useNotificationsStore } from "@/store/useNotificationsStore";
+import type { NotificationPreferenceSettings } from "@/types/NotificationTypes";
+
+type LoginChoice = "email" | "push" | "sms";
+type PushChoice = "do-not-notify" | "all-reminders";
+type ReminderChoice = "do-not-notify" | "important-only" | "all-reminders";
+
+function loginChoiceFromSettings(
+  settings: NotificationPreferenceSettings["login_attempts"]
+): LoginChoice {
+  if (settings.email) return "email";
+  if (settings.push) return "push";
+  if (settings.sms) return "sms";
+  return "email";
+}
+
+function pushChoiceFromSettings(
+  settings: NotificationPreferenceSettings["push_notifications"]
+): PushChoice {
+  if (settings.do_not_notify) return "do-not-notify";
+  return "all-reminders";
+}
+
+function reminderChoiceFromSettings(
+  settings: NotificationPreferenceSettings["reminders"]
+): ReminderChoice {
+  if (settings.do_not_notify) return "do-not-notify";
+  if (settings.important_reminders_only) return "important-only";
+  return "all-reminders";
+}
+
+function toPayload(
+  loginAttempts: LoginChoice,
+  pushNotifications: PushChoice,
+  reminders: ReminderChoice
+): NotificationPreferenceSettings {
+  return {
+    login_attempts: {
+      email: loginAttempts === "email",
+      push: loginAttempts === "push",
+      sms: loginAttempts === "sms",
+    },
+    push_notifications: {
+      do_not_notify: pushNotifications === "do-not-notify",
+      all_reminders: pushNotifications === "all-reminders",
+    },
+    reminders: {
+      do_not_notify: reminders === "do-not-notify",
+      important_reminders_only: reminders === "important-only",
+      all_reminders: reminders === "all-reminders",
+    },
+  };
+}
 
 export default function Notifications() {
-  const [loginAttempts, setLoginAttempts] = React.useState("email");
+  const {
+    notificationSettings,
+    loadingNotificationSettings,
+    savingNotificationSettings,
+    notificationSettingsError,
+    fetchNotificationSettings,
+    updateNotificationSettings,
+  } = useNotificationsStore();
+
+  const [loginAttempts, setLoginAttempts] =
+    React.useState<LoginChoice>("email");
   const [pushNotifications, setPushNotifications] =
-    React.useState("do-not-notify");
-  const [reminders, setReminders] = React.useState("all-reminders");
-  const [newsUpdates, setNewsUpdates] = React.useState(true);
-  const [tipsTutorials, setTipsTutorials] = React.useState(true);
+    React.useState<PushChoice>("do-not-notify");
+  const [reminders, setReminders] =
+    React.useState<ReminderChoice>("all-reminders");
+
+  React.useEffect(() => {
+    void fetchNotificationSettings();
+  }, [fetchNotificationSettings]);
+
+  React.useEffect(() => {
+    if (!notificationSettings) return;
+    setLoginAttempts(
+      loginChoiceFromSettings(notificationSettings.login_attempts)
+    );
+    setPushNotifications(
+      pushChoiceFromSettings(notificationSettings.push_notifications)
+    );
+    setReminders(reminderChoiceFromSettings(notificationSettings.reminders));
+  }, [notificationSettings]);
+
+  const handleSave = async () => {
+    const ok = await updateNotificationSettings(
+      toPayload(loginAttempts, pushNotifications, reminders)
+    );
+    if (ok) {
+      toast.success("Notification preferences saved");
+    }
+  };
+
+  if (loadingNotificationSettings && !notificationSettings) {
+    return (
+      <div className="flex items-center justify-center py-12 text-primary-600">
+        Loading notification preferences…
+      </div>
+    );
+  }
+
+  if (notificationSettingsError && !notificationSettings) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        {notificationSettingsError}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
@@ -40,7 +144,9 @@ export default function Notifications() {
             <div className="lg:flex-1">
               <RadioGroup
                 value={loginAttempts}
-                onValueChange={setLoginAttempts}
+                onValueChange={(value) =>
+                  setLoginAttempts(value as LoginChoice)
+                }
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="email" id="login-email" />
@@ -86,7 +192,9 @@ export default function Notifications() {
             <div className="lg:flex-1">
               <RadioGroup
                 value={pushNotifications}
-                onValueChange={setPushNotifications}
+                onValueChange={(value) =>
+                  setPushNotifications(value as PushChoice)
+                }
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="do-not-notify" id="push-do-not" />
@@ -126,7 +234,12 @@ export default function Notifications() {
               </p>
             </div>
             <div className="lg:flex-1">
-              <RadioGroup value={reminders} onValueChange={setReminders}>
+              <RadioGroup
+                value={reminders}
+                onValueChange={(value) =>
+                  setReminders(value as ReminderChoice)
+                }
+              >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="do-not-notify" id="reminder-do-not" />
                   <Label
@@ -170,6 +283,23 @@ export default function Notifications() {
               </RadioGroup>
             </div>
           </div>
+        </div>
+
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-2">
+          <Button
+            className="btn btn-group-item btn-primary"
+            onClick={handleSave}
+            disabled={savingNotificationSettings}
+          >
+            {savingNotificationSettings ? (
+              <>
+                <Loader2 className="size-4 mr-2 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
         </div>
       </div>
     </div>

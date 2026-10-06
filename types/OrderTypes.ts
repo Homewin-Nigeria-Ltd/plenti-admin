@@ -1,6 +1,27 @@
+export const ADMIN_ORDER_LIFECYCLE_STATUSES = [
+  // "pending",
+  // "processing",
+  "packed",
+  "shipped",
+  "delivered",
+  "cancelled",
+] as const;
+
+export type AdminOrderLifecycleStatus =
+  (typeof ADMIN_ORDER_LIFECYCLE_STATUSES)[number];
+
+export type UpdateOrderStatusPayload = {
+  status: AdminOrderLifecycleStatus;
+  notes?: string;
+};
+
 export type OrderStatus =
   | "pending"
   | "processing"
+  | "packed"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
   | "SUCCESSFUL"
   | "PENDING"
   | "PROCESSING"
@@ -31,10 +52,31 @@ export type OrderUser = {
 };
 
 export type RiderInfo = {
+  rider_id?: number | null;
   rider_name?: string | null;
   assigned_at?: string | null;
   rider_phone?: string | null;
   vehicle_type?: string | null;
+};
+
+export type KwikPickupLocation = {
+  id: number;
+  name: string;
+  location: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  is_primary: boolean;
+  has_coordinates: boolean;
+  kwik_ready: boolean;
+};
+
+export type KwikPickupLocationsResponse = {
+  status: string;
+  code?: number;
+  message?: string;
+  data: KwikPickupLocation[];
+  timestamp?: string;
 };
 
 export type Order = {
@@ -44,6 +86,8 @@ export type Order = {
   tax: string;
   total: number;
   status: OrderStatus;
+  /** Customer-facing label from API; use `status` for admin lifecycle truth */
+  display_status?: string | null;
   payment_status: string;
   payment_method: string | null;
   payment_reference: string | null;
@@ -51,6 +95,60 @@ export type Order = {
   paid_at: string | null;
   shipping_address: string;
   phone_number: string;
+  shipping_details?: string | null;
+  shippingDetails?: string | null;
+  shipping_fee?: number;
+  shippingFee?: number;
+  delivery_type?: string | null;
+  delivery_provider?: string | null;
+  delivery_provider_label?: string | null;
+  delivery_type_label?: string | null;
+  plenti_delivery_id?: number | null;
+  delivery_id?: number | null;
+  order_assignment_id?: number | null;
+  rider_id?: number | null;
+  rider?: { id?: number; name?: string | null } | null;
+  plenti_delivery?: {
+    id?: number;
+    rider_id?: number | null;
+    rider_name?: string | null;
+  } | null;
+  can_broadcast_to_riders?: boolean;
+  can_assign_rider?: boolean;
+  order_assignment?: {
+    id?: number;
+    delivery_id?: number | null;
+    rider_id?: number | null;
+  } | null;
+  delivery_selection?: {
+    provider?: string;
+    provider_label?: string;
+    type?: string;
+    type_label?: string;
+  } | null;
+  delivery_economics?: {
+    delivery_provider?: string;
+    customer_delivery_charge?: number | null;
+    delivery_margin?: number | null;
+    provider_delivery_cost?: number | null;
+    is_cost_known?: boolean;
+    labels?: {
+      customer_delivery_charge?: string;
+      provider_delivery_cost?: string;
+      delivery_margin?: string;
+    };
+  } | null;
+  delivery_pricing_snapshot?: {
+    kwik_provider_cost?: number;
+    kwik_customer_fees?: {
+      normal?: { margin?: number };
+      express?: { margin?: number };
+    };
+  } | null;
+  provider_delivery_cost_quote?: number | null;
+  kwik_pickup_warehouse_id?: number | null;
+  pickup_warehouse_id?: number | null;
+  kwik_pickup_warehouse?: { id?: number; name?: string } | null;
   order_number: string;
   created_at: string;
   updated_at: string;
@@ -83,13 +181,17 @@ export type OrderState = {
   lastPage: number;
   perPage: number;
   totalItems: number;
-  lastQuery: { page: number; search: string };
+  lastQuery: { page: number; search: string; delivery_provider: string };
 
   fetchOrders: (params?: {
     page?: number;
     search?: string;
+    delivery_provider?: string;
   }) => Promise<boolean>;
-  fetchSingleOrders: (id: number) => Promise<boolean>;
+  fetchSingleOrders: (
+    id: number,
+    options?: { silent?: boolean },
+  ) => Promise<boolean>;
   fetchOrderStats: () => Promise<boolean>;
   setSingleOrder: () => void;
 };
@@ -123,20 +225,12 @@ export type OrderStatCardProps = {
   className?: string;
 };
 
-export type Rider = {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  avatar_url: string | null;
-  amount_spent: number;
-  total_orders: number;
-};
+export type { AdminRider as Rider } from "@/types/RiderTypes";
 
 export type RidersResponse = {
   status: string;
   code: number;
   message: string;
-  data: Rider[];
+  data: import("@/types/RiderTypes").AdminRider[];
   timestamp: string;
 };

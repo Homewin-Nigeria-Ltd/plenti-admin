@@ -9,15 +9,19 @@ import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { BannerDetailsModal } from "./BannerDetailsModal";
 import { EditBannerModal } from "./EditBannerModal";
+import { useAccountStore } from "@/store/useAccountStore";
+import { getMarketingPermissions } from "@/lib/modulePermissions";
 
 export default function BannersContent() {
+  const account = useAccountStore((state) => state.account);
+  const { canManageBanner } = getMarketingPermissions(account);
   const { fetchMarketingBanners, banners, loadingBanners } =
     useMarketingStore();
 
   // LOCAL STATES
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedBanner, setSelectedBanner] = React.useState<Banner | null>(
-    null
+    null,
   );
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
@@ -74,8 +78,9 @@ export default function BannersContent() {
   }));
 
   const handleRowClick = (
-    row: Record<string, React.ReactNode> & { id: number; title: string }
+    row: Record<string, React.ReactNode> & { id: number; title: string },
   ) => {
+    if (!canManageBanner) return null;
     const banner = banners.find((b) => b.id === row.id);
     if (banner) {
       setSelectedBanner(banner);
@@ -99,9 +104,9 @@ export default function BannersContent() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="border border-[#F0F2F5] rounded-[8px] h-[38px] flex items-center gap-1 p-2 px-4 shadow-sm flex-1 max-w-md">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-4 min-w-0">
+        <div className="border border-[#F0F2F5] rounded-[8px] h-[38px] flex items-center gap-1 p-2 px-4 shadow-sm w-full min-w-0 max-w-md">
           <Image
             src={"/icons/search.png"}
             alt="Search"
@@ -130,18 +135,22 @@ export default function BannersContent() {
         <p className="text-center my-5 text-[#667085]">No Banners Available</p>
       )}
 
-      <BannerDetailsModal
-        isOpen={isModalOpen}
-        onClose={handleCloseDetails}
-        banner={selectedBanner}
-        onEditClick={handleEditClick}
-      />
-
-      <EditBannerModal
-        isOpen={isEditModalOpen}
-        onClose={handleCloseEdit}
-        banner={selectedBanner}
-      />
+      {/* Can if the user can manage banner  */}
+      {canManageBanner && (
+        <>
+          <BannerDetailsModal
+            isOpen={isModalOpen}
+            onClose={handleCloseDetails}
+            banner={selectedBanner}
+            onEditClick={handleEditClick}
+          />
+          <EditBannerModal
+            isOpen={isEditModalOpen}
+            onClose={handleCloseEdit}
+            banner={selectedBanner}
+          />
+        </>
+      )}
     </div>
   );
 }

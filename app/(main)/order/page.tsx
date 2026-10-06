@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { OrderStatistics } from "@/types/OrderTypes";
 import OrderStatCard from "@/components/order/OrderStatCard";
+import { OrderPageSkeleton } from "@/components/order/OrderPageSkeleton";
 import OrderTableWrapper from "@/components/order/OrderTableWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getOrderPermissions } from "@/lib/modulePermissions";
@@ -26,12 +27,16 @@ export default function OrderPage() {
   );
 
   React.useEffect(() => {
-    if (!canViewOrderModule || !canViewOrderStats) return;
+    if (!account || !canViewOrderModule || !canViewOrderStats) return;
     fetchOrderStats();
-  }, [fetchOrderStats, canViewOrderModule, canViewOrderStats]);
+  }, [account, fetchOrderStats, canViewOrderModule, canViewOrderStats]);
+
+  if (!account) {
+    return <OrderPageSkeleton />;
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       {!canViewOrderModule ? (
         <div className="rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-12 text-center">
           <p className="text-sm text-[#667085]">

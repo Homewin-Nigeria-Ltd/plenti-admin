@@ -21,8 +21,25 @@ import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useOrderStore } from "@/store/useOrderStore";
 import { ORDERS_API } from "@/data/orders";
-import type { Rider, RidersResponse } from "@/types/OrderTypes";
+import type { AdminRider } from "@/types/RiderTypes";
+import type { RidersResponse } from "@/types/OrderTypes";
 import api from "@/lib/api";
+import axios from "axios";
+
+const formatCurrency = (n: number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 2,
+  }).format(n);
+
+function getApiErrorMessage(error: unknown): string | null {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { message?: string } | undefined;
+    if (typeof data?.message === "string") return data.message;
+  }
+  return null;
+}
 
 export function AssignRiderModal({
   isOpen,
@@ -33,23 +50,25 @@ export function AssignRiderModal({
 }) {
   const { singleOrder, fetchSingleOrders } = useOrderStore();
   const [selectedRiderId, setSelectedRiderId] = React.useState<string>("");
-  const [riders, setRiders] = React.useState<Rider[]>([]);
+  const [riders, setRiders] = React.useState<AdminRider[]>([]);
   const [loadingRiders, setLoadingRiders] = React.useState(false);
   const [isAssigning, setIsAssigning] = React.useState(false);
 
   const fetchRiders = React.useCallback(async () => {
     setLoadingRiders(true);
     try {
-      const { data } = await api.get<RidersResponse>(ORDERS_API.getRiders);
+      const { data } = await api.get<RidersResponse>(ORDERS_API.getRiders, {
+        params: { is_assignable: true },
+      });
 
       if (data?.status === "success" && Array.isArray(data?.data)) {
-        setRiders(data.data);
+        setRiders(data.data.filter((rider) => rider.is_assignable !== false));
       } else {
-        toast.error("Failed to fetch riders");
+        toast.error(data?.message || "Failed to fetch riders");
       }
     } catch (error) {
       console.error("Error fetching riders =>", error);
-      toast.error("Failed to fetch riders");
+      toast.error(getApiErrorMessage(error) ?? "Failed to fetch riders");
     } finally {
       setLoadingRiders(false);
     }
@@ -74,19 +93,21 @@ export function AssignRiderModal({
         { rider_id: Number(selectedRiderId) }
       );
 
-      if (data?.status === "success") {
-        toast.success(
-          `Rider has been assigned to order ${singleOrder.order_number ?? ""}`
-        );
-        await fetchSingleOrders(singleOrder.id);
-        onClose();
-        setSelectedRiderId("");
-      } else {
+      if (data?.status === "error" || data?.status === "failed") {
         toast.error(data?.message || "Failed to assign rider");
+        return;
       }
+
+      toast.success(
+        data?.message ||
+          `Rider has been assigned to order ${singleOrder.order_number ?? ""}`,
+      );
+      await fetchSingleOrders(singleOrder.id, { silent: true });
+      onClose();
+      setSelectedRiderId("");
     } catch (error) {
       console.error("Error assigning rider =>", error);
-      toast.error("Failed to assign rider");
+      toast.error(getApiErrorMessage(error) ?? "Failed to assign rider");
     } finally {
       setIsAssigning(false);
     }
@@ -103,28 +124,29 @@ export function AssignRiderModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="min-w-[750px]" showCloseButton={false}>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-[750px] max-h-[90dvh] overflow-y-auto p-4 sm:p-6" showCloseButton={false}>
         <DialogHeader className="relative">
-          <DialogTitle className="font-medium text-[24px]">
-            Assign Rider to Order – {singleOrder?.order_number ?? "—"}
-          </DialogTitle>
-          <DialogDescription className="text-[#808080] text-[14px] font-normal">
-            Select a delivery agent for the order
-          </DialogDescription>
-
-          <div className="flex items-center gap-2 absolute top-2 right-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="font-medium text-lg sm:text-[24px] break-words">
+                Assign Rider to Order – {singleOrder?.order_number ?? "—"}
+              </DialogTitle>
+              <DialogDescription className="text-[#808080] text-sm font-normal">
+                Select a delivery agent for the order
+              </DialogDescription>
+            </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full"
+              className="flex items-center justify-center size-[30px] bg-[#E8EEFF] rounded-full shrink-0"
             >
               <X color="#0B1E66" size={20} cursor="pointer" />
             </button>
           </div>
         </DialogHeader>
 
-        <div className="px-6 pb-6 space-y-6">
+        <div className="space-y-6">
           <div className="space-y-2">
             <p className="text-[14px] text-[#1A1A1A]">Select Rider</p>
             {loadingRiders ? (
@@ -218,12 +240,23 @@ export function AssignRiderModal({
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Details</p>
                 <p className="text-[#98A2B3] text-sm">
-                  {singleOrder?.delivery_tracking ?? "—"}
+                  {singleOrder?.shipping_details ??
+                    singleOrder?.shippingDetails ??
+                    singleOrder?.delivery_tracking ??
+                    "—"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Shipping Fee</p>
-                <p className="text-[#98A2B3] text-sm">—</p>
+                <p className="text-[#98A2B3] text-sm">
+                  {(() => {
+                    const fee =
+                      singleOrder?.shipping_fee ?? singleOrder?.shippingFee;
+                    return fee != null && !Number.isNaN(Number(fee))
+                      ? formatCurrency(Number(fee))
+                      : "—";
+                  })()}
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[#101928] font-medium">Phone</p>

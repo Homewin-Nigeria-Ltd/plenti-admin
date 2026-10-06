@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { X, Ellipsis } from "lucide-react";
+import { X, Ellipsis, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { PromoCode, PromoCodeType } from "@/types/MarketingTypes";
 import { formatCurrency } from "@/lib/format";
+import { useMarketingStore } from "@/store/useMarketingStore";
 
 interface PromoCodeDetailsModalProps {
   isOpen: boolean;
@@ -76,12 +77,16 @@ export function PromoCodeDetailsModal({
   onEditClick,
 }: PromoCodeDetailsModalProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const { deletePromoCode, deletingPromoCode } = useMarketingStore();
 
-  const handleDeleteConfirm = React.useCallback(() => {
-    // Delete promo code endpoint not implemented yet; close dialog for now
-    setDeleteConfirmOpen(false);
-    onClose();
-  }, [onClose]);
+  const handleDeleteConfirm = React.useCallback(async () => {
+    if (!promoCode) return;
+    const success = await deletePromoCode(promoCode.id);
+    if (success) {
+      setDeleteConfirmOpen(false);
+      onClose();
+    }
+  }, [promoCode, deletePromoCode, onClose]);
 
   if (!promoCode) return null;
 
@@ -100,24 +105,22 @@ export function PromoCodeDetailsModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="min-w-[600px] max-w-[700px]"
+        className="w-full max-w-[calc(100%-2rem)] sm:max-w-[700px]"
         showCloseButton={false}
       >
-        <DialogHeader className="relative">
-          <div className="flex items-start justify-between gap-4 pr-12">
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="text-2xl font-bold text-[#101928] mb-1">
+        <DialogHeader>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-base sm:text-lg font-bold text-[#101928] mb-1 leading-snug break-words">
                 {promoCode.code}
               </DialogTitle>
               {promoCode.description && (
-                <DialogDescription className="text-[#101928] text-base font-normal">
+                <DialogDescription className="text-[#101928] text-sm font-normal">
                   {promoCode.description}
                 </DialogDescription>
               )}
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 absolute top-0 right-0">
+            <div className="flex items-center gap-2 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -158,6 +161,7 @@ export function PromoCodeDetailsModal({
             >
               <X color="#0B1E66" size={18} />
             </button>
+            </div>
           </div>
         </DialogHeader>
 
@@ -225,27 +229,44 @@ export function PromoCodeDetailsModal({
         </div>
       </DialogContent>
 
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+      <AlertDialog
+        open={deleteConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open && deletingPromoCode) return;
+          setDeleteConfirmOpen(open);
+        }}
+      >
         <AlertDialogContent className="rounded-[12px] border-0 p-6 sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-[#0B1E66] text-[18px]">
-              Are you sure you want to delete this promo code?
+              Delete {promoCode.code}?
             </AlertDialogTitle>
             <AlertDialogDescription className="sr-only">
               Confirm promo code deletion
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row gap-3 sm:justify-center">
-            <AlertDialogCancel className="rounded-[8px] h-12 border border-[#0B1E66] bg-transparent text-[#0B1E66] hover:bg-gray-50">
+            <AlertDialogCancel
+              disabled={deletingPromoCode}
+              className="rounded-[8px] h-12 border border-[#0B1E66] bg-transparent text-[#0B1E66] hover:bg-gray-50"
+            >
               Cancel
             </AlertDialogCancel>
             <Button
               type="button"
               variant="destructive"
+              disabled={deletingPromoCode}
               className="rounded-[8px] h-12"
               onClick={handleDeleteConfirm}
             >
-              Delete Promo Code
+              {deletingPromoCode ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin" />
+                  Deleting…
+                </span>
+              ) : (
+                "Delete Promo Code"
+              )}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

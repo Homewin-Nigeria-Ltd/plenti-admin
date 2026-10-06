@@ -20,17 +20,49 @@ import {
 import * as React from "react";
 import { toast } from "sonner";
 import { useOrderStore } from "@/store/useOrderStore";
-import { ORDERS_API } from "@/data/orders";
+import { ORDERS_API, orderStatusUpdatePath, plentiDeliveryBroadcastPath } from "@/data/orders";
+import {
+  ADMIN_ORDER_LIFECYCLE_STATUSES,
+  type AdminOrderLifecycleStatus,
+  type Order,
+} from "@/types/OrderTypes";
 import Image from "next/image";
 import api from "@/lib/api";
 import { getOrderPermissions } from "@/lib/modulePermissions";
 import { useAccountStore } from "@/store/useAccountStore";
+import { cn } from "@/lib/utils";
 
 const AssignRiderModal = dynamic(
   () => import("./AssignRiderModal").then((mod) => mod.AssignRiderModal),
   {
     ssr: false,
   },
+);
+
+const ReassignOrderDeliveryModal = dynamic(
+  () =>
+    import("./ReassignOrderDeliveryModal").then(
+      (mod) => mod.ReassignOrderDeliveryModal,
+    ),
+  {
+    ssr: false,
+  },
+);
+
+const KwikPickupWarehouseSelect = dynamic(
+  () =>
+    import("./KwikPickupWarehouseSelect").then(
+      (mod) => mod.KwikPickupWarehouseSelect,
+    ),
+  { ssr: false },
+);
+
+const DeliveryProviderSwitchSelect = dynamic(
+  () =>
+    import("./DeliveryProviderSwitchSelect").then(
+      (mod) => mod.DeliveryProviderSwitchSelect,
+    ),
+  { ssr: false },
 );
 
 const DeleteOrderConfirm = dynamic(
@@ -46,6 +78,105 @@ const formatCurrency = (n: number) =>
     currency: "NGN",
     minimumFractionDigits: 2,
   }).format(n);
+
+function formatOrderStatusLabel(raw: string | undefined | null) {
+  if (raw == null || String(raw).trim() === "") return "—";
+  return String(raw)
+    .replace(/_/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function normalizeOrderStatusKey(statusRaw: string | undefined | null): string {
+  return (statusRaw ?? "")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/-/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function orderStatusChipClass(statusRaw: string | undefined | null) {
+  const s = normalizeOrderStatusKey(statusRaw);
+  const colorMap: Record<string, string> = {
+    successful: "bg-green-100 text-green-700",
+    pending: "bg-gray-100 text-gray-700",
+    processing: "bg-orange-100 text-orange-700",
+    packed: "bg-sky-100 text-sky-800",
+    shipped: "bg-indigo-100 text-indigo-800",
+    "in transit": "bg-indigo-100 text-indigo-800",
+    delivered: "bg-green-100 text-green-800",
+    cancelled: "bg-red-100 text-red-700",
+  };
+  return colorMap[s] || "bg-gray-100 text-gray-700";
+}
+
+function orderStatusDotClass(statusRaw: string | undefined | null) {
+  const s = normalizeOrderStatusKey(statusRaw);
+  if (s === "successful" || s === "delivered") return "bg-green-600";
+  if (s === "cancelled") return "bg-red-600";
+  if (s === "packed") return "bg-sky-600";
+  if (s === "shipped" || s === "in transit") return "bg-indigo-600";
+  if (s === "processing") return "bg-orange-600";
+  return "bg-gray-500";
+}
+
+const LIFECYCLE_MENU_ITEM_CLASS: Record<AdminOrderLifecycleStatus, string> = {
+  // pending:
+  //   "text-gray-700 data-highlighted:bg-gray-100 data-highlighted:text-gray-900 focus:bg-gray-100 focus:text-gray-900",
+  // processing:
+  //   "text-orange-700 data-highlighted:bg-orange-50 data-highlighted:text-orange-900 focus:bg-orange-50 focus:text-orange-900",
+  packed:
+    "text-sky-800 data-highlighted:bg-sky-50 data-highlighted:text-sky-950 focus:bg-sky-50 focus:text-sky-950",
+  shipped:
+    "text-indigo-800 data-highlighted:bg-indigo-50 data-highlighted:text-indigo-950 focus:bg-indigo-50 focus:text-indigo-950",
+  delivered:
+    "text-green-800 data-highlighted:bg-green-50 data-highlighted:text-green-950 focus:bg-green-50 focus:text-green-950",
+  cancelled:
+    "text-red-700 data-highlighted:bg-red-50 data-highlighted:text-red-900 focus:bg-red-50 focus:text-red-900",
+};
+
+function lifecycleMenuItemClass(status: AdminOrderLifecycleStatus) {
+  return cn(
+    "text-[14px] font-medium place-self-center",
+    LIFECYCLE_MENU_ITEM_CLASS[status],
+  );
+}
+
+/** Same palette as shipped / in-transit order status chip */
+function inTransitMenuItemClass() {
+  return cn(
+    "text-[14px] font-medium place-self-center",
+    LIFECYCLE_MENU_ITEM_CLASS.shipped,
+  );
+}
+
+function asPositiveId(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function getOrderPlentiDeliveryId(order: Order | null): number | null {
+  if (!order) return null;
+  return (
+    asPositiveId(order.plenti_delivery_id) ??
+    asPositiveId(order.delivery_id) ??
+    asPositiveId(order.order_assignment_id) ??
+    asPositiveId(order.plenti_delivery?.id) ??
+    asPositiveId(order.order_assignment?.delivery_id)
+  );
+}
+
+function getOrderAssignedRiderId(order: Order | null): number | null {
+  if (!order) return null;
+  return (
+    asPositiveId(order.rider_id) ??
+    asPositiveId(order.rider?.id) ??
+    asPositiveId(order.plenti_delivery?.rider_id) ??
+    asPositiveId(order.order_assignment?.rider_id) ??
+    asPositiveId(order.payment_gateway_response?.rider_info?.rider_id)
+  );
+}
 
 export function OrderDetailsModal({
   isOpen,
@@ -65,10 +196,14 @@ export function OrderDetailsModal({
     lastQuery,
   } = useOrderStore();
   const [assignOpen, setAssignOpen] = React.useState(false);
+  const [reassignOpen, setReassignOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isMarkingInTransit, setIsMarkingInTransit] = React.useState(false);
   const [isIssuingRefund, setIsIssuingRefund] = React.useState(false);
+  const [isBroadcasting, setIsBroadcasting] = React.useState(false);
+  const [lifecycleStatusUpdating, setLifecycleStatusUpdating] =
+    React.useState<AdminOrderLifecycleStatus | null>(null);
   const {
     canViewOrderDetails,
     canMarkOrderInTransit,
@@ -76,6 +211,8 @@ export function OrderDetailsModal({
     canAssignOrderRider,
     canDeleteOrder,
   } = React.useMemo(() => getOrderPermissions(account), [account]);
+
+  const canAssignThisOrder = Boolean(singleOrder?.can_assign_rider);
 
   const canShowActionMenu =
     canMarkOrderInTransit ||
@@ -88,6 +225,40 @@ export function OrderDetailsModal({
     if (!selectedId) return;
     fetchSingleOrders(selectedId);
   }, [fetchSingleOrders, selectedId, canViewOrderDetails]);
+
+  const setLifecycleOrderStatus = async (status: AdminOrderLifecycleStatus) => {
+    if (!canMarkOrderInTransit) {
+      toast.error("You do not have permission to update order status");
+      return;
+    }
+    if (!selectedId) return;
+    setLifecycleStatusUpdating(status);
+    try {
+      const { data } = await api.patch<{ status?: string; message?: string }>(
+        orderStatusUpdatePath(selectedId),
+        { status },
+      );
+
+      if (data?.status === "success") {
+        toast.success(
+          `Order marked as ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+        );
+        await fetchSingleOrders(selectedId, { silent: true });
+        await fetchOrders({
+          page: lastQuery.page,
+          search: lastQuery.search,
+          delivery_provider: lastQuery.delivery_provider || undefined,
+        });
+      } else {
+        toast.error(data?.message ?? "Failed to update order status");
+      }
+    } catch (error) {
+      console.error("Error updating order status =>", error);
+      toast.error("Failed to update order status");
+    } finally {
+      setLifecycleStatusUpdating(null);
+    }
+  };
 
   const markAsInTransit = async () => {
     if (!canMarkOrderInTransit) {
@@ -103,7 +274,7 @@ export function OrderDetailsModal({
 
       if (data?.status === "success") {
         toast.success("Order marked as in transit");
-        await fetchSingleOrders(selectedId);
+        await fetchSingleOrders(selectedId, { silent: true });
       } else {
         toast.error(data?.message || "Failed to mark order as in transit");
       }
@@ -129,7 +300,7 @@ export function OrderDetailsModal({
 
       if (data?.status === "success") {
         toast.success("Refund issued successfully");
-        await fetchSingleOrders(selectedId);
+        await fetchSingleOrders(selectedId, { silent: true });
       } else {
         toast.error(data?.message || "Failed to issue refund");
       }
@@ -138,6 +309,39 @@ export function OrderDetailsModal({
       toast.error("Failed to issue refund");
     } finally {
       setIsIssuingRefund(false);
+    }
+  };
+
+  const broadcastDelivery = async () => {
+    if (!singleOrder?.can_broadcast_to_riders) return;
+    const deliveryId = getOrderPlentiDeliveryId(singleOrder);
+    if (deliveryId == null) {
+      toast.error(
+        "This order has no Plenti delivery to broadcast. Switch the provider to Plenti first.",
+      );
+      return;
+    }
+
+    setIsBroadcasting(true);
+    try {
+      const { data } = await api.patch<{ status?: string; message?: string }>(
+        plentiDeliveryBroadcastPath(deliveryId),
+      );
+
+      if (data?.status === "error" || data?.status === "failed") {
+        toast.error(data?.message ?? "Failed to broadcast delivery");
+        return;
+      }
+
+      toast.success(data?.message ?? "Delivery broadcast to riders");
+      if (selectedId) {
+        await fetchSingleOrders(selectedId, { silent: true });
+      }
+    } catch (error) {
+      console.error("Error broadcasting delivery =>", error);
+      toast.error("Failed to broadcast delivery");
+    } finally {
+      setIsBroadcasting(false);
     }
   };
 
@@ -159,15 +363,36 @@ export function OrderDetailsModal({
           </>
         ) : (
           <>
-            <DialogHeader className="relative px-6 pt-6 pb-4 border-b border-neutral-100 shrink-0">
-              <DialogTitle className="font-medium text-[24px]">
-                Order Details – {singleOrder?.order_number ?? selectedId ?? "—"}
-              </DialogTitle>
-              <DialogDescription className="text-[#808080] text-[14px] font-normal">
-                Complete order information and actions
-              </DialogDescription>
-
-              <div className="flex items-center gap-2 absolute top-6 right-6">
+            <DialogHeader className="relative px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-neutral-100 shrink-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <DialogTitle className="font-medium text-lg sm:text-[24px] break-words">
+                    Order Details – {singleOrder?.order_number ?? selectedId ?? "—"}
+                  </DialogTitle>
+                  <DialogDescription className="text-[#808080] text-sm font-normal">
+                    Complete order information and actions
+                  </DialogDescription>
+                  {singleOrder && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-[#101928]">
+                        Order status
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${orderStatusChipClass(
+                          String(singleOrder.status),
+                        )}`}
+                      >
+                        <span
+                          className={`size-2 shrink-0 rounded-full ${orderStatusDotClass(
+                            String(singleOrder.status),
+                          )}`}
+                        />
+                        {formatOrderStatusLabel(String(singleOrder.status))}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
                 {canShowActionMenu && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -180,10 +405,29 @@ export function OrderDetailsModal({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="border-0 rounded-2xl p-2 min-w-[220px]">
+                      {canMarkOrderInTransit &&
+                        ADMIN_ORDER_LIFECYCLE_STATUSES.map((status) => (
+                          <DropdownMenuItem
+                            key={status}
+                            className={lifecycleMenuItemClass(status)}
+                            onSelect={() => {
+                              void setLifecycleOrderStatus(status);
+                            }}
+                            disabled={lifecycleStatusUpdating !== null}
+                          >
+                            {lifecycleStatusUpdating === status
+                              ? "Updating…"
+                              : `Mark as ${status.charAt(0).toUpperCase() + status.slice(1)}`}
+                          </DropdownMenuItem>
+                        ))}
+                      {canMarkOrderInTransit && (
+                        <DropdownMenuSeparator />
+                      )}
+                      {/* Mark as in transit — hidden from menu
                       {canMarkOrderInTransit && (
                         <>
                           <DropdownMenuItem
-                            className="text-[#0B1E66] text-[14px] font-medium place-self-center"
+                            className={inTransitMenuItemClass()}
                             onSelect={markAsInTransit}
                             disabled={isMarkingInTransit}
                           >
@@ -194,6 +438,7 @@ export function OrderDetailsModal({
                           <DropdownMenuSeparator />
                         </>
                       )}
+                      */}
 
                       {canIssueOrderRefund && (
                         <>
@@ -210,11 +455,29 @@ export function OrderDetailsModal({
 
                       {canAssignOrderRider && (
                         <>
+                          {canAssignThisOrder && (
+                            <DropdownMenuItem
+                              className="text-[#D69200] text-[14px] place-self-center"
+                              onSelect={() => setAssignOpen(true)}
+                            >
+                              Assign Rider
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             className="text-[#D69200] text-[14px] place-self-center"
-                            onSelect={() => setAssignOpen(true)}
+                            onSelect={() => {
+                              const deliveryId =
+                                getOrderPlentiDeliveryId(singleOrder);
+                              if (deliveryId == null) {
+                                toast.error(
+                                  "This order has no Plenti delivery to reassign. Switch the provider to Plenti first.",
+                                );
+                                return;
+                              }
+                              setReassignOpen(true);
+                            }}
                           >
-                            Assign Rider
+                            Reassign Rider
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                         </>
@@ -242,10 +505,11 @@ export function OrderDetailsModal({
                 >
                   <X color="#0B1E66" size={20} cursor="pointer" />
                 </button>
+                </div>
               </div>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
               {!canViewOrderDetails ? (
                 <div className="rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-12 text-center mt-4">
                   <p className="text-sm text-[#667085]">
@@ -317,7 +581,9 @@ export function OrderDetailsModal({
                           Payment Method
                         </p>
                         <p className="text-[#667085] text-sm">
-                          {singleOrder?.payment_method ?? "—"}
+                          {singleOrder?.payment_method ?? (
+                            <span className="text-xs">–</span>
+                          )}
                         </p>
                       </div>
                       <div className="space-y-1 mt-5">
@@ -350,7 +616,9 @@ export function OrderDetailsModal({
                           Transaction Reference
                         </p>
                         <p className="text-[#98A2B3] text-sm">
-                          {singleOrder?.payment_reference ?? "—"}
+                          {singleOrder?.payment_reference ?? (
+                            <span className="text-xs">–</span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -372,19 +640,80 @@ export function OrderDetailsModal({
                           Shipping Details
                         </p>
                         <p className="text-[#98A2B3] text-sm">
-                          {singleOrder?.delivery_tracking ?? "—"}
+                          {singleOrder?.shipping_details ??
+                            singleOrder?.shippingDetails ??
+                            singleOrder?.delivery_tracking ??
+                            "—"}
                         </p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[#101928] font-medium">
-                          Shipping Fee
-                        </p>
-                        <p className="text-[#98A2B3] text-sm">—</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[#101928] font-medium">Phone</p>
                         <p className="text-[#98A2B3] text-sm">
                           {singleOrder?.phone_number ?? "—"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Rider</p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.plenti_delivery?.rider_name ?? "—"}
+                        </p>
+                      </div>
+                      {selectedId != null && (
+                        <KwikPickupWarehouseSelect
+                          orderId={selectedId}
+                          order={singleOrder}
+                          onUpdated={async () => {
+                            await fetchSingleOrders(selectedId, { silent: true });
+                          }}
+                        />
+                      )}
+                      {selectedId != null && (
+                        <DeliveryProviderSwitchSelect
+                          orderId={selectedId}
+                          order={singleOrder}
+                          onUpdated={async () => {
+                            await fetchSingleOrders(selectedId, { silent: true });
+                            await fetchOrders({
+                              page: lastQuery.page,
+                              search: lastQuery.search,
+                              delivery_provider:
+                                lastQuery.delivery_provider || undefined,
+                            });
+                          }}
+                        />
+                      )}
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Delivery type</p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.delivery_type_label ??
+                            singleOrder?.delivery_selection?.type_label ??
+                            singleOrder?.delivery_type ??
+                            singleOrder?.delivery_selection?.type ??
+                            "—"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Delivery fee</p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.delivery_economics?.customer_delivery_charge ??
+                            "—"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">
+                          Kwik delivery fee
+                        </p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.delivery_pricing_snapshot?.kwik_provider_cost ??
+                            "—"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Plenti profit</p>
+                        <p className="text-[#667085] text-sm">
+                          {singleOrder?.delivery_economics?.delivery_margin != null
+                            ? singleOrder.delivery_economics.delivery_margin
+                            : <span className="text-xs">–</span>}
                         </p>
                       </div>
                     </div>
@@ -399,20 +728,56 @@ export function OrderDetailsModal({
                     </p>
                   </div>
 
+                  {singleOrder?.can_broadcast_to_riders && (
+                    <Button
+                      type="button"
+                      onClick={() => void broadcastDelivery()}
+                      disabled={isBroadcasting}
+                      className="w-full h-[52px] rounded-xl bg-[#0B1E66] hover:bg-[#0B1E66]/90 disabled:opacity-50"
+                    >
+                      {isBroadcasting ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="size-4 animate-spin" />
+                          Broadcasting…
+                        </span>
+                      ) : (
+                        "Broadcast to Riders"
+                      )}
+                    </Button>
+                  )}
+
+                  {/*
                   <Button
                     variant="outline"
                     className="w-full h-[52px] rounded-xl border-primary text-primary hover:bg-primary hover:text-white cursor-pointer"
                   >
                     View Order Timeline
                   </Button>
+                  */}
                 </div>
               )}
             </div>
           </>
         )}
         <AssignRiderModal
-          isOpen={assignOpen && canAssignOrderRider}
+          isOpen={assignOpen && canAssignOrderRider && canAssignThisOrder}
           onClose={() => setAssignOpen(false)}
+        />
+        <ReassignOrderDeliveryModal
+          isOpen={reassignOpen && canAssignOrderRider}
+          onClose={() => setReassignOpen(false)}
+          deliveryId={getOrderPlentiDeliveryId(singleOrder)}
+          orderNumber={singleOrder?.order_number}
+          currentRiderId={getOrderAssignedRiderId(singleOrder)}
+          onSuccess={async () => {
+            if (!selectedId) return;
+            await fetchSingleOrders(selectedId, { silent: true });
+            await fetchOrders({
+              page: lastQuery.page,
+              search: lastQuery.search,
+              delivery_provider: lastQuery.delivery_provider || undefined,
+            });
+          }}
         />
         {canDeleteOrder && (
           <DeleteOrderConfirm
@@ -443,12 +808,14 @@ export function OrderDetailsModal({
 
                 setConfirmOpen(false);
                 setAssignOpen(false);
+                setReassignOpen(false);
                 onClose();
 
                 toast.success("Order has been cancelled");
                 await fetchOrders({
                   page: lastQuery.page,
                   search: lastQuery.search,
+                  delivery_provider: lastQuery.delivery_provider || undefined,
                 });
               } catch (e) {
                 toast.error(

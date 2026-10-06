@@ -144,14 +144,14 @@ export function CreateBannerModal({ isOpen, onClose }: CreateBannerModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
-        className="max-w-[600px] max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
         showCloseButton={false}
       >
         <DialogHeader className="relative pb-4">
-          <DialogTitle className="text-2xl font-bold text-[#101928] mb-2">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-[#101928] mb-2 pr-10">
             Create New Banner
           </DialogTitle>
-          <DialogDescription className="text-[#667085] text-base font-normal">
+          <DialogDescription className="text-[#667085] text-sm font-normal pr-10">
             Add a promotional banner with link and placement options
           </DialogDescription>
 

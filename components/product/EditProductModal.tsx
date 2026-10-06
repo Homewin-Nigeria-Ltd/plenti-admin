@@ -24,6 +24,13 @@ import { toast } from "sonner";
 import type { Product } from "@/data/products";
 import { useProductStore } from "@/store/useProductStore";
 import { useFilePreview } from "@/lib/useFilePreview";
+import { ImageCropDialog } from "@/components/common/ImageCropDialog";
+import {
+  BulkTiersFields,
+  bulkTiersEqual,
+  parseBulkTierRows,
+  productToBulkTierRows,
+} from "@/components/product/BulkTiersFields";
 import type {
   UpdateProductRequest,
   UploadImageResponse,
@@ -75,11 +82,13 @@ export function EditProductModal({
   const [subCategoryId, setSubCategoryId] = React.useState<number | null>(null);
   const [amount, setAmount] = React.useState("");
   const [initialStock, setInitialStock] = React.useState("");
-  const [minBulkQuantity, setMinBulkQuantity] = React.useState("");
-  const [bulkPrice, setBulkPrice] = React.useState("");
+  const [bulkTiers, setBulkTiers] = React.useState(productToBulkTierRows({}));
+  const [discountPercent, setDiscountPercent] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [uploadingImage, setUploadingImage] = React.useState(false);
+  const [cropImageSrc, setCropImageSrc] = React.useState<string | null>(null);
+  const [isCropOpen, setIsCropOpen] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const previewUrl = useFilePreview(selectedFile);
   const wasOpenRef = React.useRef(false);
@@ -92,6 +101,8 @@ export function EditProductModal({
       wasOpenRef.current = false;
       selectionPristineRef.current = true;
       initializedForProductRef.current = null;
+      setCropImageSrc(null);
+      setIsCropOpen(false);
       return;
     }
 
@@ -116,13 +127,13 @@ export function EditProductModal({
       setDescription(product.description);
       setAmount(String(product.price ?? ""));
       setInitialStock(String(product.stockLevel ?? ""));
-      setBulkPrice(
-        product.bulkPriceRaw == null ? "" : String(product.bulkPriceRaw)
-      );
-      setMinBulkQuantity(
-        product.minBulkQuantity == null ? "" : String(product.minBulkQuantity)
+      setBulkTiers(productToBulkTierRows(product));
+      setDiscountPercent(
+        product.discountPercent == null ? "" : String(product.discountPercent)
       );
       setSelectedFile(null);
+      setCropImageSrc(null);
+      setIsCropOpen(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
 
@@ -137,11 +148,22 @@ export function EditProductModal({
   }, [isOpen, product, categoriesTree, fetchCategories]);
 
   const handleFileSelect = (file: File) => {
-    if (file.type.startsWith("image/")) {
-      setSelectedFile(file);
-    } else {
+    if (!file.type.startsWith("image/")) {
       toast.error("Please select a valid image (PNG/JPG).");
+      return;
     }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : null;
+      if (!dataUrl) {
+        toast.error("Failed to read selected image");
+        return;
+      }
+      setCropImageSrc(dataUrl);
+      setIsCropOpen(true);
+    };
+    reader.onerror = () => toast.error("Failed to read selected image");
+    reader.readAsDataURL(file);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -162,6 +184,8 @@ export function EditProductModal({
 
   const handleClearSelectedFile = () => {
     setSelectedFile(null);
+    setCropImageSrc(null);
+    setIsCropOpen(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -200,36 +224,34 @@ export function EditProductModal({
       patch.category_id = resolvedCategoryId;
     }
 
-    // min_bulk_quantity: allow blank -> null (and only send if it changed)
-    const minBulkRaw = minBulkQuantity.trim();
-    const originalMinBulk =
-      typeof product.minBulkQuantity === "number"
-        ? product.minBulkQuantity
-        : null;
-    if (minBulkRaw === "") {
-      if (originalMinBulk !== null) patch.min_bulk_quantity = null;
-    } else {
-      const minBulk = Number(minBulkRaw);
-      if (!Number.isFinite(minBulk) || minBulk <= 0) {
-        toast.error("Please enter a valid min bulk quantity");
-        return;
-      }
-      if (minBulk !== originalMinBulk) patch.min_bulk_quantity = minBulk;
+    const parsedTiers = parseBulkTierRows(bulkTiers);
+    if (!parsedTiers.ok) {
+      toast.error(parsedTiers.message);
+      return;
+    }
+    const originalTiers = productToBulkTierRows(product);
+    const originalParsed = parseBulkTierRows(originalTiers);
+    const originalBulkTiers = originalParsed.ok ? originalParsed.tiers : [];
+    if (!bulkTiersEqual(parsedTiers.tiers, originalBulkTiers)) {
+      patch.bulk_tiers = parsedTiers.tiers;
     }
 
-    // bulk_price: allow blank -> null (and only send if it changed)
-    const bulkRaw = bulkPrice.trim();
-    const originalBulk =
-      typeof product.bulkPriceRaw === "number" ? product.bulkPriceRaw : null;
-    if (bulkRaw === "") {
-      if (originalBulk !== null) patch.bulk_price = null;
+    const discountRaw = discountPercent.trim();
+    const originalDiscount =
+      typeof product.discountPercent === "number"
+        ? product.discountPercent
+        : null;
+    if (discountRaw === "") {
+      if (originalDiscount !== null && originalDiscount !== 0) {
+        patch.discount_percent = 0;
+      }
     } else {
-      const bulk = Number(bulkRaw);
-      if (!Number.isFinite(bulk) || bulk <= 0) {
-        toast.error("Please enter a valid bulk price");
+      const discount = Number(discountRaw);
+      if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
+        toast.error("Please enter a valid discount percent (0–100)");
         return;
       }
-      if (bulk !== originalBulk) patch.bulk_price = bulk;
+      if (discount !== originalDiscount) patch.discount_percent = discount;
     }
 
     // Upload image only if user selected a new one
@@ -340,8 +362,9 @@ export function EditProductModal({
   const isSaving = uploadingImage || isUpdating;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent
         className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-139.25! sm:w-139.25! sm:max-w-139.25!"
         showCloseButton={false}
       >
@@ -480,30 +503,25 @@ export function EditProductModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-minBulkQuantity">Min Bulk Quantity</Label>
-              <Input
-                id="edit-minBulkQuantity"
-                type="number"
-                placeholder="Min Bulk Quantity"
-                value={minBulkQuantity}
-                onChange={(e) => setMinBulkQuantity(e.target.value)}
-                className="form-control"
-              />
-            </div>
+          <BulkTiersFields
+            idPrefix="edit-bulk"
+            value={bulkTiers}
+            onChange={setBulkTiers}
+          />
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-bulkPrice">Bulk Price</Label>
-              <Input
-                id="edit-bulkPrice"
-                type="number"
-                placeholder="Bulk Price"
-                value={bulkPrice}
-                onChange={(e) => setBulkPrice(e.target.value)}
-                className="form-control"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-discountPercent">Discount Percent</Label>
+            <Input
+              id="edit-discountPercent"
+              type="number"
+              min={0}
+              max={100}
+              step="0.01"
+              placeholder="Discount Percent"
+              value={discountPercent}
+              onChange={(e) => setDiscountPercent(e.target.value)}
+              className="form-control"
+            />
           </div>
 
           <div className="space-y-2">
@@ -607,7 +625,26 @@ export function EditProductModal({
               : "Update Product"}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <ImageCropDialog
+        isOpen={isCropOpen}
+        imageSrc={cropImageSrc}
+        onClose={() => {
+          setIsCropOpen(false);
+          setCropImageSrc(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }}
+        onApply={(file) => {
+          setSelectedFile(file);
+          setIsCropOpen(false);
+          setCropImageSrc(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }}
+        aspect={1}
+        title="Crop Product Image"
+      />
+    </>
   );
 }

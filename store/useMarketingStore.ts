@@ -46,6 +46,8 @@ export const useMarketingStore = create<MarketingState>((set, get) => ({
   createPromoCodeError: null,
   updatingPromoCode: false,
   updatePromoCodeError: null,
+  deletingPromoCode: false,
+  deletePromoCodeError: null,
 
   faqs: [],
   loadingFaqs: false,
@@ -386,6 +388,40 @@ export const useMarketingStore = create<MarketingState>((set, get) => ({
       return false;
     } finally {
       set({ updatingPromoCode: false });
+    }
+  },
+
+  deletePromoCode: async (id: number) => {
+    set({ deletingPromoCode: true, deletePromoCodeError: null });
+    try {
+      const { data } = await api.delete<{
+        status?: string;
+        code?: number;
+        message?: string;
+        data?: null;
+      }>(`/api/admin/promo-codes/${id}`);
+      if (data?.status !== "success") {
+        const message =
+          typeof data?.message === "string"
+            ? data.message
+            : "Failed to delete promo code";
+        set({ deletePromoCodeError: message });
+        toast.error(message);
+        return false;
+      }
+      set((state) => ({
+        promoCodes: state.promoCodes.filter((p) => p.id !== id),
+      }));
+      return true;
+    } catch (error: unknown) {
+      const message =
+        getApiErrorMessage(error) ?? "Failed to delete promo code";
+      console.error("Error deleting promo code =>", error);
+      toast.error(message);
+      set({ deletePromoCodeError: message });
+      return false;
+    } finally {
+      set({ deletingPromoCode: false });
     }
   },
 

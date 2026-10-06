@@ -22,6 +22,18 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "plenti-laravel.staging-api.motopayng.com",
+      },
+      {
+        protocol: "https",
+        hostname: "plenti-laravel.plentinig.com",
+      },
+      {
+        protocol: "http",
+        hostname: "plenti-laravel.plentinig.com",
+      },
+      {
+        protocol: "https",
         hostname: "devmotopaymp.obs.af-south-1.myhuaweicloud.com",
       },
       {
@@ -35,7 +47,19 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "ui-avatars.com",
-      }
+      },
+      {
+        protocol: "https",
+        hostname: "imglink.cc",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.phototourl.com",
+      },
+      {
+        protocol: "https",
+        hostname: "image2url.com",
+      },
     ],
   },
   compiler: {

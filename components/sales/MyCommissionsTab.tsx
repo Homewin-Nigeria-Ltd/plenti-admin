@@ -190,22 +190,20 @@ export default function MyCommissionsTab() {
   const totalPages = Math.ceil(transactions.length / PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-6 rounded-xl bg-linear-to-r from-[#0B1E66] to-[#1a2d8f] p-8">
-        <div className="flex items-start justify-between">
+      <div className="grid gap-6 rounded-xl bg-linear-to-r from-[#0B1E66] to-[#1a2d8f] p-4 sm:p-8">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:divide-x sm:divide-white/20">
           <SummaryCard
             label="Total Earned"
             amount={summary.totalEarned}
             percentageChange={summary.percentageChange}
           />
-          <div className="h-16 w-px bg-white/20"></div>
           <SummaryCard
             label="Available Balance"
             amount={summary.availableBalance}
             percentageChange={summary.percentageChange}
           />
-          <div className="h-16 w-px bg-white/20"></div>
           <SummaryCard
             label="Paid Out"
             amount={summary.paidOut}

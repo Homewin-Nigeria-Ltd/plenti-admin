@@ -1,10 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { MoreHorizontal, Search } from "lucide-react";
+import { MoreHorizontal, Search, Loader2 } from "lucide-react";
 import DataTable from "@/components/common/DataTable";
 import CreateCommissionStructureModal from "@/components/config/CreateCommissionStructureModal";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +74,10 @@ export default function CommissionsStructure() {
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [selectedStructure, setSelectedStructure] =
     React.useState<CommissionStructure | null>(null);
+  const [pendingDelete, setPendingDelete] = React.useState<{
+    id: number;
+    name: string;
+  } | null>(null);
   const {
     structures,
     loading,
@@ -156,15 +168,15 @@ export default function CommissionsStructure() {
     [fetchStructureById, structures],
   );
 
-  const handleDelete = React.useCallback(
-    async (id: number) => {
-      if (!window.confirm("Delete this commission structure?")) {
-        return;
-      }
-      await deleteStructure(id);
-    },
-    [deleteStructure],
-  );
+  const handleDelete = React.useCallback((id: number, name: string) => {
+    setPendingDelete({ id, name });
+  }, []);
+
+  const confirmDelete = React.useCallback(async () => {
+    if (!pendingDelete) return;
+    const ok = await deleteStructure(pendingDelete.id);
+    if (ok) setPendingDelete(null);
+  }, [deleteStructure, pendingDelete]);
 
   const tableRows = React.useMemo(
     () =>
@@ -240,7 +252,7 @@ export default function CommissionsStructure() {
                 variant="destructive"
                 disabled={deletingId === row.id}
                 onSelect={() => {
-                  void handleDelete(row.id);
+                  handleDelete(row.id, row.name);
                 }}
               >
                 {deletingId === row.id ? "Deleting..." : "Delete"}
@@ -325,6 +337,49 @@ export default function CommissionsStructure() {
           setSelectedStructure(null);
         }}
       />
+
+      <AlertDialog
+        open={pendingDelete != null}
+        onOpenChange={(open) => {
+          if (!open && deletingId == null) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-[12px] border-0 p-6 sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-[#0B1E66] text-[18px]">
+              Delete {pendingDelete?.name ?? "this commission structure"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-sm text-[#667085]">
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="mt-2 grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deletingId != null}
+              className="rounded-[8px] h-[52px] border border-[#D42620] bg-transparent hover:bg-white hover:text-[#D42620] text-[#D42620] disabled:opacity-70 disabled:pointer-events-none"
+              onClick={() => void confirmDelete()}
+            >
+              {deletingId != null ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin" />
+                  Deleting…
+                </span>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+            <AlertDialogCancel
+              disabled={deletingId != null}
+              className="rounded-[8px] h-[52px] bg-[#0B1E66] text-white hover:bg-[#0B1E66] hover:text-white"
+              onClick={() => setPendingDelete(null)}
+            >
+              Close
+            </AlertDialogCancel>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

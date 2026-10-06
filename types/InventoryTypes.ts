@@ -175,8 +175,13 @@ export type WarehouseApi = {
     name: string;
     email?: string;
   } | null;
-  location: string;
+  address: string;
+  /** Legacy field; may mirror `address` from API */
+  location?: string;
   description: string;
+  lat?: number | null;
+  lng?: number | null;
+  is_primary?: boolean;
   is_active: boolean;
   total_products: number;
   total_units: number;
@@ -206,8 +211,13 @@ export type WarehousesResponse = {
 export type CreateWarehouseRequest = {
   name: string;
   manager_user_id?: number;
+  address: string;
+  /** Same as `address` when sent for API backward compatibility */
   location: string;
   description: string;
+  lat?: number;
+  lng?: number;
+  is_primary?: boolean;
 };
 
 export type AuditLogUser = {

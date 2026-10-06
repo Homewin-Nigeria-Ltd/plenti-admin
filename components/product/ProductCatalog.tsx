@@ -78,7 +78,7 @@ export default function ProductCatalog() {
   }, [categoryOptions]);
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="min-w-0 space-y-4 md:space-y-6">
       {!canViewProducts ? (
         <div className="rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-12 text-center">
           <p className="text-sm text-[#667085]">

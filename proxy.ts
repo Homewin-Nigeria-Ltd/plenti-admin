@@ -11,6 +11,7 @@ export function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/inventory") ||
     request.nextUrl.pathname.startsWith("/product") ||
     request.nextUrl.pathname.startsWith("/order") ||
+    request.nextUrl.pathname.startsWith("/rider") ||
     request.nextUrl.pathname.startsWith("/finance") ||
     request.nextUrl.pathname.startsWith("/marketing") ||
     request.nextUrl.pathname.startsWith("/user") ||
@@ -28,9 +29,9 @@ export function proxy(request: NextRequest) {
   }
 
   // If accessing login page with token, redirect to dashboard
-  if (isLoginPage && token) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
+  // if (isLoginPage && token) {
+  //   return NextResponse.redirect(new URL("/dashboard", request.url));
+  // }
 
   return NextResponse.next();
 }

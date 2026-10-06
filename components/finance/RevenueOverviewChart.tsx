@@ -18,10 +18,10 @@ type Range = "week" | "month" | "year";
 
 function useChartData(
   range: Range,
-  apiData?: { label: string; value: number }[]
+  apiData?: { label: string; value: number }[],
 ) {
   const [data, setData] = React.useState<{ label: string; value: number }[]>(
-    []
+    [],
   );
 
   React.useEffect(() => {
@@ -86,7 +86,7 @@ const formatYAxisValue = (value: number) => {
   return `${value}`;
 };
 
-export function RevenueOverviewChart() {
+export function RevenueOverviewChart({ compact = false }: { compact?: boolean }) {
   const { overview, fetchFinanceOverview } = useFinanceStore();
   const [range, setRange] = React.useState<Range>("month");
   const data = useChartData(range, overview?.charts?.revenue_trend);
@@ -106,37 +106,56 @@ export function RevenueOverviewChart() {
   }, [overview]);
 
   return (
-    <div className="bg-white rounded-xl border border-[#EEF1F6] p-6 shadow-xs">
-      <div className="flex items-start justify-between mb-6">
-        <div>
+    <div
+      className={cn(
+        "min-w-0 bg-white rounded-xl border border-[#EEF1F6] shadow-xs",
+        compact ? "p-4" : "p-4 sm:p-6",
+      )}
+    >
+      <div
+        className={cn(
+          "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between",
+          compact ? "mb-4" : "mb-6",
+        )}
+      >
+        <div className="min-w-0">
           <p className="text-[#98A2B3] text-xs font-medium mb-2">
             Revenue Overview
           </p>
-          <div className="flex items-end gap-3">
-            <p className="text-[#0B1E66] text-[36px] font-semibold leading-none">
-              {totalRevenue}
-            </p>
-            <div className="flex items-center gap-1 mb-1">
-              {overview?.summary.trend === "up" ? (
-                <ArrowUp className="w-4 h-4 text-[#10B981]" />
-              ) : (
-                <ArrowDown className="w-4 h-4 text-[#EF4444]" />
-              )}
-              <span
+          {data && data.length > 0 && (
+            <div className="flex flex-wrap items-end gap-3">
+              <p
                 className={cn(
-                  "text-sm font-medium",
-                  overview?.summary.trend === "down" && "text-[#EF4444]",
-                  overview?.summary.trend === "up" && "text-[#10B981]"
+                  "text-[#0B1E66] font-semibold leading-none break-words",
+                  compact
+                    ? "text-[22px] sm:text-[28px]"
+                    : "text-[28px] sm:text-[36px]",
                 )}
               >
-                {overview?.summary.percentage_change ?? 1}%
-              </span>
-              <span className="text-[#667085] text-sm">last week</span>
+                {totalRevenue}
+              </p>
+              <div className="flex items-center gap-1 mb-1">
+                {overview?.summary.trend === "up" ? (
+                  <ArrowUp className="w-4 h-4 text-[#10B981]" />
+                ) : (
+                  <ArrowDown className="w-4 h-4 text-[#EF4444]" />
+                )}
+                <span
+                  className={cn(
+                    "text-sm font-medium",
+                    overview?.summary.trend === "down" && "text-[#EF4444]",
+                    overview?.summary.trend === "up" && "text-[#10B981]",
+                  )}
+                >
+                  {overview?.summary.percentage_change ?? 1}%
+                </span>
+                <span className="text-[#667085] text-sm">last week</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1">
+        <div className="flex items-center gap-1 bg-[#F4F5F7] border border-[#EAECF0] rounded-full p-1 self-start shrink-0 overflow-x-auto">
           {(["week", "month", "year"] as const).map((r) => {
             const active = range === r;
             return (
@@ -145,8 +164,8 @@ export function RevenueOverviewChart() {
                 onClick={() => setRange(r)}
                 className={
                   active
-                    ? "rounded-full bg-white shadow-sm px-4 py-1.5 text-[#0B1E66] text-sm font-medium transition-all"
-                    : "rounded-full px-4 py-1.5 text-[#9198AD] text-sm font-medium transition-all hover:text-[#667085]"
+                    ? "rounded-full bg-white shadow-sm px-3 sm:px-4 py-1.5 text-[#0B1E66] text-sm font-medium transition-all"
+                    : "rounded-full px-3 sm:px-4 py-1.5 text-[#9198AD] text-sm font-medium transition-all hover:text-[#667085]"
                 }
               >
                 {r[0].toUpperCase() + r.slice(1)}
@@ -156,62 +175,74 @@ export function RevenueOverviewChart() {
         </div>
       </div>
 
-      <div className="h-75">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={data}
-            margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
-          >
-            <defs>
-              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0B1E66" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="#0B1E66" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
+      {data && data.length > 0 ? (
+        <div className={cn("min-w-0", compact ? "h-36 sm:h-44" : "h-56 sm:h-75")}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={data}
+              margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
+            >
+              <defs>
+                <linearGradient
+                  id="revenueGradient"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor="#0B1E66" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#0B1E66" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
 
-            <XAxis
-              dataKey="label"
-              tick={{ fill: "#667085", fontSize: 12 }}
-              tickLine={false}
-              axisLine={{ stroke: "#EEF1F6" }}
-            />
-            <YAxis
-              tick={{ fill: "#667085", fontSize: 12 }}
-              tickLine={false}
-              axisLine={{ stroke: "#EEF1F6" }}
-              tickFormatter={formatYAxisValue}
-              // domain={[0, 15]}
-              // ticks={[0, 1, 5, 10, 15]}
-            />
-            <Tooltip
-              cursor={{ stroke: "#EEF1F6", strokeWidth: 1 }}
-              contentStyle={{
-                borderRadius: 8,
-                border: "1px solid #EEF1F6",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                backgroundColor: "white",
-              }}
-              formatter={(value) => {
-                const displayValue = typeof value === "number" ? value : 0;
-                // const numericValue = Number(value);
-                // const displayValue = Number.isFinite(numericValue)
-                //   ? numericValue
-                //   : 0;
-                return [`${formatCurrency(displayValue)}`, "Revenue"];
-              }}
-            />
-            <Area
-              type="linear"
-              dataKey="value"
-              stroke="#0B1E66"
-              strokeWidth={2.5}
-              fill="url(#revenueGradient)"
-              dot={{ r: 4, fill: "#0B1E66", strokeWidth: 0 }}
-              activeDot={{ r: 5, fill: "#0B1E66" }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+              <XAxis
+                dataKey="label"
+                tick={{ fill: "#667085", fontSize: 12 }}
+                tickLine={false}
+                axisLine={{ stroke: "#EEF1F6" }}
+              />
+              <YAxis
+                tick={{ fill: "#667085", fontSize: 12 }}
+                tickLine={false}
+                axisLine={{ stroke: "#EEF1F6" }}
+                tickFormatter={formatYAxisValue}
+                // domain={[0, 15]}
+                // ticks={[0, 1, 5, 10, 15]}
+              />
+              <Tooltip
+                cursor={{ stroke: "#EEF1F6", strokeWidth: 1 }}
+                contentStyle={{
+                  borderRadius: 8,
+                  border: "1px solid #EEF1F6",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  backgroundColor: "white",
+                }}
+                formatter={(value) => {
+                  const displayValue = typeof value === "number" ? value : 0;
+                  // const numericValue = Number(value);
+                  // const displayValue = Number.isFinite(numericValue)
+                  //   ? numericValue
+                  //   : 0;
+                  return [`${formatCurrency(displayValue)}`, "Revenue"];
+                }}
+              />
+              <Area
+                type="linear"
+                dataKey="value"
+                stroke="#0B1E66"
+                strokeWidth={2.5}
+                fill="url(#revenueGradient)"
+                dot={{ r: 4, fill: "#0B1E66", strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: "#0B1E66" }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="text-center py-5">
+          <p className="text-gray-400">No data available</p>
+        </div>
+      )}
     </div>
   );
 }

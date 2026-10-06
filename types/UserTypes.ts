@@ -71,6 +71,12 @@ export type AdminUser = {
   created_by_name: string | null;
   total_orders: number;
   amount_spent: string;
+  location?: string | null;
+  address?: string | null;
+  first_order_at?: string | null;
+  latest_order_at?: string | null;
+  first_order_date?: string | null;
+  latest_order_date?: string | null;
   joined_date: string;
   last_updated: string;
 };
@@ -115,7 +121,8 @@ export type AdminSingleUserResponse = {
 };
 
 export type AdminDetailsResponse = {
-  status: string;
+  status?: string;
+  success?: boolean;
   data: AdminUser;
 };
 
@@ -126,7 +133,7 @@ export type CreateUserRequest = {
   department: string;
   position: string;
   phone: string;
-  role: "admin" | "customer";
+  role: string;
   password: string;
 };
 

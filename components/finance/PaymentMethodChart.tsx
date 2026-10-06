@@ -71,7 +71,7 @@ export function PaymentMethodChart({
   ];
 
   return (
-    <div className="shrink-0">
+    <div className="shrink-0 mx-auto sm:mx-0">
       <ResponsiveContainer width={width} height={height}>
         <PieChart>
           {/* Outer ring - Card Payments + Bank Transfer */}

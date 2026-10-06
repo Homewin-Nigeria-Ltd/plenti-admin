@@ -5,9 +5,42 @@ export const ORDERS_API = {
   getStatistics: "/api/admin/orders/statistics",
   markInTransit: "/api/admin/orders",
   issueRefund: "/api/admin/orders",
-  assignRider: "/api/admin/orders",
+  assignRider: "/api/admin/plenti/orders",
   getRiders: "/api/admin/riders",
+  kwikPickupLocations: "/api/admin/kwik/pickup-locations",
 } as const;
+
+export function orderStatusUpdatePath(orderId: number | string): string {
+  return `${ORDERS_API.getOrders}/${orderId}/status`;
+}
+
+export function orderKwikPickupWarehousePath(orderId: number | string): string {
+  return `${ORDERS_API.getOrders}/${orderId}/kwik-pickup-warehouse`;
+}
+
+export function orderSwitchToKwikPath(orderId: number | string): string {
+  return `/api/admin/kwik/orders/${orderId}/switch-to-kwik`;
+}
+
+export function orderSwitchToSendboxPath(orderId: number | string): string {
+  return `/api/admin/sendbox/orders/${orderId}/switch-to-sendbox`;
+}
+
+export function orderSwitchToPlentiPath(orderId: number | string): string {
+  return `/api/admin/plenti/orders/${orderId}/create`;
+}
+
+export function orderAssignmentReassignPath(
+  deliveryId: number | string,
+): string {
+  return `/api/admin/rider-management/order-assignments/${deliveryId}/reassign`;
+}
+
+export function plentiDeliveryBroadcastPath(
+  deliveryId: number | string,
+): string {
+  return `/api/admin/plenti/deliveries/${deliveryId}/broadcast`;
+}
 
 /*
 export const mockOrders = [

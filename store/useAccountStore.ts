@@ -74,6 +74,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         getApiErrorMessage(error) ?? "Failed to load account settings";
       console.error("Error fetching account settings =>", error);
       set({ accountError: message });
+
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }

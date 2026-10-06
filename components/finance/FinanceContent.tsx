@@ -66,7 +66,7 @@ export function FinanceContent() {
   }, [availableTabs, activeTab]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       {!canViewFinanceModule || availableTabs.length === 0 ? (
         <div className="rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-12 text-center">
           <p className="text-sm text-[#667085]">
@@ -82,7 +82,7 @@ export function FinanceContent() {
           />
 
           {activeTab === "overview" && (
-            <div className="space-y-6">
+            <div className="min-w-0 space-y-4 sm:space-y-6">
               <FinanceMetricsCard />
               <RevenueOverviewChart />
               <PaymentMethodDistribution />

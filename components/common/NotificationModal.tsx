@@ -211,7 +211,7 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
                       className="text-sm text-[#0B1E66] underline text-left shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={!resolveNotificationActionUrl(item)}
                     >
-                     Open
+                      {item.action_text?.trim() || "Open"}
                     </button>
                   </div>
                 </div>

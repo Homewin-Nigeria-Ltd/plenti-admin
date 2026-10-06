@@ -17,7 +17,7 @@ const TicketResolutionResponseRate = dynamic(
     loading: () => (
       <div className="h-[360px] bg-[#EEF1F6] rounded-xl animate-pulse" />
     ),
-  }
+  },
 );
 
 const TicketByCategory = dynamic(() => import("./TicketByCategory"), {
@@ -40,7 +40,6 @@ export default function CustomerSupportContent() {
 
   React.useEffect(() => {
     fetchSupportStatistics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stats = React.useMemo(() => {
@@ -92,7 +91,7 @@ export default function CustomerSupportContent() {
   }, [statistics]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       {/* Notification Banner and Create Ticket Button */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-end gap-4">
         {/* Ticket notification banner commented out for now
@@ -108,7 +107,7 @@ export default function CustomerSupportContent() {
         */}
         <Button
           onClick={() => setIsCreateTicketModalOpen(true)}
-          className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-12 px-6"
+          className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-12 px-6 w-full sm:w-auto"
         >
           <Plus className="w-5 h-5" />
           Create Ticket

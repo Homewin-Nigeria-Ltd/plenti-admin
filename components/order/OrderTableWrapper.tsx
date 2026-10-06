@@ -5,10 +5,18 @@ import dynamic from "next/dynamic";
 import DataTable from "@/components/common/DataTable";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getOrderPermissions } from "@/lib/modulePermissions";
 import { useAccountStore } from "@/store/useAccountStore";
 import { Search } from "lucide-react";
 import { useOrderStore } from "@/store/useOrderStore";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "use-debounce";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -36,6 +44,10 @@ function formatOrderDate(iso: string) {
 
 export default function OrderTableWrapper() {
   const account = useAccountStore((state) => state.account);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const orderIdParam = searchParams.get("orderId");
   const {
     orders,
     loading,
@@ -51,6 +63,8 @@ export default function OrderTableWrapper() {
   const [selectedId, setSelectedId] = React.useState<number | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [debouncedSearch] = useDebounce(searchQuery, 400);
+  const [deliveryProviderFilter, setDeliveryProviderFilter] =
+    React.useState("all");
   const [hasRequested, setHasRequested] = React.useState(false);
   const { canViewOrderList, canViewOrderDetails } = React.useMemo(
     () => getOrderPermissions(account),
@@ -58,23 +72,37 @@ export default function OrderTableWrapper() {
   );
 
   React.useEffect(() => {
+    const id = Number(orderIdParam);
+    if (!canViewOrderDetails || !Number.isFinite(id) || id <= 0) return;
+    setSelectedId(id);
+    setOpen(true);
+  }, [orderIdParam, canViewOrderDetails]);
+
+  React.useEffect(() => {
     if (!canViewOrderList) return;
     let cancelled = false;
     const searchTerm =
       typeof debouncedSearch === "string" ? debouncedSearch.trim() : "";
+    const deliveryProvider =
+      deliveryProviderFilter === "all" ? undefined : deliveryProviderFilter;
     (async () => {
-      await fetchOrders({ page: 1, search: searchTerm });
+      await fetchOrders({
+        page: 1,
+        search: searchTerm,
+        delivery_provider: deliveryProvider,
+      });
       if (!cancelled) setHasRequested(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, fetchOrders, canViewOrderList]);
+  }, [debouncedSearch, deliveryProviderFilter, fetchOrders, canViewOrderList]);
 
   const columns = [
     { key: "date", label: "Order Date" },
     { key: "id", label: "Order ID" },
     { key: "customer", label: "Customer Name" },
+    { key: "deliveryProvider", label: "Delivery Provider" },
     { key: "value", label: "Order Value" },
     { key: "qty", label: "Quantity" },
     { key: "status", label: "Order Status" },
@@ -88,11 +116,20 @@ export default function OrderTableWrapper() {
     }).format(n);
 
   const statusChip = (status: string) => {
-    const s = (status ?? "").toLowerCase();
+    const s = (status ?? "")
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/-/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     const colorMap: Record<string, string> = {
       successful: "bg-green-100 text-green-700",
       pending: "bg-gray-100 text-gray-700",
       processing: "bg-orange-100 text-orange-700",
+      packed: "bg-sky-100 text-sky-800",
+      shipped: "bg-indigo-100 text-indigo-800",
+      "in transit": "bg-indigo-100 text-indigo-800",
+      delivered: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-700",
     };
     return (
@@ -121,6 +158,12 @@ export default function OrderTableWrapper() {
           0,
         );
         const name = order.user?.name ?? "—";
+        const deliveryProvider =
+          order.delivery_provider_label ??
+          order.delivery_selection?.provider_label ??
+          order.delivery_provider ??
+          order.delivery_selection?.provider ??
+          "—";
         return {
           date: (
             <span className="text-[#101928] text-sm">
@@ -150,6 +193,9 @@ export default function OrderTableWrapper() {
               </div>
             </div>
           ),
+          deliveryProvider: (
+            <span className="text-[#101928] text-sm">{deliveryProvider}</span>
+          ),
           value: (
             <span className="text-[#101928] font-medium text-sm">
               {formatCurrency(Number(order.total) ?? 0)}
@@ -172,14 +218,32 @@ export default function OrderTableWrapper() {
         </div>
       ) : (
         <>
-          <div className="border border-[#F0F2F5] rounded-xl h-12 flex items-center gap-2 p-2 px-4 shadow-sm bg-white">
-            <Search className="size-5 text-neutral-500 shrink-0" />
-            <Input
-              className="w-full placeholder:text-[#253B4B] border-0 outline-none focus-visible:ring-0 shadow-none h-auto"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="border border-[#F0F2F5] rounded-xl h-12 flex items-center gap-2 p-2 px-4 shadow-sm bg-white flex-1">
+              <Search className="size-5 text-neutral-500 shrink-0" />
+              <Input
+                className="w-full placeholder:text-[#253B4B] border-0 outline-none focus-visible:ring-0 shadow-none h-auto"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="border border-[#F0F2F5] rounded-xl h-12 flex items-center shadow-sm bg-white w-full sm:w-[220px]">
+              <Select
+                value={deliveryProviderFilter}
+                onValueChange={setDeliveryProviderFilter}
+              >
+                <SelectTrigger className="h-12 w-full min-h-12 border-0 shadow-none rounded-xl bg-transparent px-4 focus-visible:ring-0 data-[size=default]:h-12">
+                  <SelectValue placeholder="Delivery provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All providers</SelectItem>
+                  <SelectItem value="plenti">Plenti</SelectItem>
+                  <SelectItem value="kwik">Kwik</SelectItem>
+                  <SelectItem value="sendbox">Sendbox</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-[#EEF1F6] shadow-xs">
@@ -192,7 +256,14 @@ export default function OrderTableWrapper() {
                 pageSize={perPage}
                 total={totalItems}
                 onPageChange={(nextPage) =>
-                  fetchOrders({ page: nextPage, search: debouncedSearch })
+                  fetchOrders({
+                    page: nextPage,
+                    search: debouncedSearch,
+                    delivery_provider:
+                      deliveryProviderFilter === "all"
+                        ? undefined
+                        : deliveryProviderFilter,
+                  })
                 }
                 onRowClick={(_, idx) => {
                   if (!canViewOrderDetails) return;
@@ -204,9 +275,9 @@ export default function OrderTableWrapper() {
                 }}
               />
             ) : !hasRequested || loading ? (
-              <div className="min-w-180">
-                <div className="grid grid-cols-6 gap-4 px-4 py-3 border-b border-neutral-100">
-                  {Array.from({ length: 6 }).map((_, i) => (
+              <div className="overflow-x-auto">
+                <div className="grid grid-cols-7 gap-4 px-4 py-3 border-b border-neutral-100">
+                  {Array.from({ length: 7 }).map((_, i) => (
                     <Skeleton key={i} className="h-4 w-24" />
                   ))}
                 </div>
@@ -214,7 +285,7 @@ export default function OrderTableWrapper() {
                   (_, rowIdx) => (
                     <div
                       key={rowIdx}
-                      className="grid grid-cols-6 gap-4 px-4 py-4 border-b border-neutral-100"
+                      className="grid grid-cols-7 gap-4 px-4 py-4 border-b border-neutral-100"
                     >
                       <Skeleton className="h-4 w-28" />
                       <Skeleton className="h-4 w-32" />
@@ -225,6 +296,7 @@ export default function OrderTableWrapper() {
                           <Skeleton className="h-3 w-40" />
                         </div>
                       </div>
+                      <Skeleton className="h-4 w-28" />
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-4 w-12" />
                       <Skeleton className="h-6 w-20 rounded-full" />
@@ -251,6 +323,9 @@ export default function OrderTableWrapper() {
               setOpen(false);
               setSingleOrder();
               setSelectedId(null);
+              if (orderIdParam) {
+                router.replace(pathname);
+              }
             }}
           />
         </>

@@ -13,12 +13,6 @@ import { X } from "lucide-react";
 import type { Product } from "@/data/products";
 import { toast } from "sonner";
 import { useProductStore } from "@/store/useProductStore";
-import { Raleway } from "next/font/google";
-
-const raleway = Raleway({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 type DeleteProductModalProps = {
   isOpen: boolean;
@@ -53,7 +47,7 @@ export function DeleteProductModal({
       >
         <DialogHeader className="relative">
           <DialogDescription
-            className={`text-xs sm:text-[16px] font-semibold text-center text-[#0B1E66] ${raleway.className}`}
+            className="text-xs sm:text-[16px] font-semibold text-center text-[#0B1E66]"
           >
             Are you sure you want to delete this product?
           </DialogDescription>
