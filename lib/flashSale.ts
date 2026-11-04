@@ -54,8 +54,9 @@ export function resolveFlashSaleStatus(sale: {
 
 export function flashSaleItemName(item: FlashSaleItem) {
   return (
-    item.product?.name?.trim() ||
+    item.name?.trim() ||
     item.product_name?.trim() ||
+    item.product?.name?.trim() ||
     `Product #${item.product_id}`
   );
 }

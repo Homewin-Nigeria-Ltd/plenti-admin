@@ -22,3 +22,17 @@ export function useFilePreview(file: File | null): string | null {
 
   return previewUrl;
 }
+
+export function useFilesPreview(files: File[]): string[] {
+  const [previewUrls, setPreviewUrls] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
+
+  return previewUrls;
+}

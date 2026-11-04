@@ -2,8 +2,11 @@ export type FlashSaleStatus = "scheduled" | "running" | "ended" | "off";
 
 export type FlashSaleItem = {
   product_id: number;
-  discount_percent: number;
+  name?: string | null;
   product_name?: string | null;
+  original_price?: number | null;
+  sale_price?: number | null;
+  discount_percent: number;
   product?: {
     id: number;
     name?: string | null;

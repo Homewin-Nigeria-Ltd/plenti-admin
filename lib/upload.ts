@@ -46,3 +46,16 @@ export async function uploadImage(
 
   return { ok: true, url };
 }
+
+export async function uploadImages(
+  files: File[],
+  folder: string = "product",
+): Promise<{ ok: true; urls: string[] } | { ok: false; error: string }> {
+  const urls: string[] = [];
+  for (const file of files) {
+    const result = await uploadImage(file, folder);
+    if (!result.ok) return result;
+    urls.push(result.url);
+  }
+  return { ok: true, urls };
+}

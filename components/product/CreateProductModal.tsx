@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -19,13 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, X } from "lucide-react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useProductStore } from "@/store/useProductStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
-import { useFilePreview } from "@/lib/useFilePreview";
-import { uploadImage } from "@/lib/upload";
+import { useFilesPreview } from "@/lib/useFilePreview";
+import { useImageCropQueue } from "@/lib/useImageCropQueue";
+import { uploadImages } from "@/lib/upload";
 import { ImageCropDialog } from "@/components/common/ImageCropDialog";
+import { ProductImagesField } from "@/components/product/ProductImagesField";
 import {
   BulkTiersFields,
   emptyBulkTierRow,
@@ -61,61 +62,25 @@ export function CreateProductModal({
   >(null);
   const [bulkTiers, setBulkTiers] = React.useState([emptyBulkTierRow()]);
   const [discountPercent, setDiscountPercent] = React.useState("");
-  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-  const [isDragging, setIsDragging] = React.useState(false);
+  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
   const [uploadingImage, setUploadingImage] = React.useState(false);
-  const [cropImageSrc, setCropImageSrc] = React.useState<string | null>(null);
-  const [isCropOpen, setIsCropOpen] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const previewUrl = useFilePreview(selectedFile);
+  const selectedPreviews = useFilesPreview(selectedFiles);
+  const {
+    cropImageSrc,
+    isCropOpen,
+    fileInputRef,
+    enqueue,
+    handleApply: handleCropApply,
+    resetQueue,
+  } = useImageCropQueue((file) => {
+    setSelectedFiles((prev) => [...prev, file]);
+  });
 
   React.useEffect(() => {
     if (!isOpen) return;
     fetchCategories();
     fetchWarehouses();
   }, [isOpen, fetchCategories, fetchWarehouses]);
-
-  const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image (PNG/JPG).");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = typeof reader.result === "string" ? reader.result : null;
-      if (!dataUrl) {
-        toast.error("Failed to read selected image");
-        return;
-      }
-      setCropImageSrc(dataUrl);
-      setIsCropOpen(true);
-    };
-    reader.onerror = () => toast.error("Failed to read selected image");
-    reader.readAsDataURL(file);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const handleClearSelectedFile = () => {
-    setSelectedFile(null);
-    setCropImageSrc(null);
-    setIsCropOpen(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,8 +91,8 @@ export function CreateProductModal({
       return;
     }
 
-    if (!selectedFile) {
-      toast.error("Please upload a product image");
+    if (selectedFiles.length === 0) {
+      toast.error("Please upload at least one product image");
       return;
     }
 
@@ -168,7 +133,7 @@ export function CreateProductModal({
     }
 
     setUploadingImage(true);
-    const uploadResult = await uploadImage(selectedFile, "product");
+    const uploadResult = await uploadImages(selectedFiles, "product");
     setUploadingImage(false);
 
     if (!uploadResult.ok) {
@@ -183,7 +148,7 @@ export function CreateProductModal({
       stock,
       category_id: resolvedCategoryId,
       is_active: true,
-      image_urls: [uploadResult.url],
+      image_urls: uploadResult.urls,
       bulk_tiers: parsedTiers.tiers,
       discount_percent: discount,
       warehouses: [
@@ -209,10 +174,8 @@ export function CreateProductModal({
     setSelectedWarehouseId(null);
     setBulkTiers([emptyBulkTierRow()]);
     setDiscountPercent("");
-    setSelectedFile(null);
-    setCropImageSrc(null);
-    setIsCropOpen(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    setSelectedFiles([]);
+    resetQueue();
     onClose();
   };
 
@@ -419,77 +382,15 @@ export function CreateProductModal({
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label>Upload Product Image</Label>
-              <div
-                onDrop={handleDrop}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-neutral-200 bg-neutral-50"
-                }`}
-              >
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={handleFileInput}
-                  className="hidden"
-                  id="file-upload"
-                  ref={fileInputRef}
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="cursor-pointer flex flex-col items-center gap-4"
-                >
-                  {previewUrl ? (
-                    <div className="w-full">
-                      <div className="relative mx-auto w-full max-w-65">
-                        <div className="relative w-full h-40 rounded-md border border-neutral-200 overflow-hidden">
-                          <Image
-                            src={previewUrl}
-                            alt="Selected product"
-                            fill
-                            sizes="260px"
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleClearSelectedFile();
-                          }}
-                          className="absolute -top-3 -right-3 size-8 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm"
-                          aria-label="Remove selected image"
-                        >
-                          <X size={16} color="#0B1E66" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Upload className="size-12 text-primary" />
-                  )}
-                  <div>
-                    <p className="font-medium text-primary">Upload Files</p>
-                    <p className="text-sm text-neutral-500 mt-1">
-                      Click or drag image to upload PNG, JPG and are allowed
-                    </p>
-                  </div>
-                  {selectedFile && (
-                    <p className="text-sm text-primary font-medium">
-                      Selected: {selectedFile.name}
-                    </p>
-                  )}
-                </label>
-              </div>
-            </div>
+            <ProductImagesField
+              selectedPreviews={selectedPreviews}
+              onFilesChosen={enqueue}
+              onRemoveSelected={(index) => {
+                setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+              }}
+              inputId="file-upload"
+              fileInputRef={fileInputRef}
+            />
           </form>
 
           <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
@@ -500,7 +401,9 @@ export function CreateProductModal({
               disabled={creatingProduct || uploadingImage}
             >
               {uploadingImage
-                ? "Uploading image..."
+                ? selectedFiles.length > 1
+                  ? "Uploading images..."
+                  : "Uploading image..."
                 : creatingProduct
                   ? "Creating product..."
                   : "Create New Product"}
@@ -512,17 +415,8 @@ export function CreateProductModal({
       <ImageCropDialog
         isOpen={isCropOpen}
         imageSrc={cropImageSrc}
-        onClose={() => {
-          setIsCropOpen(false);
-          setCropImageSrc(null);
-          if (fileInputRef.current) fileInputRef.current.value = "";
-        }}
-        onApply={(file) => {
-          setSelectedFile(file);
-          setIsCropOpen(false);
-          setCropImageSrc(null);
-          if (fileInputRef.current) fileInputRef.current.value = "";
-        }}
+        onClose={resetQueue}
+        onApply={handleCropApply}
         aspect={1}
         title="Crop Product Image"
       />
