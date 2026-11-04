@@ -55,11 +55,14 @@ export default function FlashSalesContent() {
     return list.map((sale) => {
       const status = resolveFlashSaleStatus(sale);
       return {
-        ...sale,
+        id: sale.id,
+        name: (
+          <span className="font-medium text-[#101928]">{sale.name}</span>
+        ),
         start: formatSaleDateTime(sale.starts_at),
         end: formatSaleDateTime(sale.ends_at),
-        itemsCount: flashSaleItemsCount(sale),
         statusBadge: <StatusBadge status={status} />,
+        itemsCount: flashSaleItemsCount(sale),
       };
     });
   }, [flashSales, searchQuery]);
@@ -108,12 +111,7 @@ export default function FlashSalesContent() {
         <div className="min-w-0 overflow-x-auto">
           <DataTable
             columns={columns}
-            rows={rows.map((row) => ({
-              ...row,
-              name: (
-                <span className="font-medium text-[#101928]">{row.name}</span>
-              ),
-            }))}
+            rows={rows}
             onRowClick={(row) => void handleRowClick(row)}
           />
         </div>
