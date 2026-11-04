@@ -510,18 +510,22 @@ export function EditProductModal({
           />
 
           <div className="space-y-2">
-            <Label htmlFor="edit-discountPercent">Discount Percent</Label>
+            <Label htmlFor="edit-discountPercent">Discount %</Label>
             <Input
               id="edit-discountPercent"
               type="number"
               min={0}
               max={100}
               step="0.01"
-              placeholder="Discount Percent"
+              placeholder="Discount %"
               value={discountPercent}
               onChange={(e) => setDiscountPercent(e.target.value)}
               className="form-control"
             />
+            <p className="text-xs text-[#667085]">
+              Permanent product discount. It does not expire. Timed promotions
+              belong on Flash Sales.
+            </p>
           </div>
 
           <div className="space-y-2">

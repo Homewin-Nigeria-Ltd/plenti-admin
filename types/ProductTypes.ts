@@ -4,6 +4,8 @@ export type AdminCategory = {
   id: number;
   name: string;
   slug: string;
+  image?: string | null;
+  image_url?: string | null;
   parent_id: number | null;
   created_at: string | null;
   updated_at: string | null;
