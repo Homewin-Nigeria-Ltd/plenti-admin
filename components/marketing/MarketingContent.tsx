@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateBannerModal } from "./CreateBannerModal";
 import { CreateFaqModal } from "./CreateFaqModal";
+import { CreateFlashSaleModal } from "./CreateFlashSaleModal";
 import { CreatePromoCodeModal } from "./CreatePromoCodeModal";
 import BannersContent from "./BannersContent";
 import FaqContent from "./FaqContent";
+import FlashSalesContent from "./FlashSalesContent";
 import PromoCodeContent from "./PromoCodeContent";
 import { getMarketingPermissions } from "@/lib/modulePermissions";
 import { useAccountStore } from "@/store/useAccountStore";
@@ -21,6 +23,7 @@ export default function MarketingContent() {
   const [isCreatePromoCodeModalOpen, setIsCreatePromoCodeModalOpen] =
     React.useState(false);
   const [isCreateFaqModalOpen, setIsCreateFaqModalOpen] = React.useState(false);
+  const [isCreateFlashSaleOpen, setIsCreateFlashSaleOpen] = React.useState(false);
 
   return (
     <div className="min-w-0 space-y-4 sm:space-y-6">
@@ -44,6 +47,12 @@ export default function MarketingContent() {
               className="data-[state=active]:bg-[#E8EEFF] data-[state=active]:text-[#0B1E66] data-[state=active]:shadow-sm px-4 py-2 text-[#808080] shrink-0"
             >
               FAQ
+            </TabsTrigger>
+            <TabsTrigger
+              value="flash-sales"
+              className="data-[state=active]:bg-[#E8EEFF] data-[state=active]:text-[#0B1E66] data-[state=active]:shadow-sm px-4 py-2 text-[#808080] shrink-0"
+            >
+              Flash Sales
             </TabsTrigger>
           </TabsList>
 
@@ -73,6 +82,15 @@ export default function MarketingContent() {
               + Add FAQ
             </Button>
           )}
+
+          {activeTab === "flash-sales" && (
+            <Button
+              onClick={() => setIsCreateFlashSaleOpen(true)}
+              className="bg-[#1F3A78] hover:bg-[#1F3A78]/90 text-white h-[40px] w-full sm:w-auto"
+            >
+              + New Flash Sale
+            </Button>
+          )}
         </div>
 
         <TabsContent value="banners">
@@ -85,6 +103,10 @@ export default function MarketingContent() {
 
         <TabsContent value="faq">
           <FaqContent />
+        </TabsContent>
+
+        <TabsContent value="flash-sales">
+          <FlashSalesContent />
         </TabsContent>
       </Tabs>
 
@@ -101,6 +123,12 @@ export default function MarketingContent() {
       <CreateFaqModal
         isOpen={isCreateFaqModalOpen}
         onClose={() => setIsCreateFaqModalOpen(false)}
+      />
+
+      <CreateFlashSaleModal
+        isOpen={isCreateFlashSaleOpen}
+        sale={null}
+        onClose={() => setIsCreateFlashSaleOpen(false)}
       />
     </div>
   );

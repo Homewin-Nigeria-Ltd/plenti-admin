@@ -1,3 +1,4 @@
+import type { CategoryRow } from "@/types/CategoryTypes";
 import type { AdminCategory } from "@/types/ProductTypes";
 
 export function resolveCategoryLabels(
@@ -42,5 +43,68 @@ export function flattenCategoryOptions(categories: AdminCategory[]) {
     }
   }
   return options;
+}
+
+export function getTopLevelCategories(categories: AdminCategory[]) {
+  const hasNested = categories.some(
+    (cat) => Array.isArray(cat.subcategories) && cat.subcategories.length > 0,
+  );
+  if (hasNested) return categories;
+  return categories.filter((cat) => cat.parent_id == null);
+}
+
+export function categoryImageUrl(
+  category: Pick<AdminCategory, "image" | "image_url">,
+) {
+  return category.image_url?.trim() || category.image?.trim() || null;
+}
+
+export function flattenAdminCategories(
+  categories: AdminCategory[],
+): CategoryRow[] {
+  const hasNested = categories.some(
+    (cat) => Array.isArray(cat.subcategories) && cat.subcategories.length > 0,
+  );
+
+  if (!hasNested) {
+    const nameById = new Map(categories.map((cat) => [cat.id, cat.name]));
+    return categories.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      imageUrl: categoryImageUrl(cat),
+      parent_id: cat.parent_id,
+      parentName: cat.parent_id ? (nameById.get(cat.parent_id) ?? "—") : "—",
+      type: cat.parent_id ? "Subcategory" : "Category",
+      created_at: cat.created_at,
+    }));
+  }
+
+  const rows: CategoryRow[] = [];
+  for (const cat of categories) {
+    rows.push({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      imageUrl: categoryImageUrl(cat),
+      parent_id: cat.parent_id,
+      parentName: "—",
+      type: "Category",
+      created_at: cat.created_at,
+    });
+    for (const sub of cat.subcategories ?? []) {
+      rows.push({
+        id: sub.id,
+        name: sub.name,
+        slug: sub.slug,
+        imageUrl: categoryImageUrl(sub),
+        parent_id: sub.parent_id ?? cat.id,
+        parentName: cat.name,
+        type: "Subcategory",
+        created_at: sub.created_at,
+      });
+    }
+  }
+  return rows;
 }
 
