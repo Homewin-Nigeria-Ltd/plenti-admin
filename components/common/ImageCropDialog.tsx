@@ -35,13 +35,11 @@ export function ImageCropDialog({
   const [isApplying, setIsApplying] = React.useState(false);
 
   React.useEffect(() => {
-    if (!isOpen) {
-      setCrop({ x: 0, y: 0 });
-      setZoom(1);
-      setCroppedAreaPixels(null);
-      setIsApplying(false);
-    }
-  }, [isOpen]);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setIsApplying(false);
+  }, [isOpen, imageSrc]);
 
   const handleApply = async () => {
     if (!imageSrc || !croppedAreaPixels) return;
@@ -50,7 +48,7 @@ export function ImageCropDialog({
       const cropped = await getCroppedImageFile(
         imageSrc,
         croppedAreaPixels,
-        "product-image.jpg",
+        `product-image-${Date.now()}.jpg`,
         { width: PRODUCT_IMAGE_CROP_SIZE, height: PRODUCT_IMAGE_CROP_SIZE },
       );
       onApply(cropped);
