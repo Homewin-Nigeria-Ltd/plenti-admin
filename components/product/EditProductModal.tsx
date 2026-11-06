@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -19,22 +18,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, X } from "lucide-react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 import type { Product } from "@/data/products";
 import { useProductStore } from "@/store/useProductStore";
-import { useFilePreview } from "@/lib/useFilePreview";
+import { useFilesPreview } from "@/lib/useFilePreview";
+import { useImageCropQueue } from "@/lib/useImageCropQueue";
+import { uploadImages } from "@/lib/upload";
 import { ImageCropDialog } from "@/components/common/ImageCropDialog";
+import { ProductImagesField } from "@/components/product/ProductImagesField";
 import {
   BulkTiersFields,
   bulkTiersEqual,
   parseBulkTierRows,
   productToBulkTierRows,
 } from "@/components/product/BulkTiersFields";
-import type {
-  UpdateProductRequest,
-  UploadImageResponse,
-} from "@/types/ProductTypes";
+import type { UpdateProductRequest } from "@/types/ProductTypes";
+
+function productImageUrls(product: Product): string[] {
+  const fromImages = (product.images ?? []).filter(
+    (url): url is string =>
+      typeof url === "string" &&
+      url.length > 0 &&
+      !url.includes("picsum.photos"),
+  );
+  if (fromImages.length > 0) return Array.from(new Set(fromImages));
+  if (product.imageUrl && !product.imageUrl.includes("picsum.photos")) {
+    return [product.imageUrl];
+  }
+  return [];
+}
 
 function resolveCategorySelection(
   rawCategoryId: number | null,
@@ -84,13 +97,25 @@ export function EditProductModal({
   const [initialStock, setInitialStock] = React.useState("");
   const [bulkTiers, setBulkTiers] = React.useState(productToBulkTierRows({}));
   const [discountPercent, setDiscountPercent] = React.useState("");
-  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-  const [isDragging, setIsDragging] = React.useState(false);
+  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = React.useState<string[]>(
+    [],
+  );
+  const [originalImageUrls, setOriginalImageUrls] = React.useState<string[]>(
+    [],
+  );
   const [uploadingImage, setUploadingImage] = React.useState(false);
-  const [cropImageSrc, setCropImageSrc] = React.useState<string | null>(null);
-  const [isCropOpen, setIsCropOpen] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const previewUrl = useFilePreview(selectedFile);
+  const selectedPreviews = useFilesPreview(selectedFiles);
+  const {
+    cropImageSrc,
+    isCropOpen,
+    fileInputRef,
+    enqueue,
+    handleApply: handleCropApply,
+    resetQueue,
+  } = useImageCropQueue((file) => {
+    setSelectedFiles((prev) => [...prev, file]);
+  });
   const wasOpenRef = React.useRef(false);
   const selectionPristineRef = React.useRef(true);
   const initializedForProductRef = React.useRef<string | number | null>(null);
@@ -101,8 +126,7 @@ export function EditProductModal({
       wasOpenRef.current = false;
       selectionPristineRef.current = true;
       initializedForProductRef.current = null;
-      setCropImageSrc(null);
-      setIsCropOpen(false);
+      resetQueue();
       return;
     }
 
@@ -131,10 +155,11 @@ export function EditProductModal({
       setDiscountPercent(
         product.discountPercent == null ? "" : String(product.discountPercent)
       );
-      setSelectedFile(null);
-      setCropImageSrc(null);
-      setIsCropOpen(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      const urls = productImageUrls(product);
+      setExistingImageUrls(urls);
+      setOriginalImageUrls(urls);
+      setSelectedFiles([]);
+      resetQueue();
     }
 
     // Initialize category selection only if user hasn't modified it in this open cycle
@@ -145,49 +170,7 @@ export function EditProductModal({
     const resolved = resolveCategorySelection(rawId, categoriesTree);
     setCategoryId(resolved.categoryId);
     setSubCategoryId(resolved.subCategoryId);
-  }, [isOpen, product, categoriesTree, fetchCategories]);
-
-  const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image (PNG/JPG).");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = typeof reader.result === "string" ? reader.result : null;
-      if (!dataUrl) {
-        toast.error("Failed to read selected image");
-        return;
-      }
-      setCropImageSrc(dataUrl);
-      setIsCropOpen(true);
-    };
-    reader.onerror = () => toast.error("Failed to read selected image");
-    reader.readAsDataURL(file);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const handleClearSelectedFile = () => {
-    setSelectedFile(null);
-    setCropImageSrc(null);
-    setIsCropOpen(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+  }, [isOpen, product, categoriesTree, fetchCategories, resetQueue]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -254,72 +237,29 @@ export function EditProductModal({
       if (discount !== originalDiscount) patch.discount_percent = discount;
     }
 
-    // Upload image only if user selected a new one
-    if (selectedFile) {
-      try {
-        setUploadingImage(true);
-        const fd = new FormData();
-        fd.set("image", selectedFile);
-        fd.set("folder", "product");
+    const imagesChanged =
+      selectedFiles.length > 0 ||
+      existingImageUrls.join("|") !== originalImageUrls.join("|");
 
-        const uploadRes = await fetch("/api/upload/image", {
-          method: "POST",
-          body: fd,
-        });
-
-        const uploadJson = (await uploadRes.json().catch(() => null)) as
-          | UploadImageResponse
-          | unknown
-          | null;
-
-        if (!uploadRes.ok) {
-          const message =
-            uploadJson &&
-            typeof uploadJson === "object" &&
-            "message" in uploadJson &&
-            typeof (uploadJson as Record<string, unknown>).message === "string"
-              ? String((uploadJson as Record<string, unknown>).message)
-              : "Image upload failed";
-          toast.error(message);
-          return;
-        }
-
-        const imageUrl =
-          uploadJson &&
-          typeof uploadJson === "object" &&
-          "data" in uploadJson &&
-          typeof (uploadJson as Record<string, unknown>).data === "object" &&
-          (uploadJson as Record<string, unknown>).data !== null &&
-          "url" in
-            ((uploadJson as Record<string, unknown>).data as Record<
-              string,
-              unknown
-            >) &&
-          typeof (
-            (uploadJson as Record<string, unknown>).data as Record<
-              string,
-              unknown
-            >
-          ).url === "string"
-            ? String(
-                (
-                  (uploadJson as Record<string, unknown>).data as Record<
-                    string,
-                    unknown
-                  >
-                ).url
-              )
-            : null;
-
-        if (!imageUrl) {
-          toast.error("Image upload failed: missing image URL");
-          return;
-        }
-
-        patch.image_urls = [imageUrl];
-      } finally {
-        setUploadingImage(false);
+    if (imagesChanged) {
+      if (existingImageUrls.length + selectedFiles.length === 0) {
+        toast.error("Please keep at least one product image");
+        return;
       }
+
+      let uploadedUrls: string[] = [];
+      if (selectedFiles.length > 0) {
+        setUploadingImage(true);
+        const uploadResult = await uploadImages(selectedFiles, "product");
+        setUploadingImage(false);
+        if (!uploadResult.ok) {
+          toast.error(uploadResult.error);
+          return;
+        }
+        uploadedUrls = uploadResult.urls;
+      }
+
+      patch.image_urls = [...existingImageUrls, ...uploadedUrls];
     }
 
     if (Object.keys(patch).length === 0) {
@@ -345,16 +285,6 @@ export function EditProductModal({
     () => selectedCategory?.subcategories ?? [],
     [selectedCategory]
   );
-
-  const currentImageUrls = React.useMemo(() => {
-    if (!product) return [];
-    const urls = Array.isArray(product.images) ? product.images : [];
-    const merged = [
-      ...urls.filter((u): u is string => typeof u === "string" && !!u),
-      ...(product.imageUrl ? [product.imageUrl] : []),
-    ];
-    return Array.from(new Set(merged));
-  }, [product]);
 
   if (!product) return null;
 
@@ -510,105 +440,37 @@ export function EditProductModal({
           />
 
           <div className="space-y-2">
-            <Label htmlFor="edit-discountPercent">Discount Percent</Label>
+            <Label htmlFor="edit-discountPercent">Discount %</Label>
             <Input
               id="edit-discountPercent"
               type="number"
               min={0}
               max={100}
               step="0.01"
-              placeholder="Discount Percent"
+              placeholder="Discount %"
               value={discountPercent}
               onChange={(e) => setDiscountPercent(e.target.value)}
               className="form-control"
             />
+            <p className="text-xs text-[#667085]">
+              Permanent product discount. It does not expire. Timed promotions
+              belong on Flash Sales.
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <Label>Upload Product Image</Label>
-            <div
-              onDrop={handleDrop}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              className={`border-[0.5px] border-dashed rounded-lg p-8 text-center transition-colors ${
-                isDragging
-                  ? "border-primary bg-primary/5"
-                  : "border-[#D9D9D9] bg-[#E8EEFF]"
-              }`}
-            >
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/jpg"
-                onChange={handleFileInput}
-                className="hidden"
-                id="edit-file-upload"
-                ref={fileInputRef}
-              />
-              <label
-                htmlFor="edit-file-upload"
-                className="cursor-pointer flex flex-col items-center gap-4"
-              >
-                {previewUrl ? (
-                  <div className="w-full">
-                    <div className="relative mx-auto w-full max-w-65">
-                      <div className="relative w-full h-40 rounded-md border border-neutral-200 overflow-hidden">
-                        <Image
-                          src={previewUrl}
-                          alt="Selected product"
-                          fill
-                          sizes="260px"
-                          className="object-cover"
-                          unoptimized
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleClearSelectedFile();
-                        }}
-                        className="absolute -top-3 -right-3 size-8 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm"
-                        aria-label="Remove selected image"
-                      >
-                        <X size={16} color="#0B1E66" />
-                      </button>
-                    </div>
-                  </div>
-                ) : currentImageUrls.length > 0 ? (
-                  <div className="w-full">
-                    <div className="relative mx-auto w-full max-w-65">
-                      <div className="relative w-full h-40 rounded-md border border-neutral-200 overflow-hidden">
-                        <Image
-                          src={currentImageUrls[0]}
-                          alt={product.name}
-                          fill
-                          sizes="260px"
-                          className="object-cover"
-                        />
-                      </div>
-                      {currentImageUrls.length > 1 ? (
-                        <p className="text-xs text-neutral-500 mt-2">
-                          {currentImageUrls.length} images
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                ) : (
-                  <Upload className="size-12 text-primary" />
-                )}
-                <div>
-                  <p className="font-medium text-primary">Upload Files</p>
-                  <p className="text-sm text-neutral-500 mt-1">
-                    Click or drag image to upload PNG, JPG and are allowed
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
+          <ProductImagesField
+            existingUrls={existingImageUrls}
+            selectedPreviews={selectedPreviews}
+            onFilesChosen={enqueue}
+            onRemoveExisting={(url) => {
+              setExistingImageUrls((prev) => prev.filter((item) => item !== url));
+            }}
+            onRemoveSelected={(index) => {
+              setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+            }}
+            inputId="edit-file-upload"
+            fileInputRef={fileInputRef}
+          />
         </form>
 
         <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
@@ -619,7 +481,9 @@ export function EditProductModal({
             disabled={isSaving}
           >
             {uploadingImage
-              ? "Uploading image..."
+              ? selectedFiles.length > 1
+                ? "Uploading images..."
+                : "Uploading image..."
               : isUpdating
               ? "Updating product..."
               : "Update Product"}
@@ -631,17 +495,8 @@ export function EditProductModal({
       <ImageCropDialog
         isOpen={isCropOpen}
         imageSrc={cropImageSrc}
-        onClose={() => {
-          setIsCropOpen(false);
-          setCropImageSrc(null);
-          if (fileInputRef.current) fileInputRef.current.value = "";
-        }}
-        onApply={(file) => {
-          setSelectedFile(file);
-          setIsCropOpen(false);
-          setCropImageSrc(null);
-          if (fileInputRef.current) fileInputRef.current.value = "";
-        }}
+        onClose={resetQueue}
+        onApply={handleCropApply}
         aspect={1}
         title="Crop Product Image"
       />
