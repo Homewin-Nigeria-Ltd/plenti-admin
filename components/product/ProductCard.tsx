@@ -12,11 +12,11 @@ import type { Product, ProductStatus } from "@/data/products";
 import { resolveCategoryLabels } from "@/lib/mappers/categories";
 import { useProductStore } from "@/store/useProductStore";
 import { Ellipsis } from "lucide-react";
-import Image from "next/image";
 import * as React from "react";
 import { toast } from "sonner";
 import { DeleteProductModal } from "./DeleteProductModal";
 import { EditProductModal } from "./EditProductModal";
+import { ProductImageGallery } from "./ProductImageGallery";
 
 type ProductCardProps = {
   product: Product;
@@ -139,14 +139,7 @@ export default function ProductCard({
         ) : null}
       </div>
 
-      <div className="w-full h-48 bg-neutral-100 relative overflow-hidden">
-        <Image
-          src={product.imageUrl}
-          alt={product.name}
-          fill
-          className="object-cover"
-        />
-      </div>
+      <ProductImageGallery product={product} />
 
       <div className="p-4 sm:p-5 space-y-3">
         <div>

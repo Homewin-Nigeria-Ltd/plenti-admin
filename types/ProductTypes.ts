@@ -159,7 +159,8 @@ export type AdminProductsResponse = {
       discount_percent?: number | string | null;
       low_stock_threshold: number | null;
       image_url: string | null;
-      images?: string[];
+      images?: unknown;
+      image_urls?: unknown;
       is_active: boolean;
       category?: {
         id: number;
