@@ -2,6 +2,60 @@ import type { Product, ProductBulkTier, ProductCategory } from "@/data/products"
 import type { AdminCategory, AdminProductsResponse } from "@/types/ProductTypes";
 import { resolveCategoryLabels } from "@/lib/mappers/categories";
 
+function extractImageUrl(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  for (const key of ["url", "image_url", "original_url", "full_url", "image", "src", "path"]) {
+    if (typeof record[key] === "string" && record[key].trim()) {
+      return record[key].trim();
+    }
+  }
+  return null;
+}
+
+function asImageList(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.trim().startsWith("[")) {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function collectProductImages(product: {
+  image_url?: string | null;
+  images?: unknown;
+  image_urls?: unknown;
+}): string[] {
+  const urls: string[] = [];
+  for (const bucket of [product.images, product.image_urls]) {
+    for (const item of asImageList(bucket)) {
+      const url = extractImageUrl(item);
+      if (url) urls.push(url);
+    }
+  }
+  const primary = extractImageUrl(product.image_url);
+  if (primary) urls.unshift(primary);
+  return Array.from(new Set(urls));
+}
+
+export function productDisplayImages(product: {
+  imageUrl?: string | null;
+  images?: string[] | null;
+}): string[] {
+  const urls = (product.images ?? []).filter(
+    (url): url is string => typeof url === "string" && url.length > 0,
+  );
+  if (urls.length > 0) return Array.from(new Set(urls));
+  if (product.imageUrl) return [product.imageUrl];
+  return [];
+}
+
 function parseBulkTiers(raw: unknown): ProductBulkTier[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -69,17 +123,9 @@ export function mapAdminProductsToUi(
           ? p.discount_percent
           : null;
 
-    const images =
-      Array.isArray(p.images) && p.images.length > 0
-        ? p.images.filter((u): u is string => typeof u === "string" && !!u)
-        : p.image_url
-        ? [p.image_url]
-        : [];
-
+    const images = collectProductImages(p);
     const imageUrl =
-      typeof images[0] === "string" && images[0]
-        ? images[0]
-        : p.image_url ?? "https://picsum.photos/seed/product/300/300";
+      images[0] ?? "https://picsum.photos/seed/product/300/300";
 
     const categoryId = p.category?.id ?? p.category_id ?? null;
     const labels = resolveCategoryLabels(
