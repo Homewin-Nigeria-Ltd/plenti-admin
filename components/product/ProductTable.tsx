@@ -16,6 +16,7 @@ import { EditProductModal } from "./EditProductModal";
 import { DeleteProductModal } from "./DeleteProductModal";
 import { toast } from "sonner";
 import { resolveCategoryLabels } from "@/lib/mappers/categories";
+import { productDisplayImages } from "@/lib/mappers/products";
 import { useProductStore } from "@/store/useProductStore";
 
 type ProductTableProps = {
@@ -77,14 +78,42 @@ export default function ProductTable({
       return {
       brandName: (
         <div className="flex items-center gap-3">
-          <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              className="object-cover"
-            />
-          </div>
+          {(() => {
+            const urls = productDisplayImages(product);
+            const shown = urls.slice(0, 3);
+            const extra = urls.length - shown.length;
+            return (
+              <div className="flex items-center shrink-0">
+                {shown.length === 0 ? (
+                  <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#F2F4F7]" />
+                ) : (
+                  shown.map((url, index) => (
+                    <div
+                      key={`${url}-${index}`}
+                      className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-white bg-[#F2F4F7] shrink-0"
+                      style={{
+                        marginLeft: index === 0 ? 0 : -12,
+                        zIndex: shown.length - index,
+                      }}
+                    >
+                      <Image
+                        src={url}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                      {index === shown.length - 1 && extra > 0 ? (
+                        <span className="absolute inset-0 bg-[#0B1E66]/70 text-white text-[10px] font-medium flex items-center justify-center">
+                          +{extra}
+                        </span>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            );
+          })()}
           <div>
             <p className="font-medium text-primary-700">{product.name}</p>
             <p className="text-neutral-500 text-xs">Product ID: {product.id}</p>
