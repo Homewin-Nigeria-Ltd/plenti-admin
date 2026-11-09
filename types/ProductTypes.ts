@@ -7,6 +7,7 @@ export type AdminCategory = {
   image?: string | null;
   image_url?: string | null;
   parent_id: number | null;
+  commission_rate?: number | string | null;
   created_at: string | null;
   updated_at: string | null;
   created_by: number | null;

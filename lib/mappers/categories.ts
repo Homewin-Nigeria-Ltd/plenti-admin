@@ -59,6 +59,12 @@ export function categoryImageUrl(
   return category.image_url?.trim() || category.image?.trim() || null;
 }
 
+function parseCommission(raw: unknown): number | null {
+  if (raw == null || raw === "") return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
 export function flattenAdminCategories(
   categories: AdminCategory[],
 ): CategoryRow[] {
@@ -76,6 +82,7 @@ export function flattenAdminCategories(
       parent_id: cat.parent_id,
       parentName: cat.parent_id ? (nameById.get(cat.parent_id) ?? "—") : "—",
       type: cat.parent_id ? "Subcategory" : "Category",
+      commission_rate: parseCommission(cat.commission_rate),
       created_at: cat.created_at,
     }));
   }
@@ -90,6 +97,7 @@ export function flattenAdminCategories(
       parent_id: cat.parent_id,
       parentName: "—",
       type: "Category",
+      commission_rate: parseCommission(cat.commission_rate),
       created_at: cat.created_at,
     });
     for (const sub of cat.subcategories ?? []) {
@@ -101,6 +109,7 @@ export function flattenAdminCategories(
         parent_id: sub.parent_id ?? cat.id,
         parentName: cat.name,
         type: "Subcategory",
+        commission_rate: parseCommission(sub.commission_rate),
         created_at: sub.created_at,
       });
     }
