@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { flattenAdminCategories } from "@/lib/mappers/categories";
@@ -58,7 +59,16 @@ function findCategory(
   return null;
 }
 
-export default function CategoryContent() {
+type CategoryContentProps = {
+  kind?: "parent" | "sub";
+};
+
+export default function CategoryContent({
+  kind = "parent",
+}: CategoryContentProps) {
+  const isSub = kind === "sub";
+  const entityLabel = isSub ? "sub category" : "parent category";
+  const entityLabelTitle = isSub ? "Sub Categories" : "Parent Categories";
   const account = useAccountStore((state) => state.account);
   const {
     canCreateProducts,
@@ -83,6 +93,7 @@ export default function CategoryContent() {
     id: number;
     name: string;
   } | null>(null);
+  const [deleteProducts, setDeleteProducts] = React.useState(false);
 
   React.useEffect(() => {
     void fetchCategories();
@@ -90,15 +101,17 @@ export default function CategoryContent() {
 
   const rows = React.useMemo(() => {
     const query = search.trim().toLowerCase();
-    const flattened = flattenAdminCategories(categories);
+    const flattened = flattenAdminCategories(categories).filter((row) =>
+      isSub ? row.type === "Subcategory" : row.type === "Category",
+    );
     if (!query) return flattened;
     return flattened.filter((row) =>
-      [row.name, row.slug, row.parentName, row.type]
+      [row.name, row.slug, row.parentName]
         .join(" ")
         .toLowerCase()
         .includes(query),
     );
-  }, [categories, search]);
+  }, [categories, search, isSub]);
 
   const handleEdit = (id: number) => {
     const found = findCategory(categories, id);
@@ -109,10 +122,13 @@ export default function CategoryContent() {
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
-    const ok = await deleteCategory(pendingDelete.id);
+    const ok = await deleteCategory(pendingDelete.id, {
+      delete_products: !isSub && deleteProducts,
+    });
     if (ok) {
-      toast.success("Category deleted");
+      toast.success(`${entityLabelTitle} deleted`);
       setPendingDelete(null);
+      setDeleteProducts(false);
     } else {
       toast.error(
         useCategoryStore.getState().deleteCategoryError ??
@@ -122,10 +138,11 @@ export default function CategoryContent() {
   };
 
   const columns = [
-    { key: "image", label: "Image" },
+    ...(isSub ? [] : [{ key: "image", label: "Image" }]),
     { key: "name", label: "Name" },
-    { key: "type", label: "Type" },
-    { key: "parent", label: "Parent" },
+    ...(isSub
+      ? [{ key: "parent", label: "Parent category" }]
+      : [{ key: "commission_rate", label: "Commission (%)" }]),
     { key: "slug", label: "Slug" },
     { key: "created", label: "Date created" },
     { key: "actions", label: "Actions" },
@@ -152,6 +169,11 @@ export default function CategoryContent() {
     ),
     type: <span className="text-[#667085]">{row.type}</span>,
     parent: <span className="text-[#667085]">{row.parentName}</span>,
+    commission_rate: (
+      <span className="text-[#667085]">
+        {row.commission_rate == null ? "—" : `${row.commission_rate}%`}
+      </span>
+    ),
     slug: <span className="text-[#667085]">{row.slug || "—"}</span>,
     created: (
       <span className="text-[#667085] whitespace-nowrap">
@@ -180,7 +202,10 @@ export default function CategoryContent() {
             <DropdownMenuItem
               variant="destructive"
               disabled={Boolean(deletingById[row.id])}
-              onSelect={() => setPendingDelete({ id: row.id, name: row.name })}
+              onSelect={() => {
+                setDeleteProducts(false);
+                setPendingDelete({ id: row.id, name: row.name });
+              }}
             >
               Delete
             </DropdownMenuItem>
@@ -200,7 +225,7 @@ export default function CategoryContent() {
           <Search className="size-5 text-neutral-500 shrink-0" />
           <Input
             className="w-full placeholder:text-primary-700 border-0 outline-none focus-visible:ring-0 shadow-none"
-            placeholder="Search categories"
+            placeholder={`Search ${entityLabelTitle.toLowerCase()}`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -214,7 +239,7 @@ export default function CategoryContent() {
             }}
           >
             <Plus className="size-4" />
-            Add Category
+            Add {entityLabelTitle}
           </Button>
         ) : null}
       </div>
@@ -234,13 +259,15 @@ export default function CategoryContent() {
         <div className="rounded-xl border border-[#EEF1F6] bg-white p-8 text-center">
           <p className="text-base font-medium text-[#101928]">
             {search.trim()
-              ? "No categories match your search"
-              : "No categories yet"}
+              ? `No ${entityLabelTitle.toLowerCase()} match your search`
+              : `No ${entityLabelTitle.toLowerCase()} yet`}
           </p>
           <p className="mt-1 text-sm text-[#667085]">
             {search.trim()
               ? "Try a different keyword."
-              : "Create a category to organize products."}
+              : isSub
+                ? "Create a sub category under a parent category."
+                : "Create a parent category to organize products."}
           </p>
         </div>
       ) : (
@@ -252,6 +279,7 @@ export default function CategoryContent() {
       <CreateCategoryModal
         isOpen={modalOpen}
         category={editingCategory}
+        mode={kind}
         onClose={() => {
           setModalOpen(false);
           setEditingCategory(null);
@@ -263,19 +291,36 @@ export default function CategoryContent() {
         onOpenChange={(open) => {
           if (!open && pendingDelete && !deletingById[pendingDelete.id]) {
             setPendingDelete(null);
+            setDeleteProducts(false);
           }
         }}
       >
         <AlertDialogContent className="rounded-[12px] border-0 p-6 sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-[#0B1E66] text-[18px]">
-              Delete {pendingDelete?.name ?? "this category"}?
+              Delete {pendingDelete?.name ?? `this ${entityLabel}`}?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center text-sm text-[#667085]">
-              This cannot be undone. Products in this category may need to be
-              reassigned.
+              This cannot be undone. Products in this {entityLabel} may need to
+              be reassigned.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {!isSub ? (
+            <label
+              htmlFor="delete-associated-products"
+              className="mt-3 flex items-start gap-2 rounded-lg border border-[#EEF1F6] bg-[#F9FAFB] p-3 cursor-pointer"
+            >
+              <Checkbox
+                id="delete-associated-products"
+                checked={deleteProducts}
+                onCheckedChange={setDeleteProducts}
+                className="mt-0.5"
+              />
+              <span className="text-sm text-[#101928]">
+                Also delete the associated products
+              </span>
+            </label>
+          ) : null}
           <div className="mt-2 grid grid-cols-2 gap-3">
             <Button
               type="button"

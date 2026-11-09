@@ -4,12 +4,14 @@ export type CreateCategoryRequest = {
   name: string;
   parent_id?: number | null;
   image?: string | null;
+  commission_rate?: number | null;
 };
 
 export type UpdateCategoryRequest = {
   name?: string;
   parent_id?: number | null;
   image?: string | null;
+  commission_rate?: number | null;
 };
 
 export type CategoryListResponse = {
@@ -38,6 +40,7 @@ export type CategoryRow = {
   parent_id: number | null;
   parentName: string;
   type: "Category" | "Subcategory";
+  commission_rate?: number | null;
   created_at: string | null;
 };
 
@@ -57,5 +60,8 @@ export type CategoryState = {
     id: number,
     payload: UpdateCategoryRequest,
   ) => Promise<boolean>;
-  deleteCategory: (id: number) => Promise<boolean>;
+  deleteCategory: (
+    id: number,
+    options?: { delete_products?: boolean },
+  ) => Promise<boolean>;
 };

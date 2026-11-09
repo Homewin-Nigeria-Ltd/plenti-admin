@@ -32,13 +32,18 @@ type CreateCategoryModalProps = {
   isOpen: boolean;
   onClose: () => void;
   category: AdminCategory | null;
+  mode?: "parent" | "sub";
 };
 
 export function CreateCategoryModal({
   isOpen,
   onClose,
   category,
+  mode = "parent",
 }: CreateCategoryModalProps) {
+  const isSub = mode === "sub";
+  const entityLabel = isSub ? "sub category" : "parent category";
+  const entityLabelTitle = isSub ? "Sub Categories" : "Parent Categories";
   const {
     categories,
     createCategory,
@@ -48,6 +53,7 @@ export function CreateCategoryModal({
   } = useCategoryStore();
   const [name, setName] = React.useState("");
   const [parentId, setParentId] = React.useState<string>(NO_PARENT);
+  const [commission, setCommission] = React.useState("");
   const [imageUrl, setImageUrl] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
@@ -61,12 +67,19 @@ export function CreateCategoryModal({
     if (!isOpen) return;
     setName(category?.name ?? "");
     setParentId(
-      category?.parent_id != null ? String(category.parent_id) : NO_PARENT,
+      isSub && category?.parent_id != null
+        ? String(category.parent_id)
+        : NO_PARENT,
+    );
+    setCommission(
+      category?.commission_rate == null || category.commission_rate === ""
+        ? ""
+        : String(category.commission_rate),
     );
     setImageUrl(category ? categoryImageUrl(category) ?? "" : "");
     setSelectedFile(null);
     setPreviewUrl(null);
-  }, [isOpen, category]);
+  }, [isOpen, category, isSub]);
 
   React.useEffect(() => {
     if (!selectedFile) {
@@ -87,6 +100,7 @@ export function CreateCategoryModal({
   const resetForm = () => {
     setName("");
     setParentId(NO_PARENT);
+    setCommission("");
     setImageUrl("");
     setSelectedFile(null);
     setPreviewUrl(null);
@@ -110,27 +124,57 @@ export function CreateCategoryModal({
     e.preventDefault();
     const nameTrim = name.trim();
     if (!nameTrim) {
-      toast.error("Please enter a category name");
+      toast.error(`Please enter a ${entityLabel} name`);
       return;
     }
 
-    let image = imageUrl.trim() || null;
-    if (selectedFile) {
-      setUploading(true);
-      const uploadResult = await uploadImage(selectedFile, "category");
-      setUploading(false);
-      if (!uploadResult.ok) {
-        toast.error(uploadResult.error);
+    if (isSub && (parentId === NO_PARENT || !parentId)) {
+      toast.error("Please select a parent category");
+      return;
+    }
+
+    let commissionValue: number | undefined;
+    if (!isSub) {
+      const commissionRaw = commission.trim();
+      if (commissionRaw === "") {
+        toast.error("Please enter a commission percent");
         return;
       }
-      image = uploadResult.url;
+      commissionValue = Number(commissionRaw);
+      if (
+        !Number.isFinite(commissionValue) ||
+        commissionValue < 0 ||
+        commissionValue > 100
+      ) {
+        toast.error("Please enter a valid commission percent (0–100)");
+        return;
+      }
+    }
+
+    let image: string | null | undefined;
+    if (!isSub) {
+      image = imageUrl.trim() || null;
+      if (selectedFile) {
+        setUploading(true);
+        const uploadResult = await uploadImage(selectedFile, "category");
+        setUploading(false);
+        if (!uploadResult.ok) {
+          toast.error(uploadResult.error);
+          return;
+        }
+        image = uploadResult.url;
+      }
     }
 
     const parsedParent = parentId === NO_PARENT ? null : Number(parentId);
     const payload = {
       name: nameTrim,
-      parent_id: Number.isFinite(parsedParent) ? parsedParent : null,
-      image,
+      parent_id: isSub
+        ? Number.isFinite(parsedParent)
+          ? parsedParent
+          : null
+        : null,
+      ...(isSub ? {} : { image, commission_rate: commissionValue }),
     };
 
     const ok =
@@ -143,12 +187,14 @@ export function CreateCategoryModal({
         useCategoryStore.getState();
       toast.error(
         (isEdit ? updateCategoryError : createCategoryError) ??
-          (isEdit ? "Failed to update category" : "Failed to create category"),
+          (isEdit
+            ? `Failed to update ${entityLabel}`
+            : `Failed to create ${entityLabel}`),
       );
       return;
     }
 
-    toast.success(isEdit ? "Category updated" : "Category created");
+    toast.success(isEdit ? `${entityLabelTitle} updated` : `${entityLabelTitle} created`);
     resetForm();
     onClose();
   };
@@ -168,12 +214,16 @@ export function CreateCategoryModal({
       >
         <DialogHeader className="relative pb-4">
           <DialogTitle className="text-lg sm:text-xl font-bold text-[#101928] mb-2 pr-10">
-            {isEdit ? "Edit Category" : "Create Category"}
+            {isEdit ? `Edit ${entityLabelTitle}` : `Create ${entityLabelTitle}`}
           </DialogTitle>
           <DialogDescription className="text-[#667085] text-sm font-normal pr-10">
-            {isEdit
-              ? "Update this category or move it under a parent"
-              : "Add a product category or subcategory"}
+            {isSub
+              ? isEdit
+                ? "Update this sub category or change its parent"
+                : "Add a sub category under a parent category"
+              : isEdit
+                ? "Update this parent category"
+                : "Add a top-level parent category"}
           </DialogDescription>
           <button
             type="button"
@@ -200,28 +250,54 @@ export function CreateCategoryModal({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="category-parent" className="text-[#101928] font-medium">
-              Parent category
-            </Label>
-            <Select value={parentId} onValueChange={setParentId}>
-              <SelectTrigger
-                id="category-parent"
-                className="form-control w-full! h-[48px]"
+          {isSub ? (
+            <div className="space-y-2">
+              <Label htmlFor="category-parent" className="text-[#101928] font-medium">
+                Parent category
+              </Label>
+              <Select
+                value={parentId === NO_PARENT ? undefined : parentId}
+                onValueChange={setParentId}
               >
-                <SelectValue placeholder="None (top-level)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_PARENT}>None (top-level)</SelectItem>
-                {parentOptions.map((cat) => (
-                  <SelectItem key={cat.id} value={String(cat.id)}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                <SelectTrigger
+                  id="category-parent"
+                  className="form-control w-full! h-[48px]"
+                >
+                  <SelectValue placeholder="Select parent category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {parentOptions.map((cat) => (
+                    <SelectItem key={cat.id} value={String(cat.id)}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label
+                htmlFor="category-commission"
+                className="text-[#101928] font-medium"
+              >
+                Commission (%)
+              </Label>
+              <Input
+                id="category-commission"
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                placeholder="e.g. 10"
+                value={commission}
+                onChange={(e) => setCommission(e.target.value)}
+                className="focus-visible:ring-0 h-[48px]"
+                required
+              />
+            </div>
+          )}
 
+          {isSub ? null : (
           <div className="space-y-2">
             <Label className="text-[#101928] font-medium">Image</Label>
             <div
@@ -246,14 +322,14 @@ export function CreateCategoryModal({
                 type="file"
                 accept="image/png,image/jpeg,image/jpg,image/webp"
                 className="hidden"
-                id="category-image-upload"
+                id={`category-image-upload-${mode}`}
                 onChange={(e) => {
                   handleFile(e.target.files?.[0]);
                   e.target.value = "";
                 }}
               />
               <label
-                htmlFor="category-image-upload"
+                htmlFor={`category-image-upload-${mode}`}
                 className="cursor-pointer flex flex-col items-center gap-3"
               >
                 {displayPreview ? (
@@ -301,6 +377,7 @@ export function CreateCategoryModal({
               className="focus-visible:ring-0 h-[48px]"
             />
           </div>
+          )}
 
           <div className="pt-2">
             <Button
@@ -313,8 +390,8 @@ export function CreateCategoryModal({
                   ? "Updating…"
                   : "Creating…"
                 : isEdit
-                  ? "Update Category"
-                  : "Create Category"}
+                  ? `Update ${entityLabelTitle}`
+                  : `Create ${entityLabelTitle}`}
             </Button>
           </div>
         </form>

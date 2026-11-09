@@ -138,7 +138,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     }
   },
 
-  deleteCategory: async (id: number) => {
+  deleteCategory: async (id, options) => {
     set((state) => ({
       deletingById: { ...state.deletingById, [id]: true },
       deleteCategoryError: null,
@@ -146,6 +146,11 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       const { data } = await api.delete<CategoryMutationResponse>(
         categoryPath(id),
+        {
+          params: options?.delete_products
+            ? { delete_products: true }
+            : undefined,
+        },
       );
       if (!isSuccessStatus(data?.status)) {
         const message =
