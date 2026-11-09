@@ -1,5 +1,7 @@
 import type { AdminCategory } from "@/types/ProductTypes";
 
+export type CategoryListType = "parent" | "sub";
+
 export type CreateCategoryRequest = {
   name: string;
   parent_id?: number | null;
@@ -46,6 +48,8 @@ export type CategoryRow = {
 
 export type CategoryState = {
   categories: AdminCategory[];
+  parentCategories: AdminCategory[];
+  subCategories: AdminCategory[];
   loadingCategories: boolean;
   creatingCategory: boolean;
   updatingCategory: boolean;
@@ -54,7 +58,10 @@ export type CategoryState = {
   createCategoryError: string | null;
   updateCategoryError: string | null;
   deleteCategoryError: string | null;
-  fetchCategories: (search?: string) => Promise<boolean>;
+  fetchCategories: (params?: {
+    search?: string;
+    type?: CategoryListType;
+  }) => Promise<boolean>;
   createCategory: (payload: CreateCategoryRequest) => Promise<boolean>;
   updateCategory: (
     id: number,
