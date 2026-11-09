@@ -77,13 +77,15 @@ export default function CategoryContent({
   } = React.useMemo(() => getProductPermissions(account), [account]);
 
   const {
-    categories,
+    parentCategories,
+    subCategories,
     loadingCategories,
     categoriesError,
     deletingById,
     fetchCategories,
     deleteCategory,
   } = useCategoryStore();
+  const categories = isSub ? subCategories : parentCategories;
 
   const [search, setSearch] = React.useState("");
   const [modalOpen, setModalOpen] = React.useState(false);
@@ -96,13 +98,21 @@ export default function CategoryContent({
   const [deleteProducts, setDeleteProducts] = React.useState(false);
 
   React.useEffect(() => {
-    void fetchCategories();
-  }, [fetchCategories]);
+    void fetchCategories({ type: kind });
+    if (kind === "sub") {
+      void fetchCategories({ type: "parent" });
+    }
+  }, [fetchCategories, kind]);
+
+  const parentNameById = React.useMemo(
+    () => new Map(parentCategories.map((cat) => [cat.id, cat.name])),
+    [parentCategories],
+  );
 
   const rows = React.useMemo(() => {
     const query = search.trim().toLowerCase();
-    const flattened = flattenAdminCategories(categories).filter((row) =>
-      isSub ? row.type === "Subcategory" : row.type === "Category",
+    const flattened = flattenAdminCategories(categories, parentNameById).filter(
+      (row) => (isSub ? row.type === "Subcategory" : row.type === "Category"),
     );
     if (!query) return flattened;
     return flattened.filter((row) =>
@@ -111,7 +121,7 @@ export default function CategoryContent({
         .toLowerCase()
         .includes(query),
     );
-  }, [categories, search, isSub]);
+  }, [categories, search, parentNameById, isSub]);
 
   const handleEdit = (id: number) => {
     const found = findCategory(categories, id);

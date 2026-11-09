@@ -67,6 +67,7 @@ function parseCommission(raw: unknown): number | null {
 
 export function flattenAdminCategories(
   categories: AdminCategory[],
+  parentNameById?: Map<number, string>,
 ): CategoryRow[] {
   const hasNested = categories.some(
     (cat) => Array.isArray(cat.subcategories) && cat.subcategories.length > 0,
@@ -80,7 +81,11 @@ export function flattenAdminCategories(
       slug: cat.slug,
       imageUrl: categoryImageUrl(cat),
       parent_id: cat.parent_id,
-      parentName: cat.parent_id ? (nameById.get(cat.parent_id) ?? "—") : "—",
+      parentName: cat.parent_id
+        ? (parentNameById?.get(cat.parent_id) ??
+          nameById.get(cat.parent_id) ??
+          "—")
+        : "—",
       type: cat.parent_id ? "Subcategory" : "Category",
       commission_rate: parseCommission(cat.commission_rate),
       created_at: cat.created_at,

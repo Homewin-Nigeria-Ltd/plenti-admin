@@ -45,11 +45,12 @@ export function CreateCategoryModal({
   const entityLabel = isSub ? "sub category" : "parent category";
   const entityLabelTitle = isSub ? "Sub Categories" : "Parent Categories";
   const {
-    categories,
+    parentCategories,
     createCategory,
     updateCategory,
     creatingCategory,
     updatingCategory,
+    fetchCategories,
   } = useCategoryStore();
   const [name, setName] = React.useState("");
   const [parentId, setParentId] = React.useState<string>(NO_PARENT);
@@ -62,6 +63,11 @@ export function CreateCategoryModal({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const isEdit = Boolean(category);
   const saving = creatingCategory || updatingCategory || uploading;
+
+  React.useEffect(() => {
+    if (!isOpen || !isSub) return;
+    void fetchCategories({ type: "parent" });
+  }, [isOpen, isSub, fetchCategories]);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -92,10 +98,10 @@ export function CreateCategoryModal({
   }, [selectedFile]);
 
   const parentOptions = React.useMemo(() => {
-    return getTopLevelCategories(categories).filter(
+    return getTopLevelCategories(parentCategories).filter(
       (cat) => cat.id !== category?.id,
     );
-  }, [categories, category?.id]);
+  }, [parentCategories, category?.id]);
 
   const resetForm = () => {
     setName("");

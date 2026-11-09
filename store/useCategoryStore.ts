@@ -55,6 +55,8 @@ async function refreshProductCategories() {
 
 export const useCategoryStore = create<CategoryState>((set, get) => ({
   categories: [],
+  parentCategories: [],
+  subCategories: [],
   loadingCategories: false,
   creatingCategory: false,
   updatingCategory: false,
@@ -64,18 +66,36 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
   updateCategoryError: null,
   deleteCategoryError: null,
 
-  fetchCategories: async (search) => {
+  fetchCategories: async (params) => {
+    const search = params?.search?.trim();
+    const type = params?.type;
     set({ loadingCategories: true, categoriesError: null });
     try {
       const { data } = await api.get<CategoryListResponse>(CATEGORIES_API.list, {
-        params: search?.trim() ? { search: search.trim() } : undefined,
+        params: {
+          ...(search ? { search } : {}),
+          ...(type ? { type } : {}),
+        },
       });
-      set({ categories: unwrapCategories(data) });
+      const list = unwrapCategories(data);
+      if (type === "sub") {
+        set({ subCategories: list });
+      } else if (type === "parent") {
+        set({ parentCategories: list });
+      } else {
+        set({ categories: list });
+      }
       return true;
     } catch (error: unknown) {
       const message = getApiErrorMessage(error) ?? "Failed to fetch categories";
       console.error("Error fetching categories =>", error);
-      set({ categoriesError: message, categories: [] });
+      const empty =
+        type === "sub"
+          ? { subCategories: [] as AdminCategory[] }
+          : type === "parent"
+            ? { parentCategories: [] as AdminCategory[] }
+            : { categories: [] as AdminCategory[] };
+      set({ categoriesError: message, ...empty });
       return false;
     } finally {
       set({ loadingCategories: false });
@@ -97,7 +117,10 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
         set({ createCategoryError: message });
         return false;
       }
-      await get().fetchCategories();
+      await Promise.all([
+        get().fetchCategories({ type: "parent" }),
+        get().fetchCategories({ type: "sub" }),
+      ]);
       void refreshProductCategories();
       return true;
     } catch (error: unknown) {
@@ -125,7 +148,10 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
         set({ updateCategoryError: message });
         return false;
       }
-      await get().fetchCategories();
+      await Promise.all([
+        get().fetchCategories({ type: "parent" }),
+        get().fetchCategories({ type: "sub" }),
+      ]);
       void refreshProductCategories();
       return true;
     } catch (error: unknown) {
@@ -160,7 +186,10 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
         set({ deleteCategoryError: message });
         return false;
       }
-      await get().fetchCategories();
+      await Promise.all([
+        get().fetchCategories({ type: "parent" }),
+        get().fetchCategories({ type: "sub" }),
+      ]);
       void refreshProductCategories();
       return true;
     } catch (error: unknown) {
