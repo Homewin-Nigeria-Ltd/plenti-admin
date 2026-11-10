@@ -12,8 +12,10 @@ import { useProductStore } from "@/store/useProductStore";
 import { Plus, Search } from "lucide-react";
 import Image from "next/image";
 import * as React from "react";
+import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { CreateProductModal } from "./CreateProductModal";
+import { BulkDeleteProductModal } from "./DeleteProductModal";
 import ProductGrid from "./ProductGrid";
 import ProductTable from "./ProductTable";
 
@@ -36,6 +38,10 @@ export default function ProductCatalog() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<number>>(
+    () => new Set(),
+  );
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = React.useState(false);
   const pageSize = perPage || 20;
   const [debouncedSearch] = useDebounce(searchQuery, 400);
   const {
@@ -68,6 +74,35 @@ export default function ProductCatalog() {
     });
   }, [fetchProducts, selectedCategoryId, debouncedSearch, canViewProducts]);
 
+  const handleSelectedChange = React.useCallback(
+    (productId: number, checked: boolean) => {
+      if (!Number.isFinite(productId) || productId <= 0) return;
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (checked) next.add(productId);
+        else next.delete(productId);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const handleToggleSelectAll = React.useCallback(
+    (checked: boolean) => {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const product of products) {
+          const id = Number(product.id);
+          if (!Number.isFinite(id) || id <= 0) continue;
+          if (checked) next.add(id);
+          else next.delete(id);
+        }
+        return next;
+      });
+    },
+    [products],
+  );
+
   const categories = React.useMemo(() => {
     return [
       { value: ALL_PRODUCTS_CATEGORY, label: ALL_PRODUCTS_CATEGORY },
@@ -98,6 +133,23 @@ export default function ProductCatalog() {
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              {canDeleteProducts ? (
+                <Button
+                  variant="outline"
+                  className="btn btn-outline w-full sm:w-auto rounded-lg"
+                  disabled={selectedIds.size === 0}
+                  onClick={() => {
+                    if (selectedIds.size === 0) return;
+                    if (selectedIds.size > 100) {
+                      toast.error("You can delete up to 100 products at once");
+                      return;
+                    }
+                    setIsBulkDeleteOpen(true);
+                  }}
+                >
+                  Delete Selected
+                </Button>
+              ) : null}
               {canCreateProducts && (
                 <Button
                   className="btn btn-primary w-full sm:w-auto rounded-lg"
@@ -254,6 +306,8 @@ export default function ProductCatalog() {
               canEditProducts={canEditProducts}
               canDeleteProducts={canDeleteProducts}
               canPublishProducts={canPublishProducts}
+              selectedIds={selectedIds}
+              onSelectedChange={handleSelectedChange}
               onPageChange={(nextPage) => {
                 fetchProducts({
                   page: nextPage,
@@ -273,6 +327,9 @@ export default function ProductCatalog() {
               canEditProducts={canEditProducts}
               canDeleteProducts={canDeleteProducts}
               canPublishProducts={canPublishProducts}
+              selectedIds={selectedIds}
+              onSelectedChange={handleSelectedChange}
+              onToggleSelectAll={handleToggleSelectAll}
               onPageChange={(nextPage) => {
                 fetchProducts({
                   page: nextPage,
@@ -287,6 +344,12 @@ export default function ProductCatalog() {
           <CreateProductModal
             isOpen={isCreateModalOpen && canCreateProducts}
             onClose={() => setIsCreateModalOpen(false)}
+          />
+          <BulkDeleteProductModal
+            isOpen={isBulkDeleteOpen && canDeleteProducts}
+            productIds={Array.from(selectedIds)}
+            onClose={() => setIsBulkDeleteOpen(false)}
+            onDeleted={() => setSelectedIds(new Set())}
           />
         </>
       )}

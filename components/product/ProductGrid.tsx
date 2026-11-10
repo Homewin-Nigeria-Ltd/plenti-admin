@@ -12,6 +12,8 @@ type ProductGridProps = {
   canEditProducts: boolean;
   canDeleteProducts: boolean;
   canPublishProducts: boolean;
+  selectedIds?: Set<number>;
+  onSelectedChange?: (productId: number, checked: boolean) => void;
   onPageChange: (page: number) => void;
   formatCurrency: (n: number) => string;
 };
@@ -24,6 +26,8 @@ export default function ProductGrid({
   canEditProducts,
   canDeleteProducts,
   canPublishProducts,
+  selectedIds,
+  onSelectedChange,
   onPageChange,
   formatCurrency,
 }: ProductGridProps) {
@@ -49,6 +53,12 @@ export default function ProductGrid({
             canEditProducts={canEditProducts}
             canDeleteProducts={canDeleteProducts}
             canPublishProducts={canPublishProducts}
+            selected={selectedIds?.has(Number(product.id)) ?? false}
+            onSelectedChange={
+              onSelectedChange
+                ? (checked) => onSelectedChange(Number(product.id), checked)
+                : undefined
+            }
           />
         ))}
       </div>
