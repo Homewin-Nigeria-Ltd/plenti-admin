@@ -9,6 +9,7 @@ type CheckboxProps = {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   className?: string;
+  "aria-label"?: string;
 };
 
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(

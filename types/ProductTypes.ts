@@ -110,6 +110,8 @@ export type ProductState = {
   updatingById: Record<string, boolean>;
   togglingStatusById: Record<string, boolean>;
   deletingById: Record<string, boolean>;
+  bulkDeleting: boolean;
+  bulkDeleteError: string | null;
   error: string | null;
   categoriesError: string | null;
   createProductError: string | null;
@@ -136,6 +138,9 @@ export type ProductState = {
 
   toggleProductStatus: (productId: string | number) => Promise<boolean>;
   deleteProduct: (productId: string | number) => Promise<boolean>;
+  bulkDeleteProducts: (
+    productIds: Array<string | number>,
+  ) => Promise<{ ok: boolean; notFoundIds: number[] }>;
 };
 
 export type AdminProductsResponse = {

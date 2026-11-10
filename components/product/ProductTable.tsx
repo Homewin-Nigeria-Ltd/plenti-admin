@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import type { Product, ProductStatus } from "@/data/products";
 import { Ellipsis } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import DataTable from "@/components/common/DataTable";
 import { EditProductModal } from "./EditProductModal";
 import { DeleteProductModal } from "./DeleteProductModal";
@@ -28,6 +29,9 @@ type ProductTableProps = {
   canEditProducts: boolean;
   canDeleteProducts: boolean;
   canPublishProducts: boolean;
+  selectedIds?: Set<number>;
+  onSelectedChange?: (productId: number, checked: boolean) => void;
+  onToggleSelectAll?: (checked: boolean) => void;
   onPageChange: (page: number) => void;
   formatCurrency: (n: number) => string;
 };
@@ -41,6 +45,9 @@ export default function ProductTable({
   canEditProducts,
   canDeleteProducts,
   canPublishProducts,
+  selectedIds,
+  onSelectedChange,
+  onToggleSelectAll,
   onPageChange,
   formatCurrency,
 }: ProductTableProps) {
@@ -55,7 +62,29 @@ export default function ProductTable({
   );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
 
+  const pageIds = products
+    .map((product) => Number(product.id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+  const selectedOnPage = pageIds.filter((id) => selectedIds?.has(id)).length;
+  const allSelected =
+    pageIds.length > 0 && selectedOnPage === pageIds.length;
+
   const columns = [
+    ...(canDeleteProducts && onSelectedChange
+      ? [
+          {
+            key: "select",
+            label: (
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={(checked) => onToggleSelectAll?.(checked)}
+                aria-label="Select all products on this page"
+              />
+            ),
+            className: "w-10",
+          },
+        ]
+      : []),
     { key: "brandName", label: "Brand Name" },
     { key: "status", label: "Status" },
     { key: "category", label: "Category" },
@@ -76,6 +105,17 @@ export default function ProductTable({
       );
 
       return {
+      select: canDeleteProducts && onSelectedChange ? (
+        <span onClick={(event) => event.stopPropagation()}>
+          <Checkbox
+            checked={selectedIds?.has(Number(product.id)) ?? false}
+            onCheckedChange={(checked) =>
+              onSelectedChange(Number(product.id), checked)
+            }
+            aria-label={`Select ${product.name}`}
+          />
+        </span>
+      ) : null,
       brandName: (
         <div className="flex items-center gap-3">
           {(() => {
@@ -261,6 +301,11 @@ export default function ProductTable({
     setIsEditModalOpen,
     setProductToDelete,
     setIsDeleteModalOpen,
+    canDeleteProducts,
+    canEditProducts,
+    canPublishProducts,
+    selectedIds,
+    onSelectedChange,
   ]);
 
   if (total === 0) {

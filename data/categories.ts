@@ -5,3 +5,7 @@ export const CATEGORIES_API = {
 export function categoryPath(id: number) {
   return `${CATEGORIES_API.list}/${id}`;
 }
+
+export function categoryDeleteCheckPath(id: number) {
+  return `${categoryPath(id)}/delete-check`;
+}

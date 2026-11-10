@@ -36,6 +36,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
   updatingById: {},
   togglingStatusById: {},
   deletingById: {},
+  bulkDeleting: false,
+  bulkDeleteError: null,
   error: null,
   categoriesError: null,
   createProductError: null,
@@ -270,12 +272,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   deleteProduct: async (productId) => {
     const id = String(productId);
-    const prevProducts = get().products;
 
-    // Optimistic UI removal.
     set((state) => ({
       deletingById: { ...state.deletingById, [id]: true },
-      products: state.products.filter((p) => String(p.id) !== id),
     }));
 
     try {
@@ -290,13 +289,77 @@ export const useProductStore = create<ProductState>((set, get) => ({
       return true;
     } catch (error) {
       console.error("Error deleting product =>", error);
-      // Revert on failure
-      set({ products: prevProducts });
       return false;
     } finally {
       set((state) => ({
         deletingById: { ...state.deletingById, [id]: false },
       }));
+    }
+  },
+
+  bulkDeleteProducts: async (productIds) => {
+    const uniqueIds = [
+      ...new Set(
+        productIds
+          .map((id) => Number(id))
+          .filter((id) => Number.isFinite(id) && id > 0),
+      ),
+    ].slice(0, 100);
+
+    if (uniqueIds.length === 0) {
+      set({ bulkDeleteError: "Select at least one product" });
+      return { ok: false, notFoundIds: [] };
+    }
+
+    set({
+      bulkDeleting: true,
+      bulkDeleteError: null,
+    });
+
+    try {
+      const { data } = await api.post<unknown>(
+        "/api/admin/products/bulk-delete",
+        { product_ids: uniqueIds },
+      );
+
+      const payload = isRecord(data) ? data : {};
+      if (
+        typeof payload.status === "string" &&
+        payload.status !== "success"
+      ) {
+        const message =
+          typeof payload.message === "string"
+            ? payload.message
+            : "Failed to delete products";
+        set({ bulkDeleteError: message });
+        return { ok: false, notFoundIds: [] };
+      }
+
+      const nested = isRecord(payload.data) ? payload.data : payload;
+      const rawNotFound = nested.not_found_ids;
+      const notFoundIds = Array.isArray(rawNotFound)
+        ? rawNotFound
+            .map((value) => Number(value))
+            .filter((id) => Number.isFinite(id))
+        : [];
+
+      const { lastQuery } = get();
+      await get().fetchProducts(lastQuery);
+
+      const { currentPage, lastPage, products } = get();
+      if (products.length === 0 && currentPage > 1 && lastPage < currentPage) {
+        await get().fetchProducts({ ...lastQuery, page: lastPage });
+      }
+
+      return { ok: true, notFoundIds };
+    } catch (error: unknown) {
+      const message =
+        getApiErrorMessage(error) ?? "Failed to delete products";
+      console.error("Error bulk deleting products =>", error);
+      set({ bulkDeleteError: message });
+      return { ok: false, notFoundIds: [] };
+    } finally {
+      set({ bulkDeleting: false });
     }
   },
 }));
