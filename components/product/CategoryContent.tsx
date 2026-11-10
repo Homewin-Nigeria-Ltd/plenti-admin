@@ -83,6 +83,11 @@ export default function CategoryContent({
     categoriesError,
     deletingById,
     fetchCategories,
+    fetchDeleteCheck,
+    clearDeleteCheck,
+    deleteCheck,
+    loadingDeleteCheck,
+    deleteCheckError,
     deleteCategory,
   } = useCategoryStore();
   const categories = isSub ? subCategories : parentCategories;
@@ -96,6 +101,7 @@ export default function CategoryContent({
     name: string;
   } | null>(null);
   const [deleteProducts, setDeleteProducts] = React.useState(false);
+  const [deleteSubcategories, setDeleteSubcategories] = React.useState(false);
 
   React.useEffect(() => {
     void fetchCategories({ type: kind });
@@ -103,6 +109,14 @@ export default function CategoryContent({
       void fetchCategories({ type: "parent" });
     }
   }, [fetchCategories, kind]);
+
+  React.useEffect(() => {
+    if (!pendingDelete) {
+      clearDeleteCheck();
+      return;
+    }
+    void fetchDeleteCheck(pendingDelete.id);
+  }, [pendingDelete, fetchDeleteCheck, clearDeleteCheck]);
 
   const parentNameById = React.useMemo(
     () => new Map(parentCategories.map((cat) => [cat.id, cat.name])),
@@ -133,12 +147,18 @@ export default function CategoryContent({
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     const ok = await deleteCategory(pendingDelete.id, {
-      delete_products: !isSub && deleteProducts,
+      delete_products: Boolean(
+        deleteCheck?.requires_delete_products && deleteProducts,
+      ),
+      delete_subcategories: Boolean(
+        deleteCheck?.requires_delete_subcategories && deleteSubcategories,
+      ),
     });
     if (ok) {
       toast.success(`${entityLabelTitle} deleted`);
       setPendingDelete(null);
       setDeleteProducts(false);
+      setDeleteSubcategories(false);
     } else {
       toast.error(
         useCategoryStore.getState().deleteCategoryError ??
@@ -214,6 +234,7 @@ export default function CategoryContent({
               disabled={Boolean(deletingById[row.id])}
               onSelect={() => {
                 setDeleteProducts(false);
+                setDeleteSubcategories(false);
                 setPendingDelete({ id: row.id, name: row.name });
               }}
             >
@@ -302,6 +323,7 @@ export default function CategoryContent({
           if (!open && pendingDelete && !deletingById[pendingDelete.id]) {
             setPendingDelete(null);
             setDeleteProducts(false);
+            setDeleteSubcategories(false);
           }
         }}
       >
@@ -311,11 +333,39 @@ export default function CategoryContent({
               Delete {pendingDelete?.name ?? `this ${entityLabel}`}?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center text-sm text-[#667085]">
-              This cannot be undone. Products in this {entityLabel} may need to
-              be reassigned.
+              This cannot be undone. If this {entityLabel} has subcategories or
+              products, check the options below or reassign them first.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {!isSub ? (
+          {loadingDeleteCheck ? (
+            <div className="mt-3 space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : null}
+          {deleteCheckError ? (
+            <p className="mt-3 text-sm text-red-600">{deleteCheckError}</p>
+          ) : null}
+          {deleteCheck?.requires_delete_subcategories ? (
+            <label
+              htmlFor="delete-associated-subcategories"
+              className="mt-3 flex items-start gap-2 rounded-lg border border-[#EEF1F6] bg-[#F9FAFB] p-3 cursor-pointer"
+            >
+              <Checkbox
+                id="delete-associated-subcategories"
+                checked={deleteSubcategories}
+                onCheckedChange={setDeleteSubcategories}
+                className="mt-0.5"
+              />
+              <span className="text-sm text-[#101928]">
+                Also delete subcategories
+                {deleteCheck.subcategories_count
+                  ? ` (${deleteCheck.subcategories_count})`
+                  : ""}
+              </span>
+            </label>
+          ) : null}
+          {deleteCheck?.requires_delete_products ? (
             <label
               htmlFor="delete-associated-products"
               className="mt-3 flex items-start gap-2 rounded-lg border border-[#EEF1F6] bg-[#F9FAFB] p-3 cursor-pointer"
@@ -328,6 +378,9 @@ export default function CategoryContent({
               />
               <span className="text-sm text-[#101928]">
                 Also delete the associated products
+                {deleteCheck.products_count
+                  ? ` (${deleteCheck.products_count})`
+                  : ""}
               </span>
             </label>
           ) : null}
@@ -335,7 +388,10 @@ export default function CategoryContent({
             <Button
               type="button"
               variant="outline"
-              disabled={pendingDelete != null && Boolean(deletingById[pendingDelete.id])}
+              disabled={
+                loadingDeleteCheck ||
+                (pendingDelete != null && Boolean(deletingById[pendingDelete.id]))
+              }
               className="rounded-[8px] h-[52px] border border-[#D42620] bg-transparent hover:bg-white hover:text-[#D42620] text-[#D42620] disabled:opacity-70"
               onClick={() => void confirmDelete()}
             >
