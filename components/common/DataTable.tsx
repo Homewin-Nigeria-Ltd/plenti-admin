@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 type Column = {
   key: string;
-  label: string;
+  label: React.ReactNode;
   className?: string;
 };
 

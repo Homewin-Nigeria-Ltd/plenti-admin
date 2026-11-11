@@ -34,6 +34,20 @@ export type CategoryMutationResponse = {
   data?: AdminCategory | null;
 };
 
+export type CategoryDeleteCheck = {
+  category_id: number | null;
+  subcategories_count: number;
+  products_count: number;
+  requires_delete_subcategories: boolean;
+  requires_delete_products: boolean;
+};
+
+export type CategoryDeleteCheckResponse = {
+  status?: string;
+  message?: string;
+  data?: CategoryDeleteCheck | null;
+};
+
 export type CategoryRow = {
   id: number;
   name: string;
@@ -58,10 +72,15 @@ export type CategoryState = {
   createCategoryError: string | null;
   updateCategoryError: string | null;
   deleteCategoryError: string | null;
+  deleteCheck: CategoryDeleteCheck | null;
+  loadingDeleteCheck: boolean;
+  deleteCheckError: string | null;
   fetchCategories: (params?: {
     search?: string;
     type?: CategoryListType;
   }) => Promise<boolean>;
+  fetchDeleteCheck: (id: number) => Promise<boolean>;
+  clearDeleteCheck: () => void;
   createCategory: (payload: CreateCategoryRequest) => Promise<boolean>;
   updateCategory: (
     id: number,
@@ -69,6 +88,6 @@ export type CategoryState = {
   ) => Promise<boolean>;
   deleteCategory: (
     id: number,
-    options?: { delete_products?: boolean },
+    options?: { delete_products?: boolean; delete_subcategories?: boolean },
   ) => Promise<boolean>;
 };

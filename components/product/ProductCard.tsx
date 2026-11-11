@@ -1,5 +1,6 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,6 +25,8 @@ type ProductCardProps = {
   canEditProducts: boolean;
   canDeleteProducts: boolean;
   canPublishProducts: boolean;
+  selected?: boolean;
+  onSelectedChange?: (checked: boolean) => void;
 };
 
 export default function ProductCard({
@@ -32,6 +35,8 @@ export default function ProductCard({
   canEditProducts,
   canDeleteProducts,
   canPublishProducts,
+  selected = false,
+  onSelectedChange,
 }: ProductCardProps) {
   const { toggleProductStatus, togglingStatusById, categoriesTree } =
     useProductStore();
@@ -69,7 +74,20 @@ export default function ProductCard({
 
   return (
     <div className="bg-white rounded-xl border border-neutral-100 shadow-xs relative overflow-hidden">
-      <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+      <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2">
+        {canDeleteProducts && onSelectedChange ? (
+          <span
+            className="inline-flex rounded-sm bg-white/90 p-0.5 shadow-sm"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Checkbox
+              checked={selected}
+              onCheckedChange={onSelectedChange}
+              className="h-5 w-5 border-[#D0D5DD]"
+              aria-label={`Select ${product.name}`}
+            />
+          </span>
+        ) : null}
         <span className={`badge ${getStatusBadgeClass(product.status)}`}>
           {product.status}
         </span>
