@@ -156,7 +156,7 @@ export function mapAdminProductsToUi(
           typeof p.weight === "string" ? Number(p.weight) : p.weight;
         return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
       })(),
-      category: labels.category as ProductCategory;
+      category: labels.category as ProductCategory,
       categoryId,
       subCategory: labels.subCategory,
       stockLevel: stock,

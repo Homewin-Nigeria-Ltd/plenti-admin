@@ -79,6 +79,13 @@ const formatCurrency = (n: number) =>
     minimumFractionDigits: 2,
   }).format(n);
 
+function formatProductWeight(raw: number | string | null | undefined) {
+  if (raw == null || raw === "") return "—";
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) return "—";
+  return `${value} kg`;
+}
+
 function formatOrderStatusLabel(raw: string | undefined | null) {
   if (raw == null || String(raw).trim() === "") return "—";
   return String(raw)
@@ -542,7 +549,7 @@ export function OrderDetailsModal({
                             <p className="text-xs text-[#9B9B9B] truncate">
                               {item.product?.description ?? "—"}
                             </p>
-                            <div className="flex items-center mt-2 gap-6 text-sm">
+                            <div className="flex flex-wrap items-center mt-2 gap-x-6 gap-y-1 text-sm">
                               <span>
                                 Price:{" "}
                                 <span className="font-medium">
@@ -555,6 +562,14 @@ export function OrderDetailsModal({
                                 QTY:{" "}
                                 <span className="text-black">
                                   {item.quantity ?? "—"}
+                                </span>
+                              </span>
+                              <span className="text-[#9B9B9B]">
+                                Weight:{" "}
+                                <span className="text-black">
+                                  {formatProductWeight(
+                                    item.product?.weight ?? item.weight,
+                                  )}
                                 </span>
                               </span>
                             </div>
@@ -693,6 +708,12 @@ export function OrderDetailsModal({
                         </p>
                       </div>
                       <div className="space-y-1">
+                        <p className="text-[#101928] font-medium">Total weight</p>
+                        <p className="text-[#667085] text-sm">
+                          {formatProductWeight(singleOrder?.total_weight)}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
                         <p className="text-[#101928] font-medium">Delivery fee</p>
                         <p className="text-[#667085] text-sm">
                           {singleOrder?.delivery_economics?.customer_delivery_charge ??
@@ -719,13 +740,21 @@ export function OrderDetailsModal({
                     </div>
                   </div>
 
-                  <div className="border-t border-dashed border-[#EAECF0] pt-6 flex items-center justify-between">
-                    <p className="text-[#667085]">Amount Total</p>
-                    <p className="text-[#101928] font-semibold">
-                      {singleOrder?.total != null
-                        ? formatCurrency(Number(singleOrder.total))
-                        : "—"}
-                    </p>
+                  <div className="border-t border-dashed border-[#EAECF0] pt-6 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[#667085]">Total Weight</p>
+                      <p className="text-[#101928] font-semibold">
+                        {formatProductWeight(singleOrder?.total_weight)}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[#667085]">Amount Total</p>
+                      <p className="text-[#101928] font-semibold">
+                        {singleOrder?.total != null
+                          ? formatCurrency(Number(singleOrder.total))
+                          : "—"}
+                      </p>
+                    </div>
                   </div>
 
                   {singleOrder?.can_broadcast_to_riders && (

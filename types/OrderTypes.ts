@@ -35,11 +35,13 @@ export type OrderItem = {
   quantity: number;
   price: string;
   product_name: string;
+  weight?: number | string | null;
   product?: {
     id: number;
     name: string;
     image_url?: string;
     description?: string;
+    weight?: number | string | null;
   };
 };
 
@@ -85,6 +87,7 @@ export type Order = {
   subtotal: string;
   tax: string;
   total: number;
+  total_weight?: number | string | null;
   status: OrderStatus;
   /** Customer-facing label from API; use `status` for admin lifecycle truth */
   display_status?: string | null;
