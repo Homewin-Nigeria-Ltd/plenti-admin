@@ -80,10 +80,7 @@ const formatCurrency = (n: number) =>
   }).format(n);
 
 function formatProductWeight(raw: number | string | null | undefined) {
-  if (raw == null || raw === "") return "—";
-  const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0) return "—";
-  return `${value} kg`;
+  return raw == null ? "—" : `${raw} kg`;
 }
 
 function formatOrderStatusLabel(raw: string | undefined | null) {
