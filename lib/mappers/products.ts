@@ -151,7 +151,12 @@ export function mapAdminProductsToUi(
         Number.isFinite(discountPercentRaw)
           ? discountPercentRaw
           : null,
-      category: labels.category as ProductCategory,
+      weight: (() => {
+        const raw =
+          typeof p.weight === "string" ? Number(p.weight) : p.weight;
+        return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
+      })(),
+      category: labels.category as ProductCategory;
       categoryId,
       subCategory: labels.subCategory,
       stockLevel: stock,

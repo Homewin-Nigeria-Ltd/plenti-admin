@@ -31,6 +31,7 @@ export type CreateProductRequest = {
   image_urls: string[];
   bulk_tiers: ProductBulkTier[];
   discount_percent?: number;
+  weight?: number | null;
   warehouses?: Array<{
     warehouse_id: number;
     quantity: number;
@@ -79,6 +80,7 @@ export type UpdateProductRequest = {
   image_urls?: string[];
   bulk_tiers?: ProductBulkTier[];
   discount_percent?: number | null;
+  weight?: number | null;
 };
 
 export type UpdateProductResponse = {
@@ -163,6 +165,7 @@ export type AdminProductsResponse = {
       bulk_price?: number | string | null;
       bulk_tiers?: ProductBulkTier[];
       discount_percent?: number | string | null;
+      weight?: number | string | null;
       low_stock_threshold: number | null;
       image_url: string | null;
       images?: unknown;
