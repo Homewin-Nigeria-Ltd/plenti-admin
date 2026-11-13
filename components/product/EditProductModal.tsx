@@ -95,6 +95,7 @@ export function EditProductModal({
   const [subCategoryId, setSubCategoryId] = React.useState<number | null>(null);
   const [amount, setAmount] = React.useState("");
   const [initialStock, setInitialStock] = React.useState("");
+  const [weight, setWeight] = React.useState("");
   const [bulkTiers, setBulkTiers] = React.useState(productToBulkTierRows({}));
   const [discountPercent, setDiscountPercent] = React.useState("");
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
@@ -151,6 +152,7 @@ export function EditProductModal({
       setDescription(product.description);
       setAmount(String(product.price ?? ""));
       setInitialStock(String(product.stockLevel ?? ""));
+      setWeight(product.weight == null ? "" : String(product.weight));
       setBulkTiers(productToBulkTierRows(product));
       setDiscountPercent(
         product.discountPercent == null ? "" : String(product.discountPercent)
@@ -199,6 +201,20 @@ export function EditProductModal({
       return;
     }
     if (stock !== product.stockLevel) patch.stock = stock;
+
+    const weightRaw = weight.trim();
+    const originalWeight =
+      typeof product.weight === "number" ? product.weight : null;
+    if (weightRaw === "") {
+      if (originalWeight !== null) patch.weight = null;
+    } else {
+      const weightValue = Number(weightRaw);
+      if (!Number.isFinite(weightValue) || weightValue <= 0) {
+        toast.error("Please enter a valid weight in kg");
+        return;
+      }
+      if (weightValue !== originalWeight) patch.weight = weightValue;
+    }
 
     const resolvedCategoryId = subCategoryId ?? categoryId;
     const originalCategoryId =
@@ -405,7 +421,7 @@ export function EditProductModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-amount">Enter Amount</Label>
               <Input
@@ -429,6 +445,20 @@ export function EditProductModal({
                 onChange={(e) => setInitialStock(e.target.value)}
                 className="form-control"
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-weight">Weight (kg)</Label>
+              <Input
+                id="edit-weight"
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="e.g. 1.5"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="form-control"
               />
             </div>
           </div>
