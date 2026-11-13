@@ -230,6 +230,13 @@ export default function ProductCard({
               {new Intl.NumberFormat("en-US").format(product.stockLevel)}
             </span>
           </div>
+
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-neutral-500">Weight:</span>
+            <span className="font-semibold text-primary">
+              {product.weight == null ? "—" : `${product.weight} kg`}
+            </span>
+          </div>
         </div>
 
         {/* Bottom CTA Section */}
