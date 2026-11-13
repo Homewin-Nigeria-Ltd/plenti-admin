@@ -57,6 +57,7 @@ export function CreateProductModal({
   const [subCategoryId, setSubCategoryId] = React.useState<number | null>(null);
   const [amount, setAmount] = React.useState("");
   const [initialStock, setInitialStock] = React.useState("");
+  const [weight, setWeight] = React.useState("");
   const [selectedWarehouseId, setSelectedWarehouseId] = React.useState<
     number | null
   >(null);
@@ -108,6 +109,15 @@ export function CreateProductModal({
       toast.error("Please enter a valid stock quantity");
       return;
     }
+    const weightRaw = weight.trim();
+    let weightValue: number | undefined;
+    if (weightRaw !== "") {
+      weightValue = Number(weightRaw);
+      if (!Number.isFinite(weightValue) || weightValue <= 0) {
+        toast.error("Please enter a valid weight in kg");
+        return;
+      }
+    }
     if (!parsedTiers.ok) {
       toast.error(parsedTiers.message);
       return;
@@ -151,6 +161,7 @@ export function CreateProductModal({
       image_urls: uploadResult.urls,
       bulk_tiers: parsedTiers.tiers,
       discount_percent: discount,
+      ...(weightValue != null ? { weight: weightValue } : {}),
       warehouses: [
         {
           warehouse_id: selectedWarehouseId,
@@ -171,6 +182,7 @@ export function CreateProductModal({
     setSubCategoryId(null);
     setAmount("");
     setInitialStock("");
+    setWeight("");
     setSelectedWarehouseId(null);
     setBulkTiers([emptyBulkTierRow()]);
     setDiscountPercent("");
@@ -322,6 +334,20 @@ export function CreateProductModal({
                   onChange={(e) => setInitialStock(e.target.value)}
                   className="form-control"
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="weight">Weight (kg)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="e.g. 1.5"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="form-control"
                 />
               </div>
 

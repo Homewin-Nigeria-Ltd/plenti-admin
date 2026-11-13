@@ -23,6 +23,7 @@ export type Product = {
   bulkPriceRaw?: number | null;
   bulkTiers?: ProductBulkTier[];
   discountPercent?: number | null;
+  weight?: number | null;
   category: ProductCategory;
   categoryId?: number | null;
   subCategory: string;
