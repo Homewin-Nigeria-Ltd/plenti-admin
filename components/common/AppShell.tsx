@@ -32,7 +32,7 @@ export default function AppShell({
   }, [mobileNavOpen]);
 
   return (
-    <div className="flex min-h-dvh min-w-0 [--sidebar-width:340px] [--navbar-height:4rem] md:[--navbar-height:120px]">
+    <div className="flex min-h-dvh min-w-0 [--sidebar-width:264px] [--navbar-height:4rem]">
       <Sidebar
         mobileOpen={mobileNavOpen}
         onMobileClose={() => setMobileNavOpen(false)}
