@@ -5,85 +5,149 @@ import { dmSans } from "@/lib/fonts";
 import { getSidebarPermissions } from "@/lib/modulePermissions";
 import { cn } from "@/lib/utils";
 import { useAccountStore } from "@/store/useAccountStore";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import {
+  Bell,
+  Bike,
+  Headset,
+  LayoutDashboard,
+  Megaphone,
+  Package,
+  ShoppingBag,
+  ShoppingCart,
+  SlidersHorizontal,
+  TrendingUp,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-type linkType = {
+type NavBadge = {
+  text: string;
+  className: string;
+};
+
+type NavItem = {
   name: string;
   href: string;
-  pageHeader?: string;
-  activeIcon: string;
-  inactiveIcon: string;
-}[];
+  icon: LucideIcon;
+  permission: keyof ReturnType<typeof getSidebarPermissions>;
+  badge?: NavBadge;
+};
 
-export const links: linkType = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    activeIcon: "/sidebarIcons/home-trend-up.png",
-    inactiveIcon: "/sidebarIcons/home-trend-up-grey.png",
-  },
-  {
-    name: "Inventory Management",
-    href: "/inventory",
-    activeIcon: "/sidebarIcons/building-active.svg",
-    inactiveIcon: "/sidebarIcons/building.png",
-  },
-  {
-    name: "Product Management",
-    href: "/product",
-    activeIcon: "/sidebarIcons/bag.png",
-    inactiveIcon: "/sidebarIcons/bag-grey.png",
-  },
-  {
-    name: "Order Management",
-    href: "/order",
-    activeIcon: "/sidebarIcons/shopping-cart.png",
-    inactiveIcon: "/sidebarIcons/shopping-cart-grey.png",
-  },
-  {
-    name: "Rider Management",
-    href: "/rider",
-    activeIcon: "/sidebarIcons/rider-active.svg",
-    inactiveIcon: "/sidebarIcons/rider-grey.svg",
-  },
-  // {
-  //   name: "Analytics & Reporting",
-  //   href: "/analytics",
-  // },
-  {
-    name: "Finance Management",
-    href: "/finance",
-    activeIcon: "/sidebarIcons/wallet.png",
-    inactiveIcon: "/sidebarIcons/wallet-grey.png",
-  },
-  {
-    name: "Marketing & Engagement",
-    href: "/marketing",
-    activeIcon: "/sidebarIcons/presentation-chart.png",
-    inactiveIcon: "/sidebarIcons/presentation-chart-grey.png",
-  },
-  {
-    name: "Sales Management",
-    href: "/sales",
-    activeIcon: "/sidebarIcons/notification-active.png",
-    inactiveIcon: "/sidebarIcons/coin-inactive.png",
-  },
+type NavSection = {
+  title: string;
+  items: NavItem[];
+};
 
+const NAV_SECTIONS: NavSection[] = [
   {
-    name: "Notification Management",
-    href: "/notification",
-    activeIcon: "/sidebarIcons/coin-active.png",
-    inactiveIcon: "/sidebarIcons/coin-inactive.png",
+    title: "Overview",
+    items: [
+      {
+        name: "Dashboard",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+        permission: "canViewDashboard",
+      },
+    ],
   },
-
   {
-    name: "User Management",
-    href: "/user?type=customer",
-    activeIcon: "/sidebarIcons/user.png",
-    inactiveIcon: "/sidebarIcons/user-grey.png",
+    title: "Commerce",
+    items: [
+      {
+        name: "Orders",
+        href: "/order",
+        icon: ShoppingCart,
+        permission: "canViewOrderManagement",
+        badge: { text: "4 new", className: "bg-[#FFF6ED] text-[#F38744]" },
+      },
+      {
+        name: "Products",
+        href: "/product",
+        icon: ShoppingBag,
+        permission: "canViewProductManagement",
+      },
+      {
+        name: "Inventory",
+        href: "/inventory",
+        icon: Package,
+        permission: "canViewInventoryManagement",
+        badge: {
+          text: "3",
+          className: "bg-[#FEE4E2] text-[#D92D20] min-w-5 justify-center px-1.5",
+        },
+      },
+      {
+        name: "Sales",
+        href: "/sales",
+        icon: TrendingUp,
+        permission: "canViewSalesManagement",
+      },
+      {
+        name: "Marketing",
+        href: "/marketing",
+        icon: Megaphone,
+        permission: "canViewMarketingAndEngagement",
+      },
+    ],
+  },
+  {
+    title: "Operations",
+    items: [
+      {
+        name: "Riders",
+        href: "/rider",
+        icon: Bike,
+        permission: "canViewRiderManagement",
+      },
+      {
+        name: "Customer support",
+        href: "/customer",
+        icon: Headset,
+        permission: "canViewCustomerSupport",
+      },
+    ],
+  },
+  {
+    title: "Admin",
+    items: [
+      {
+        name: "Finance",
+        href: "/finance",
+        icon: Wallet,
+        permission: "canViewFinanceManagement",
+      },
+      {
+        name: "Users",
+        href: "/user?type=customer",
+        icon: Users,
+        permission: "canViewUserManagement",
+      },
+      {
+        name: "Notifications",
+        href: "/notification",
+        icon: Bell,
+        permission: "canViewNotifications",
+      },
+      {
+        name: "System config",
+        href: "/configuration",
+        icon: SlidersHorizontal,
+        permission: "canViewConfiguration",
+      },
+    ],
   },
 ];
+
+export const links = NAV_SECTIONS.flatMap((section) =>
+  section.items.map((item) => ({ name: item.name, href: item.href })),
+);
+
+function hrefPath(href: string) {
+  return href.split("?")[0];
+}
 
 type SidebarLinksProps = {
   collapsed?: boolean;
@@ -91,175 +155,86 @@ type SidebarLinksProps = {
 
 export default function SidebarLinks({ collapsed = false }: SidebarLinksProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const account = useAccountStore((state) => state.account);
-  const {
-    canViewDashboard,
-    canViewNotifications,
-    canViewUserManagement,
-    canViewConfiguration,
-    canViewProductManagement,
-    canViewInventoryManagement,
-    canViewSalesManagement,
-    canViewFinanceManagement,
-    canViewOrderManagement,
-    canViewCustomerSupport,
-    canViewMarketingAndEngagement,
-    canViewRiderManagement,
-  } = React.useMemo(() => getSidebarPermissions(account), [account]);
+  const permissions = React.useMemo(
+    () => getSidebarPermissions(account),
+    [account],
+  );
 
-  const visibleLinks = React.useMemo(
+  const visibleSections = React.useMemo(
     () =>
-      links.filter((link) => {
-        if (link.href === "/dashboard") return canViewDashboard;
-        if (link.href === "/notification") return canViewNotifications;
-        if (link.href.startsWith("/user")) return canViewUserManagement;
-        if (link.href === "/product") return canViewProductManagement;
-        if (link.href === "/inventory") return canViewInventoryManagement;
-        if (link.href === "/sales") return canViewSalesManagement;
-        if (link.href === "/finance") return canViewFinanceManagement;
-        if (link.href === "/order") return canViewOrderManagement;
-        if (link.href === "/marketing") return canViewMarketingAndEngagement;
-        if (link.href === "/rider") return canViewRiderManagement;
-        if (link.href === "/customer") return canViewCustomerSupport;
-        return true;
-      }),
-    [
-      canViewDashboard,
-      canViewNotifications,
-      canViewUserManagement,
-      canViewProductManagement,
-      canViewInventoryManagement,
-      canViewSalesManagement,
-      canViewFinanceManagement,
-      canViewOrderManagement,
-      canViewCustomerSupport,
-      canViewMarketingAndEngagement,
-      canViewRiderManagement,
-    ],
+      NAV_SECTIONS.map((section) => ({
+        ...section,
+        items: section.items.filter((item) => permissions[item.permission]),
+      })).filter((section) => section.items.length > 0),
+    [permissions],
   );
 
   const isRouteActive = React.useCallback(
-    (href: string) => pathname === href || pathname.startsWith(`${href}/`),
+    (href: string) => {
+      const path = hrefPath(href);
+      return pathname === path || pathname.startsWith(`${path}/`);
+    },
     [pathname],
   );
 
-  const linkBaseClass = React.useMemo(
-    () =>
-      cn(
-        "text-[16px] font-semibold h-13.75 flex items-center cursor-pointer",
-        collapsed
-          ? "justify-center px-2 mx-7 rounded-[4px] "
-          : "px-4 gap-3 mx-3 rounded-lg",
-      ),
-    [collapsed],
-  );
-
-  const handleNav = React.useCallback(
-    (e: React.MouseEvent<HTMLElement>) => {
-      const href = (e.currentTarget as HTMLElement).dataset.href;
-      if (href) router.push(href);
-    },
-    [router],
-  );
-
   return (
-    <ul className={`${dmSans.className} flex-1 overflow-auto mt-3 space-y-2`}>
-      {visibleLinks.map((link, idx) => {
-        const isActive = isRouteActive(link.href);
-
-        return (
-          <li
-            key={idx}
-            className={cn(
-              isActive ? "bg-primary text-white" : "text-[#98A2B3]",
-              linkBaseClass,
-            )}
-            data-href={link.href}
-            onClick={handleNav}
-            title={collapsed ? link.name : undefined}
-          >
-            <span className="shrink-0">
-              <Image
-                src={isActive ? link.activeIcon : link.inactiveIcon}
-                alt={link.name}
-                width={24}
-                height={24}
-              />
-            </span>
-            {!collapsed && (
-              <span className="min-w-0 truncate">{link.name}</span>
-            )}
-          </li>
-        );
-      })}
-      {(() => {
-        const customerActive = isRouteActive("/customer");
-        const configActive = isRouteActive("/configuration");
-
-        return (
-          <>
-            {canViewCustomerSupport && (
-              <li
-                className={cn(
-                  customerActive
-                    ? "bg-primary text-white rounded-lg"
-                    : "text-[#98A2B3]",
-                  linkBaseClass,
-                )}
-                data-href="/customer"
-                onClick={handleNav}
-                title={collapsed ? "Customer Support" : undefined}
-              >
-                <span className="shrink-0">
-                  <Image
-                    src={
-                      customerActive
-                        ? "/sidebarIcons/presentation-chart-grey.png"
-                        : "/sidebarIcons/life-ring-grey.png"
-                    }
-                    alt="Customer Support"
-                    width={24}
-                    height={24}
-                  />
-                </span>
-                {!collapsed && (
-                  <span className="min-w-0 truncate">Customer Support</span>
-                )}
-              </li>
-            )}
-            {canViewConfiguration && (
-              <li
-                className={cn(
-                  configActive
-                    ? "bg-primary text-white rounded-lg"
-                    : "text-[#98A2B3]",
-                  linkBaseClass,
-                )}
-                data-href="/configuration"
-                onClick={handleNav}
-                title={collapsed ? "Systems Configuration" : undefined}
-              >
-                <span className="shrink-0">
-                  <Image
-                    src={
-                      configActive
-                        ? "/sidebarIcons/setting.png"
-                        : "/sidebarIcons/setting-grey.png"
-                    }
-                    alt="System Configuration"
-                    width={24}
-                    height={24}
-                  />
-                </span>
-                {!collapsed && (
-                  <span className="min-w-0 truncate">Systems Configuration</span>
-                )}
-              </li>
-            )}
-          </>
-        );
-      })()}
-    </ul>
+    <nav
+      className={cn(dmSans.className, "sidebar-scroller flex-1 min-h-0 px-3 pb-3")}
+    >
+      {visibleSections.map((section) => (
+        <div key={section.title} className="mb-4">
+          {!collapsed ? (
+            <p className="px-2.5 mb-1 text-[11px] font-semibold tracking-[0.08em] uppercase text-[#98A2B3]">
+              {section.title}
+            </p>
+          ) : null}
+          <ul className="space-y-0.5">
+            {section.items.map((item) => {
+              const isActive = isRouteActive(item.href);
+              const Icon = item.icon;
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    title={collapsed ? item.name : undefined}
+                    className={cn(
+                      "flex items-center rounded-lg text-[14px] font-medium h-9 transition-colors",
+                      collapsed ? "justify-center px-0" : "gap-2.5 px-2.5",
+                      isActive
+                        ? "bg-[#EEF2FF] text-[#0B1E66]"
+                        : "text-[#667085] hover:bg-[#F9FAFB]",
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "size-[18px] shrink-0",
+                        isActive ? "text-[#0B1E66]" : "text-[#98A2B3]",
+                      )}
+                      strokeWidth={1.75}
+                    />
+                    {!collapsed ? (
+                      <>
+                        <span className="min-w-0 truncate flex-1">{item.name}</span>
+                        {item.badge ? (
+                          <span
+                            className={cn(
+                              "shrink-0 inline-flex items-center rounded-full py-0.5 px-2 text-[10px] font-semibold leading-none",
+                              item.badge.className,
+                            )}
+                          >
+                            {item.badge.text}
+                          </span>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
   );
 }

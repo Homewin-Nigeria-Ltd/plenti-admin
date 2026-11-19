@@ -244,5 +244,24 @@
   .btn-secondary {
     @apply bg-transparent text-neutral-500 hover:bg-neutral-50;
   }
+
+  .sidebar-scroller {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #d0d5dd transparent;
+  }
+
+  .sidebar-scroller::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar-scroller::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-scroller::-webkit-scrollbar-thumb {
+    background-color: #d0d5dd;
+    border-radius: 999px;
+  }
 }
 
