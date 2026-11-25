@@ -22,7 +22,11 @@ function getApiErrorMessage(err: unknown): string | null {
   return typeof message === "string" ? message : null;
 }
 
-/** Build overview from API data; now includes revenue_overview and best_selling_categories */
+function asObject<T>(value: unknown): T | undefined {
+  return isRecord(value) ? (value as T) : undefined;
+}
+
+/** Build overview from API data, including today / past_month / past_year blocks. */
 function mapOverview(data: Record<string, unknown>): DashboardOverview | null {
   const stats = data.stats;
   const top_products = data.top_products;
@@ -33,11 +37,25 @@ function mapOverview(data: Record<string, unknown>): DashboardOverview | null {
 
   if (!stats || typeof stats !== "object") return null;
 
+  const products = Array.isArray(top_products)
+    ? (top_products as DashboardOverview["top_products"]).map((product) => ({
+        ...product,
+        image_url: product.image_url || product.image_urls?.[0] || "",
+      }))
+    : [];
+
   return {
+    generated_at:
+      typeof data.generated_at === "string" ? data.generated_at : undefined,
+    today: asObject(data.today),
+    past_month: asObject(data.past_month),
+    past_year: asObject(data.past_year),
+    total_orders: asObject(data.total_orders),
+    active_users: asObject(data.active_users),
+    conversion_rate: asObject(data.conversion_rate),
+    riders: asObject(data.riders),
     stats: stats as DashboardOverview["stats"],
-    top_products: Array.isArray(top_products)
-      ? (top_products as DashboardOverview["top_products"])
-      : [],
+    top_products: products,
     cart_analysis:
       cart_analysis && typeof cart_analysis === "object"
         ? (cart_analysis as DashboardOverview["cart_analysis"])

@@ -14,8 +14,8 @@ import type {
   TopProductsFilter,
 } from "@/types/DashboardTypes";
 
-const formatIncome = (value: string) => {
-  const n = parseFloat(value);
+const formatIncome = (value: string | number) => {
+  const n = typeof value === "number" ? value : parseFloat(value);
   if (Number.isNaN(n)) return value;
   return new Intl.NumberFormat("en-NG", {
     style: "currency",

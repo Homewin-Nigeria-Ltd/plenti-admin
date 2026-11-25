@@ -1,53 +1,54 @@
+import LoginBrandPanel from "@/components/auth/LoginBrandPanel";
 import LoginForm from "@/components/auth/LoginForm";
-import Image from "next/image";
 import { Suspense } from "react";
 
 const LoginPage = () => {
   return (
-    <div className="min-h-dvh w-full grid grid-cols-1 lg:grid-cols-2 px-5 py-8 sm:px-8 lg:p-10 gap-8 lg:gap-10">
-      <div className="hidden lg:grid place-items-center place-content-center min-w-0">
-        <Image
-          src={"/login-display.svg"}
-          alt="Plenti"
-          width={170}
-          height={70}
-          className="h-[min(90vh,800px)] w-auto max-w-full"
-          priority
-        />
-      </div>
-
-      <div className="flex flex-col justify-center w-full max-w-md mx-auto lg:max-w-none min-w-0">
-        <div className="lg:hidden flex justify-center mb-6">
-          <Image
-            src={"/login-display.svg"}
-            alt="Plenti"
-            width={170}
-            height={70}
-            className="h-36 sm:h-44 w-auto"
-            priority
-          />
+    <div className="min-h-dvh w-full grid grid-cols-1 lg:grid-cols-2 bg-white">
+      <section className="min-h-dvh flex flex-col px-6 py-8 sm:px-10 lg:px-14 xl:px-20">
+        <div className="flex items-center gap-2.5">
+          <span className="size-8 rounded-[10px] bg-[#2F5BDB] text-white text-sm font-semibold inline-flex items-center justify-center">
+            P
+          </span>
+          <p className="text-[15px] font-semibold text-[#101828]">
+            Plenti{" "}
+            <span className="font-medium text-[#98A2B3]">Admin</span>
+          </p>
         </div>
 
-        <h1 className="text-[#101928] font-bold text-[28px] sm:text-[32px] lg:text-[40px]">
-          Welcome Back
-        </h1>
-        <p className="text-secondary text-sm sm:text-base font-normal mb-6 lg:mb-10">
-          Welcome Back! Please enter your credentials to access your account and
-          continue managing your business effortlessly.
-        </p>
-        <Suspense fallback={<div>Loading...</div>}>
-          <LoginForm />
-        </Suspense>
-        <p className="text-sm sm:text-base font-normal text-secondary/50 text-center mt-3">
-          Forgot Password?{" "}
-          <a
-            href="mailto:sales@plentinig.com"
-            className="underline text-primary cursor-pointer"
-          >
-            Reach to Admin
+        <div className="flex-1 flex items-center pb-[8vh]">
+          <div className="w-full max-w-[400px]">
+            <h1 className="text-[28px] leading-8 font-semibold text-[#101828] tracking-tight">
+              Welcome back
+            </h1>
+            <p className="mt-2 text-sm text-[#667085]">
+              Sign in to Plenti Admin with your work email.
+            </p>
+            <div className="mt-8">
+              <Suspense
+                fallback={
+                  <div className="h-40 rounded-xl bg-[#F2F4F7] animate-pulse" />
+                }
+              >
+                <LoginForm />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-[12px] text-[#98A2B3]">
+          © {new Date().getFullYear()} Plenti.{" "}
+          <a href="#" className="hover:text-[#667085]">
+            Privacy
+          </a>
+          {" · "}
+          <a href="#" className="hover:text-[#667085]">
+            Terms
           </a>
         </p>
-      </div>
+      </section>
+
+      <LoginBrandPanel />
     </div>
   );
 };

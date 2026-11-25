@@ -1,5 +1,6 @@
 export const ORDERS_API = {
   getOrders: "/api/admin/orders",
+  getIncoming: "/api/admin/orders/incoming",
   getOrder: "/api/admin/orders",
   deleteOrder: "/api/admin/orders",
   getStatistics: "/api/admin/orders/statistics",
@@ -12,6 +13,14 @@ export const ORDERS_API = {
 
 export function orderStatusUpdatePath(orderId: number | string): string {
   return `${ORDERS_API.getOrders}/${orderId}/status`;
+}
+
+export function orderAcceptPath(orderId: number | string): string {
+  return `${ORDERS_API.getOrders}/${orderId}/accept`;
+}
+
+export function orderDeclinePath(orderId: number | string): string {
+  return `${ORDERS_API.getOrders}/${orderId}/decline`;
 }
 
 export function orderKwikPickupWarehousePath(orderId: number | string): string {

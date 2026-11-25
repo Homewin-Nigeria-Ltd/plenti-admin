@@ -527,10 +527,14 @@ export function OrderDetailsModal({
                       {items.map((item) => (
                         <div key={item.id} className="flex items-center gap-4">
                           <div className="size-16 shrink-0 rounded-md bg-[#E8EEFF80] border-[0.5px] border-[#D0D5DD] overflow-hidden">
-                            {item.product?.image_url ? (
+                            {item.product?.image_url || item.product?.image_urls?.[0] ? (
                               <Image
-                                src={item.product.image_url}
-                                alt={item.product_name}
+                                src={
+                                  item.product.image_url ||
+                                  item.product.image_urls?.[0] ||
+                                  ""
+                                }
+                                alt={item.product_name || item.product?.name || "Product"}
                                 width={64}
                                 height={64}
                                 className="size-full object-cover"
@@ -541,7 +545,7 @@ export function OrderDetailsModal({
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-[16px] text-[#1A1A1A]">
-                              {item.product_name ?? "—"}
+                              {item.product_name || item.product?.name || "—"}
                             </p>
                             <p className="text-xs text-[#9B9B9B] truncate">
                               {item.product?.description ?? "—"}
@@ -661,13 +665,17 @@ export function OrderDetailsModal({
                       <div className="space-y-1">
                         <p className="text-[#101928] font-medium">Phone</p>
                         <p className="text-[#98A2B3] text-sm">
-                          {singleOrder?.phone_number ?? "—"}
+                          {singleOrder?.phone_number ||
+                            singleOrder?.user?.phone ||
+                            "+234 809 xxx 4412"}
                         </p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[#101928] font-medium">Rider</p>
                         <p className="text-[#667085] text-sm">
-                          {singleOrder?.plenti_delivery?.rider_name ?? "—"}
+                          {singleOrder?.delivery_fulfillment?.plenti_rider_name ||
+                            singleOrder?.plenti_delivery?.rider_name ||
+                            "Waiting for rider"}
                         </p>
                       </div>
                       {selectedId != null && (

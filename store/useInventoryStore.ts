@@ -28,7 +28,7 @@ export type InventoryStoreState = InventoryState & {
   warehouses: WarehouseApi[];
   loadingWarehouses: boolean;
   warehousesError: string | null;
-  fetchWarehouses: () => Promise<boolean>;
+  fetchWarehouses: (params?: { per_page?: number }) => Promise<boolean>;
 };
 
 export const useInventoryStore = create<InventoryStoreState>((set) => ({
@@ -123,18 +123,24 @@ export const useInventoryStore = create<InventoryStoreState>((set) => ({
     }
   },
 
-  fetchWarehouses: async () => {
+  fetchWarehouses: async (params) => {
     set({ loadingWarehouses: true, warehousesError: null });
     try {
+      const query: Record<string, number> = {};
+      if (params?.per_page) query.per_page = params.per_page;
       const { data } = await api.get<WarehousesResponse>(
-        INVENTORY_API.getWarehouses
+        INVENTORY_API.getWarehouses,
+        { params: query }
       );
 
-      const warehouseRows = Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data?.data?.items)
-          ? data.data.items
-          : [];
+      const payload = data?.data;
+      const warehouseRows = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.items)
+          ? payload.items
+          : Array.isArray(payload?.warehouses)
+            ? payload.warehouses
+            : [];
 
       if (data?.status === "success") {
         set({ warehouses: warehouseRows });

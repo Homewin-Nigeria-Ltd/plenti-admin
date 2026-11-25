@@ -18,10 +18,14 @@ export type UpdateOrderStatusPayload = {
 export type OrderStatus =
   | "pending"
   | "processing"
+  | "accepted"
   | "packed"
+  | "in_transit"
   | "shipped"
   | "delivered"
   | "cancelled"
+  | "refund_pending"
+  | "refunded"
   | "SUCCESSFUL"
   | "PENDING"
   | "PROCESSING"
@@ -34,12 +38,13 @@ export type OrderItem = {
   product_id: number;
   quantity: number;
   price: string;
-  product_name: string;
+  product_name?: string;
   weight?: number | string | null;
   product?: {
     id: number;
     name: string;
     image_url?: string;
+    image_urls?: string[];
     description?: string;
     weight?: number | string | null;
   };
@@ -50,7 +55,28 @@ export type OrderUser = {
   name: string;
   email: string;
   phone?: string | null;
+  avatar?: string | null;
   avatar_url?: string | null;
+  total_orders?: number;
+};
+
+export type OrderShipment = {
+  id: number;
+  order_id?: number;
+  warehouse_id?: number | null;
+  delivery_fee?: number;
+  delivery_type?: string | null;
+  delivery_provider?: string | null;
+  pickup_address?: string | null;
+};
+
+export type OrderDeliveryFulfillment = {
+  has_plenti_delivery?: boolean;
+  plenti_delivery_id?: number | null;
+  plenti_delivery_status?: string | null;
+  plenti_rider_name?: string | null;
+  plenti_rider_id?: number | null;
+  plenti_is_broadcast?: boolean;
 };
 
 export type RiderInfo = {
@@ -94,14 +120,18 @@ export type Order = {
   payment_status: string;
   payment_method: string | null;
   payment_reference: string | null;
-  payment_gateway_response?: { rider_info?: RiderInfo } | null;
+  payment_gateway_response?: {
+    rider_info?: RiderInfo;
+    gateway?: string | null;
+    provider?: string | null;
+  } | null;
   paid_at: string | null;
   shipping_address: string;
-  phone_number: string;
+  phone_number?: string | null;
   shipping_details?: string | null;
   shippingDetails?: string | null;
-  shipping_fee?: number;
-  shippingFee?: number;
+  shipping_fee?: number | string;
+  shippingFee?: number | string;
   delivery_type?: string | null;
   delivery_provider?: string | null;
   delivery_provider_label?: string | null;
@@ -123,12 +153,18 @@ export type Order = {
     delivery_id?: number | null;
     rider_id?: number | null;
   } | null;
+  assigned_rider_id?: number | null;
   delivery_selection?: {
     provider?: string;
+    provider_stored?: string | null;
     provider_label?: string;
     type?: string;
     type_label?: string;
+    is_kwik?: boolean;
+    is_plenti?: boolean;
   } | null;
+  delivery_fulfillment?: OrderDeliveryFulfillment | null;
+  shipments?: OrderShipment[];
   delivery_economics?: {
     delivery_provider?: string;
     customer_delivery_charge?: number | null;
@@ -153,6 +189,10 @@ export type Order = {
   pickup_warehouse_id?: number | null;
   kwik_pickup_warehouse?: { id?: number; name?: string } | null;
   order_number: string;
+  order_date?: string | null;
+  order_time?: string | null;
+  date_placed?: string | null;
+  time_placed?: string | null;
   created_at: string;
   updated_at: string;
   user?: OrderUser;
@@ -173,29 +213,59 @@ export type OrdersListResponse = {
 
 export type OrderState = {
   orders: Order[];
+  incomingOrders: Order[];
   singleOrder: Order | null;
   orderStats: OrderStatistics | null;
   loading: boolean;
+  loadingIncoming: boolean;
   loadingSingle: boolean;
   loadingStats: boolean;
   error: string | null;
+  incomingError: string | null;
   statsError: string | null;
   currentPage: number;
   lastPage: number;
   perPage: number;
   totalItems: number;
-  lastQuery: { page: number; search: string; delivery_provider: string };
+  incomingPage: number;
+  incomingLastPage: number;
+  incomingPerPage: number;
+  incomingTotal: number;
+  lastQuery: {
+    page: number;
+    search: string;
+    delivery_provider: string;
+    status?: string;
+    warehouse_id?: string;
+    payment_method?: string;
+    start_date?: string;
+    end_date?: string;
+  };
+  lastIncomingQuery: { page: number; search: string; per_page: number };
 
   fetchOrders: (params?: {
     page?: number;
     search?: string;
     delivery_provider?: string;
+    status?: string;
+    warehouse_id?: string;
+    payment_method?: string;
+    start_date?: string;
+    end_date?: string;
+  }) => Promise<boolean>;
+  fetchIncomingOrders: (params?: {
+    page?: number;
+    search?: string;
+    per_page?: number;
   }) => Promise<boolean>;
   fetchSingleOrders: (
     id: number,
     options?: { silent?: boolean },
   ) => Promise<boolean>;
-  fetchOrderStats: () => Promise<boolean>;
+  fetchOrderStats: (params?: {
+    start_date?: string;
+    end_date?: string;
+  }) => Promise<boolean>;
   setSingleOrder: () => void;
 };
 
@@ -203,9 +273,14 @@ export type OrderStatistics = {
   total_orders?: number;
   pending_orders: number;
   processing_orders: number;
+  accepted_orders?: number;
+  packed_orders?: number;
+  in_transit_orders?: number;
   shipped_orders: number;
   delivered_orders: number;
   cancelled_orders: number;
+  refund_pending_orders?: number;
+  refunded_orders?: number;
   total_revenue?: number;
   average_order_value?: string;
   period?: string;
