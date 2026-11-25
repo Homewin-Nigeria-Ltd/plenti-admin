@@ -160,7 +160,7 @@ export function buildIncomingDetail(
       name: item.product_name || item.product?.name || "Item",
       image: item.product?.image_url || item.product?.image_urls?.[0],
       stockLabel: last ? "Low · 2 left" : "In stock · 1 left",
-      stockTone: (last ? "low" : "in") as const,
+      stockTone: (last ? "low" : "in") as IncomingStockTone,
       qty: item.quantity,
       price: Number(item.price) || 0,
     };

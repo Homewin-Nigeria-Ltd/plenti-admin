@@ -138,7 +138,7 @@ export default function DashboardRevenueTrend({
                 }
               />
               <Tooltip
-                formatter={(value: number) =>
+                formatter={(value) =>
                   metric === "revenue"
                     ? formatCompactNaira(Number(value) || 0)
                     : Number(value || 0).toLocaleString()

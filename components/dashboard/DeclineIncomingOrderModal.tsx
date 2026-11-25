@@ -14,6 +14,7 @@ import * as React from "react";
 import {
   DECLINE_REASONS,
   defaultDeclineMessage,
+  type DeclineReason,
   type IncomingOrderDetail,
 } from "@/components/dashboard/incomingOrderView";
 
@@ -34,7 +35,7 @@ export default function DeclineIncomingOrderModal({
   onBack,
   onConfirm,
 }: DeclineIncomingOrderModalProps) {
-  const [reason, setReason] = React.useState(DECLINE_REASONS[0].id);
+  const [reason, setReason] = React.useState<DeclineReason>(DECLINE_REASONS[0].id);
   const [message, setMessage] = React.useState("");
 
   React.useEffect(() => {

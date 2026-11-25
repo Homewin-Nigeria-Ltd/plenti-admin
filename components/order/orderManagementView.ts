@@ -264,7 +264,7 @@ export function matchesWarehouse(order: Order, warehouseId: string) {
     order.kwik_pickup_warehouse?.id,
     ...(order.shipments ?? []).map((shipment) => shipment.warehouse_id),
   ]
-    .filter((value) => value != null && value !== "")
+    .filter((value) => value != null)
     .map(String);
   return ids.includes(warehouseId);
 }
