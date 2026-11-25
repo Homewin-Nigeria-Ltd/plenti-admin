@@ -2,6 +2,7 @@
 
 import Navbar from "@/components/common/Navbar";
 import Sidebar from "@/components/common/Sidebar";
+import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
@@ -39,7 +40,17 @@ export default function AppShell({
       />
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         <Navbar onMenuClick={() => setMobileNavOpen(true)} />
-        <main className="min-w-0 flex-1 overflow-auto bg-white p-4 sm:p-6">
+        <main
+          className={cn(
+            "min-w-0 flex-1 overflow-auto p-4 sm:p-6",
+            pathname === "/dashboard" ||
+            pathname.startsWith("/dashboard/") ||
+            pathname === "/order" ||
+            pathname.startsWith("/order/")
+              ? "bg-[#F7F8FA]"
+              : "bg-white",
+          )}
+        >
           {children}
         </main>
       </div>

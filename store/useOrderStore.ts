@@ -9,29 +9,94 @@ import {
 } from "@/types/OrderTypes";
 import { create } from "zustand";
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function unwrapIncoming(body: unknown): {
+  orders: Order[];
+  currentPage: number;
+  lastPage: number;
+  perPage: number;
+  total: number;
+} {
+  const root = asRecord(body);
+  const data = root && "data" in root ? root.data : body;
+
+  if (Array.isArray(data)) {
+    return {
+      orders: data as Order[],
+      currentPage: 1,
+      lastPage: 1,
+      perPage: data.length || PAGE_SIZE,
+      total: data.length,
+    };
+  }
+
+  const obj = asRecord(data);
+  const rows = Array.isArray(obj?.data)
+    ? (obj.data as Order[])
+    : Array.isArray(obj?.orders)
+      ? (obj.orders as Order[])
+      : Array.isArray(obj?.items)
+        ? (obj.items as Order[])
+        : [];
+  return {
+    orders: rows,
+    currentPage: Number(obj?.current_page ?? 1) || 1,
+    lastPage: Number(obj?.last_page ?? 1) || 1,
+    perPage: Number(obj?.per_page ?? rows.length) || PAGE_SIZE,
+    total: Number(obj?.total ?? rows.length) || rows.length,
+  };
+}
+
 export const useOrderStore = create<OrderState>((set) => ({
   orders: [],
+  incomingOrders: [],
   singleOrder: null,
   orderStats: null,
   loading: false,
+  loadingIncoming: false,
   loadingSingle: false,
   loadingStats: false,
   error: null,
+  incomingError: null,
   statsError: null,
   currentPage: 1,
   lastPage: 1,
   perPage: PAGE_SIZE,
   totalItems: 0,
+  incomingPage: 1,
+  incomingLastPage: 1,
+  incomingPerPage: PAGE_SIZE,
+  incomingTotal: 0,
   lastQuery: { page: 1, search: "", delivery_provider: "" },
+  lastIncomingQuery: { page: 1, search: "", per_page: PAGE_SIZE },
 
   fetchOrders: async (params) => {
     const page = params?.page ?? 1;
     const search = params?.search?.trim() ?? "";
     const deliveryProvider = params?.delivery_provider?.trim() ?? "";
+    const status = params?.status?.trim() ?? "";
+    const warehouseId = params?.warehouse_id?.trim() ?? "";
+    const paymentMethod = params?.payment_method?.trim() ?? "";
+    const startDate = params?.start_date?.trim() ?? "";
+    const endDate = params?.end_date?.trim() ?? "";
     set({
       loading: true,
       error: null,
-      lastQuery: { page, search, delivery_provider: deliveryProvider },
+      lastQuery: {
+        page,
+        search,
+        delivery_provider: deliveryProvider,
+        status,
+        warehouse_id: warehouseId,
+        payment_method: paymentMethod,
+        start_date: startDate,
+        end_date: endDate,
+      },
     });
 
     try {
@@ -43,6 +108,11 @@ export const useOrderStore = create<OrderState>((set) => ({
       if (deliveryProvider) {
         query.delivery_provider = deliveryProvider;
       }
+      if (status) query.status = status;
+      if (warehouseId) query.warehouse_id = warehouseId;
+      if (paymentMethod) query.payment_method = paymentMethod;
+      if (startDate) query.start_date = startDate;
+      if (endDate) query.end_date = endDate;
 
       const { data } = await api.get<OrdersListResponse>(ORDERS_API.getOrders, {
         params: query,
@@ -63,6 +133,46 @@ export const useOrderStore = create<OrderState>((set) => ({
       return false;
     } finally {
       set({ loading: false });
+    }
+  },
+
+  fetchIncomingOrders: async (params) => {
+    const page = params?.page ?? 1;
+    const search = params?.search?.trim() ?? "";
+    const perPage = params?.per_page ?? PAGE_SIZE;
+    set({
+      loadingIncoming: true,
+      incomingError: null,
+      lastIncomingQuery: { page, search, per_page: perPage },
+    });
+
+    try {
+      const query: Record<string, string | number> = {
+        page,
+        per_page: perPage,
+      };
+      if (search) query.search = search;
+
+      const { data } = await api.get(ORDERS_API.getIncoming, { params: query });
+      const parsed = unwrapIncoming(data);
+      set({
+        incomingOrders: parsed.orders,
+        incomingPage: parsed.currentPage,
+        incomingLastPage: parsed.lastPage,
+        incomingPerPage: parsed.perPage,
+        incomingTotal: parsed.total,
+      });
+      return true;
+    } catch (error) {
+      console.error("Error fetching incoming orders =>", error);
+      set({
+        incomingError: "Failed to fetch incoming orders",
+        incomingOrders: [],
+        incomingTotal: 0,
+      });
+      return false;
+    } finally {
+      set({ loadingIncoming: false });
     }
   },
 
@@ -92,12 +202,17 @@ export const useOrderStore = create<OrderState>((set) => ({
     }
   },
 
-  fetchOrderStats: async () => {
+  fetchOrderStats: async (params) => {
     set({ loadingStats: true, statsError: null });
     try {
+      const query: Record<string, string> = {};
+      const startDate = params?.start_date?.trim() ?? "";
+      const endDate = params?.end_date?.trim() ?? "";
+      if (startDate) query.start_date = startDate;
+      if (endDate) query.end_date = endDate;
       const { data } = await api.get<{ data: OrderStatistics }>(
         ORDERS_API.getStatistics,
-        { timeout: 8000 }
+        { timeout: 8000, params: query }
       );
       set({ orderStats: data.data ?? null });
       return true;

@@ -175,17 +175,20 @@ export type WarehouseApi = {
     name: string;
     email?: string;
   } | null;
-  address: string;
+  address?: string | null;
   /** Legacy field; may mirror `address` from API */
-  location?: string;
-  description: string;
+  location?: string | null;
+  description?: string | null;
   lat?: number | null;
   lng?: number | null;
+  has_coordinates?: boolean;
   is_primary?: boolean;
   is_active: boolean;
   total_products: number;
-  total_units: number;
+  total_units: number | string;
   total_worth: number | string;
+  low_stock_products?: number;
+  out_of_stock_products?: number;
   created_at: string;
   updated_at: string;
 };
@@ -198,6 +201,7 @@ export type WarehousesResponse = {
     | WarehouseApi[]
     | {
         items?: WarehouseApi[];
+        warehouses?: WarehouseApi[];
         pagination?: {
           current_page?: number;
           per_page?: number;

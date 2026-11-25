@@ -17,11 +17,79 @@ export type DashboardStats = {
   top_weekly_category: string;
 };
 
+export type OverviewHourPoint = {
+  hour: number;
+  label: string;
+  today: number | null;
+  yesterday: number | null;
+};
+
+export type OverviewSameTime = {
+  revenue: number;
+  orders: number;
+  average_order_value: number;
+};
+
+export type OverviewToday = {
+  revenue: number;
+  orders: number;
+  average_order_value: number;
+  to_accept: number;
+  same_time_yesterday: OverviewSameTime;
+  revenue_change_percent: number;
+  hourly: OverviewHourPoint[];
+};
+
+export type OverviewPreviousPeriod = {
+  start: string;
+  end: string;
+  revenue: number;
+  orders: number;
+  average_order_value: number;
+};
+
+export type OverviewMonthPoint = {
+  date: string;
+  label: string;
+  orders: number;
+  revenue: number;
+};
+
+export type OverviewYearPoint = {
+  month: string;
+  label: string;
+  orders: number;
+  revenue: number;
+};
+
+export type OverviewPastMonth = {
+  start: string;
+  end: string;
+  revenue: number;
+  orders: number;
+  average_order_value: number;
+  previous: OverviewPreviousPeriod;
+  revenue_change_percent: number;
+  series: OverviewMonthPoint[];
+};
+
+export type OverviewPastYear = {
+  start: string;
+  end: string;
+  revenue: number;
+  orders: number;
+  average_order_value: number;
+  previous: OverviewPreviousPeriod;
+  revenue_change_percent: number;
+  series: OverviewYearPoint[];
+};
+
 /** Top product from dashboard overview (data.top_products[]) */
 export type DashboardTopProduct = {
   name: string;
   category_name: string;
-  image_url: string;
+  image_url?: string;
+  image_urls?: string[];
   units_sold: string;
   total_income: string;
 };
@@ -47,19 +115,34 @@ export type DashboardRecentOrder = {
 /** Revenue overview data point */
 export type RevenueOverviewData = {
   month: string;
-  revenue: number;
+  revenue: number | string;
 };
 
 /** Best selling category from dashboard */
 export type BestSellingCategory = {
+  category_id?: number | null;
   category_name: string;
   order_frequency: number;
-  units_sold: string;
-  total_income: string;
+  units_sold: string | number;
+  total_income: string | number;
+  percent?: number;
 };
 
 /** Dashboard overview payload – includes all data from API response */
 export type DashboardOverview = {
+  generated_at?: string;
+  today?: OverviewToday;
+  past_month?: OverviewPastMonth;
+  past_year?: OverviewPastYear;
+  total_orders?: { value: number };
+  active_users?: { value: number; change_percent?: number | null };
+  conversion_rate?: {
+    value: number | string;
+    active_customers?: number;
+    buyers?: number;
+    change_points?: number | null;
+  };
+  riders?: { free: number; total: number };
   stats: DashboardStats;
   top_products: DashboardTopProduct[];
   cart_analysis: DashboardCartAnalysis;
@@ -82,6 +165,8 @@ export type RevenueStats = {
   percentage_change: number;
   trend: "up" | "down";
   chart_data: RevenueChartData[];
+  total_transactions?: number;
+  average_order_value?: number;
 };
 
 export type DashboardState = {

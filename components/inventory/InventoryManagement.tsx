@@ -79,7 +79,7 @@ export default function InventoryManagement() {
     return warehouses.map((w) => ({
       id: String(w.id),
       name: w.name,
-      units: w.total_units,
+      units: Number(w.total_units) || 0,
       fillPercentage: 0,
       manager: w.manager ?? "—",
       product_count: w.total_products,
