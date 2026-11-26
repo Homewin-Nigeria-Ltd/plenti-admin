@@ -106,7 +106,7 @@ export default function DashboardQuickStats({
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-2xl border border-[#EAECF0] bg-white px-4 py-3 flex items-center gap-3 min-w-0"
+          className="rounded-2xl border border-[#E4E6EB] bg-white px-4 py-3 flex items-center gap-3 min-w-0"
         >
           <span
             className={`size-9 rounded-xl inline-flex items-center justify-center shrink-0 ${item.iconClass}`}

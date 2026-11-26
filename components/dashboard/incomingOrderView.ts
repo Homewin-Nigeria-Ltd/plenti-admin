@@ -125,9 +125,11 @@ function orderCountLabel(total?: number) {
 
 function paymentMethodLabel(method?: string | null) {
   const value = (method || "").toLowerCase();
-  if (value.includes("wallet")) return "Wallet";
+  if (value.includes("wallet")) return "Plenti wallet";
+  if (value.includes("paystack")) return "Paystack";
+  if (value.includes("monnify")) return "Monnify";
   if (value.includes("transfer") || value.includes("bank")) return "Transfer";
-  if (value.includes("paystack") || value.includes("card")) return "Card";
+  if (value.includes("card")) return "Card";
   return method || "Card";
 }
 

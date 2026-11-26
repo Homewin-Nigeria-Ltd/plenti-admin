@@ -1,6 +1,6 @@
 import { format, subDays } from "date-fns";
 import api from "@/lib/api";
-import { orderAcceptPath, orderDeclinePath } from "@/data/orders";
+import { orderAcceptAllPath, orderAcceptPath, orderDeclinePath } from "@/data/orders";
 import type { Order, OrderItem } from "@/types/OrderTypes";
 
 export type OrderStatusTab =
@@ -76,9 +76,6 @@ export const FALLBACK_ITEM_NAMES = [
 ];
 
 export const FALLBACK_PHONE = "+234 809 xxx 4412";
-export const FALLBACK_HEADER_ORDERS = 188;
-export const FALLBACK_HEADER_REVENUE = 2184500;
-export const FALLBACK_HEADER_WAITING = 4;
 
 export function fallbackWarehouseName(seed = 0) {
   return FALLBACK_WAREHOUSES[Math.abs(seed) % FALLBACK_WAREHOUSES.length];
@@ -227,32 +224,119 @@ export function shipsFrom(order: Order, warehouses?: WarehouseRef[]) {
   );
 }
 
+export function isPaymentFailed(order: Order) {
+  const status = `${order.payment_status ?? ""} ${order.display_status ?? ""}`.toLowerCase();
+  return status.includes("fail") || status.includes("expired");
+}
+
 export function isPaid(order: Order) {
+  if (isPaymentFailed(order)) return false;
   const status = (order.payment_status || "").toLowerCase();
+  if (status.includes("refund")) return false;
   return status.includes("paid") || status.includes("success");
 }
 
-export function paymentMeta(order: Order) {
-  const method = (order.payment_method || "").toLowerCase();
-  const paid = isPaid(order);
-  const cod =
+export function isPlentiOrder(order: Order) {
+  if (order.delivery_selection?.is_plenti) return true;
+  if (order.has_plenti_delivery) return true;
+  if (order.plenti_delivery_id) return true;
+  if (order.can_assign_rider) return true;
+  if (order.can_broadcast_to_riders) return true;
+  const provider = `${order.delivery_provider ?? ""} ${order.delivery_selection?.provider ?? ""}`.toLowerCase();
+  return provider.includes("plenti");
+}
+
+export function paymentCardMeta(order: Order) {
+  const card = order.payment_gateway_response?.cardDetails;
+  return {
+    last4: card?.last4 || "",
+    brand: card?.cardType || "",
+    bank: card?.bankName || "",
+    maskedPan: card?.maskedPan || "",
+  };
+}
+
+export const ORDER_PAYMENT_FILTERS = [
+  { value: "all", label: "Any payment" },
+  { value: "plenti_wallet", label: "Plenti wallet" },
+  { value: "monnify", label: "Monnify" },
+  { value: "paystack", label: "Paystack" },
+] as const;
+
+export type PaymentMethodKey =
+  | "wallet"
+  | "monnify"
+  | "paystack"
+  | "card"
+  | "transfer"
+  | "delivery";
+
+function paymentMethodKey(method: string): PaymentMethodKey {
+  if (method.includes("wallet")) return "wallet";
+  if (method.includes("paystack")) return "paystack";
+  if (method.includes("monnify")) return "monnify";
+  if (method.includes("transfer") || method.includes("bank")) return "transfer";
+  if (
     method.includes("cash") ||
     method.includes("cod") ||
     method.includes("pay on delivery") ||
-    method.includes("pos") ||
-    (!paid && !method);
-  if (cod) return { key: "delivery" as const, label: "Pay on delivery", paid: false };
-  if (method.includes("wallet")) {
-    return { key: "wallet" as const, label: "Wallet", paid };
+    method.includes("pos")
+  ) {
+    return "delivery";
   }
-  if (method.includes("transfer") || method.includes("bank")) {
-    return { key: "transfer" as const, label: "Transfer", paid };
+  return "card";
+}
+
+export function paymentMeta(order: Order) {
+  const method = (order.payment_method || order.payment_session?.method || "").toLowerCase();
+  const key = paymentMethodKey(method);
+  const paid = isPaid(order);
+  const paymentStatus = (order.payment_status || "").toLowerCase();
+  if (isPaymentFailed(order)) {
+    return { key, label: "Payment failed", paid: false };
   }
+  if (paymentStatus.includes("refund")) {
+    return { key, label: "Refunded", paid: false };
+  }
+  if (key === "delivery" || (!paid && !method)) {
+    return { key: "delivery" as const, label: "Pay on delivery", paid: false };
+  }
+  if (key === "wallet") return { key, label: "Plenti wallet", paid };
+  if (key === "monnify") return { key, label: "Monnify", paid };
+  if (key === "paystack") return { key, label: "Paystack", paid };
+  if (key === "transfer") return { key, label: "Transfer", paid };
   return { key: "card" as const, label: "Card", paid };
+}
+
+export function isCardPayment(key: PaymentMethodKey) {
+  return key === "card" || key === "monnify" || key === "paystack";
+}
+
+export function paymentStatusLabel(order: Order) {
+  const raw = (order.payment_status || "").trim();
+  if (!raw) return "-";
+  return raw.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export function paidDateLabel(order: Order) {
+  if (order.payment_date && order.payment_time) {
+    return `${order.payment_date} · ${order.payment_time}`;
+  }
+  if (order.payment_confirmed_at) return order.payment_confirmed_at;
+  if (order.payment_date) return order.payment_date;
+  if (order.paid_at) {
+    const date = new Date(order.paid_at);
+    if (Number.isFinite(date.getTime())) return format(date, "MMM d, yyyy · h:mm a");
+  }
+  return "-";
 }
 
 export function matchesPayment(order: Order, payment: string) {
   if (payment === "all") return true;
+  const method = (order.payment_method || order.payment_session?.method || "").toLowerCase();
+  if (payment === "plenti_wallet") return method.includes("wallet");
+  if (payment === "monnify") return method.includes("monnify");
+  if (payment === "paystack") return method.includes("paystack");
   return paymentMeta(order).key === payment;
 }
 
@@ -308,43 +392,21 @@ export function riderName(order: Order) {
   );
 }
 
-export function riderCell(order: Order) {
-  const name = riderName(order);
-  if (name) return { text: name, tone: "default" as const };
-  const seller = soldBy(order);
-  if (seller.vendor) {
-    return {
-      text: `Vendor hasn't accepted · ${waitingMinutes(order.created_at)}`,
-      tone: "danger" as const,
-    };
-  }
-  const status = normalizeStatus(`${order.status} ${order.display_status ?? ""}`);
-  if (
-    status.includes("pending") ||
-    status.includes("processing") ||
-    status.includes("accepted") ||
-    status.includes("packed")
-  ) {
-    return { text: waitingLabel(order.created_at), tone: "muted" as const };
-  }
-  return { text: waitingLabel(order.created_at), tone: "muted" as const };
+export function deliveryProviderLabel(order: Order) {
+  return (
+    order.delivery_provider_label ||
+    order.delivery_selection?.provider_label ||
+    order.delivery_provider ||
+    "-"
+  );
 }
 
 export function statusLabel(order: Order) {
-  const status = normalizeStatus(order.status || order.display_status || "");
-  if (status.includes("refund pending")) return "Refund pending";
-  if (status === "refunded") return "Refunded";
-  if (status.includes("pending")) return "Pending";
-  if (status.includes("accepted")) return "Accepted";
-  if (status.includes("packed")) return "Packed";
-  if (status.includes("processing")) return "Processing";
-  if (status.includes("shipped") || status.includes("transit")) return "In Transit";
-  if (status.includes("delivered") || status.includes("completed") || status.includes("successful")) {
-    return "Delivered";
-  }
-  if (status.includes("cancel")) return "Canceled";
-  if (!status) return "Pending";
-  return status.replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const status = `${order.status ?? ""}`.trim();
+  if (!status) return "-";
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export function statusTone(label: string) {
@@ -355,7 +417,7 @@ export function statusTone(label: string) {
     return "text-[#2F5BDB]";
   }
   if (value === "delivered" || value === "refunded") return "text-[#12B76A]";
-  if (value === "canceled") return "text-[#F04438]";
+  if (value === "canceled" || value === "cancelled") return "text-[#F04438]";
   return "text-[#667085]";
 }
 
@@ -397,6 +459,22 @@ function apiErrorMessage(error: unknown, fallback: string) {
   }
   if (error instanceof Error && error.message) return error.message;
   return fallback;
+}
+
+export async function acceptAllPendingOrders() {
+  try {
+    const { data } = await api.post<{
+      status?: string;
+      message?: string;
+      data?: { accepted?: number; failed?: number; count?: number };
+    }>(orderAcceptAllPath(), {});
+    if (data?.status === "error" || data?.status === "failed") {
+      throw new Error(data?.message ?? "Failed to accept orders");
+    }
+    return data;
+  } catch (error) {
+    throw new Error(apiErrorMessage(error, "Failed to accept orders"));
+  }
 }
 
 export async function acceptPlentiOrder(
@@ -451,9 +529,12 @@ export function ordersToCsv(orders: Order[]) {
     "Sold by",
     "Ships from",
     "Amount",
+    "Payment status",
+    "Date paid",
     "Payment",
     "Status",
     "Rider",
+    "Delivery provider",
   ];
   const rows = orders.map((order) => {
     const seller = soldBy(order);
@@ -467,9 +548,12 @@ export function ordersToCsv(orders: Order[]) {
       seller.name,
       shipsFrom(order),
       String(Number(order.total) || 0),
+      paymentStatusLabel(order),
+      paidDateLabel(order),
       payment.label,
       statusLabel(order),
-      riderCell(order).text,
+      riderName(order) || "-",
+      deliveryProviderLabel(order),
     ];
   });
   const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;

@@ -5,71 +5,38 @@ import {
   ORDER_STATUS_TABS,
   type OrderStatusTab,
 } from "@/components/order/orderManagementView";
-import type { OrderStatistics } from "@/types/OrderTypes";
-
-const FALLBACK_TAB_COUNTS: Record<OrderStatusTab, number> = {
-  all: 188,
-  pending: 4,
-  processing: 12,
-  accepted: 9,
-  packed: 6,
-  in_transit: 8,
-  delivered: 142,
-  canceled: 3,
-  refund_pending: 2,
-  refunded: 1,
-};
+import type { OrderStatusCounts } from "@/types/OrderTypes";
 
 type OrderStatusTabsProps = {
   value: OrderStatusTab;
   onChange: (tab: OrderStatusTab) => void;
-  stats: OrderStatistics | null;
-  pendingCount?: number;
+  statusCounts?: OrderStatusCounts | null;
 };
 
 function tabCount(
   tab: (typeof ORDER_STATUS_TABS)[number],
-  stats: OrderStatistics | null,
-  pendingCount?: number,
+  statusCounts?: OrderStatusCounts | null,
 ) {
-  const fallback = FALLBACK_TAB_COUNTS[tab.id];
-  if (tab.id === "pending" && pendingCount != null) return pendingCount;
-  if (!stats) return fallback;
-  if (tab.id === "all") {
-    if (stats.total_orders != null) return stats.total_orders;
-    return (
-      Number(stats.pending_orders ?? 0) +
-      Number(stats.processing_orders ?? 0) +
-      Number(stats.accepted_orders ?? 0) +
-      Number(stats.packed_orders ?? 0) +
-      Number(stats.in_transit_orders ?? stats.shipped_orders ?? 0) +
-      Number(stats.delivered_orders ?? 0) +
-      Number(stats.cancelled_orders ?? 0) +
-      Number(stats.refund_pending_orders ?? 0) +
-      Number(stats.refunded_orders ?? 0) || fallback
-    );
-  }
-  if (tab.id === "in_transit") {
-    const count = stats.in_transit_orders ?? stats.shipped_orders;
-    return count == null ? fallback : Number(count);
-  }
-  if (!tab.statKey) return fallback;
-  const count = stats[tab.statKey];
-  return count == null ? fallback : Number(count);
+  if (!statusCounts) return null;
+  const key = tab.id === "all" ? "all" : tab.query ?? tab.id;
+  const value =
+    statusCounts[key as keyof OrderStatusCounts] ??
+    (tab.id === "canceled" ? statusCounts.cancelled : undefined);
+  return value == null ? null : Number(value);
 }
 
 export default function OrderStatusTabs({
   value,
   onChange,
-  stats,
-  pendingCount,
+  statusCounts,
 }: OrderStatusTabsProps) {
   return (
     <div className="overflow-x-auto">
       <div className="flex min-w-max items-end gap-1 border-b border-[#EAECF0]">
         {ORDER_STATUS_TABS.map((tab) => {
           const active = value === tab.id;
-          const count = tabCount(tab, stats, pendingCount);
+          const count = tabCount(tab, statusCounts);
+          const label = count == null ? "-" : count.toLocaleString("en-US");
           const isPending = tab.id === "pending" || tab.id === "refund_pending";
           return (
             <button
@@ -93,7 +60,7 @@ export default function OrderStatusTabs({
                       : "bg-[#F2F4F7] text-[#667085]",
                   )}
                 >
-                  {count.toLocaleString("en-US")}
+                  {label}
                 </span>
               ) : (
                 <span
@@ -102,7 +69,7 @@ export default function OrderStatusTabs({
                     active ? "text-[#2F5BDB]" : "text-[#98A2B3]",
                   )}
                 >
-                  {count.toLocaleString("en-US")}
+                  {label}
                 </span>
               )}
               {active ? (

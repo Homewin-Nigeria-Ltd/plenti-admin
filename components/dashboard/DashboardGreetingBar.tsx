@@ -41,7 +41,7 @@ export default function DashboardGreetingBar({
           <select
             value={warehouseId}
             onChange={(event) => onWarehouseChange?.(event.target.value)}
-            className="h-9 appearance-none rounded-lg border border-[#EAECF0] bg-white pl-9 pr-8 text-[13px] text-[#344054] outline-none"
+            className="h-9 appearance-none rounded-lg border border-[#E4E6EB] bg-white pl-9 pr-8 text-[13px] text-[#344054] outline-none"
           >
             <option value="all">All warehouses</option>
             {warehouses.map((warehouse) => (
@@ -55,7 +55,7 @@ export default function DashboardGreetingBar({
         <button
           type="button"
           className={cn(
-            "h-9 px-3.5 rounded-lg border border-[#EAECF0] bg-white text-[13px] font-medium text-[#344054]",
+            "h-9 px-3.5 rounded-lg border border-[#E4E6EB] bg-white text-[13px] font-medium text-[#344054]",
             "inline-flex items-center gap-1.5 hover:bg-[#F9FAFB]",
           )}
           onClick={() => router.push("/finance")}

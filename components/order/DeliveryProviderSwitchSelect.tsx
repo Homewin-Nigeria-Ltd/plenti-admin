@@ -57,7 +57,7 @@ function getOrderDeliveryProviderLabel(order: Order | null): string {
     order?.delivery_provider ??
     order?.delivery_selection?.provider ??
     order?.delivery_economics?.delivery_provider ??
-    "—"
+    "-"
   );
 }
 

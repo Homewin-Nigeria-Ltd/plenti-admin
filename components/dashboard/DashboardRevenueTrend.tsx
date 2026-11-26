@@ -71,7 +71,7 @@ export default function DashboardRevenueTrend({
   const yearRevenue = parseNumeric(year?.revenue);
 
   return (
-    <section className="rounded-2xl border border-[#EAECF0] bg-white p-4 sm:p-5 min-w-0">
+    <section className="rounded-2xl border border-[#E4E6EB] bg-white p-4 sm:p-5 min-w-0">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <h2 className="text-sm font-semibold text-[#101828]">Revenue trend</h2>
@@ -119,7 +119,7 @@ export default function DashboardRevenueTrend({
                   <stop offset="100%" stopColor="#32D583" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} stroke="#F2F4F7" />
+              <CartesianGrid vertical={false} stroke="#E4E6EB" />
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 11, fill: "#98A2B3" }}
@@ -143,7 +143,7 @@ export default function DashboardRevenueTrend({
                     ? formatCompactNaira(Number(value) || 0)
                     : Number(value || 0).toLocaleString()
                 }
-                contentStyle={{ borderRadius: 12, border: "1px solid #EAECF0" }}
+                contentStyle={{ borderRadius: 12, border: "1px solid #E4E6EB" }}
               />
               <Area
                 type="monotone"

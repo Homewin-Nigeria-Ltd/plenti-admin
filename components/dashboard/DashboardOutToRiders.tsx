@@ -181,7 +181,7 @@ export default function DashboardOutToRiders({
   const counts = hasLiveCounts ? liveCounts : DUMMY_COUNTS;
 
   return (
-    <section className="rounded-2xl border border-[#EAECF0] bg-white p-4 sm:p-5 min-w-0">
+    <section className="rounded-2xl border border-[#E4E6EB] bg-white p-4 sm:p-5 min-w-0">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
           <h2 className="text-sm font-semibold text-[#101828]">Out to riders</h2>
@@ -228,9 +228,9 @@ export default function DashboardOutToRiders({
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="divide-y divide-[#E4E6EB]">
         {DUMMY_ROWS.map((row, index) => (
-          <div key={row.id} className="flex items-start gap-2.5">
+          <div key={row.id} className="flex items-start gap-2.5 py-3 first:pt-0 last:pb-0">
             <RowIcon
               kind={row.kind}
               name={row.name}

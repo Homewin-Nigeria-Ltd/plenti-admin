@@ -68,15 +68,15 @@ export function resolveNotificationActionUrl(n: NotificationApiEntry): string | 
   const riderId = asPositiveId(payload.rider_id);
   const parsed = parseAdminResourcePath(n.action_url);
 
-  if (parsed?.resource === "orders") return `/order?orderId=${parsed.id}`;
+  if (parsed?.resource === "orders") return `/order/${parsed.id}`;
   if (parsed?.resource === "riders") return `/rider?riderId=${parsed.id}`;
   if (parsed?.resource === "deliveries") {
-    if (orderId) return `/order?orderId=${orderId}`;
+    if (orderId) return `/order/${orderId}`;
     if (riderId) return `/rider?riderId=${riderId}`;
     return "/rider";
   }
 
-  if (orderId) return `/order?orderId=${orderId}`;
+  if (orderId) return `/order/${orderId}`;
   if (riderId) return `/rider?riderId=${riderId}`;
 
   const lower = (n.title ?? "").toLowerCase();

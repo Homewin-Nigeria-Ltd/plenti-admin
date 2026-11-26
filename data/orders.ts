@@ -1,6 +1,8 @@
 export const ORDERS_API = {
   getOrders: "/api/admin/orders",
   getIncoming: "/api/admin/orders/incoming",
+  acceptAll: "/api/admin/orders/accept-all",
+  exportOrders: "/api/admin/orders/export",
   getOrder: "/api/admin/orders",
   deleteOrder: "/api/admin/orders",
   getStatistics: "/api/admin/orders/statistics",
@@ -17,6 +19,10 @@ export function orderStatusUpdatePath(orderId: number | string): string {
 
 export function orderAcceptPath(orderId: number | string): string {
   return `${ORDERS_API.getOrders}/${orderId}/accept`;
+}
+
+export function orderAcceptAllPath(): string {
+  return ORDERS_API.acceptAll;
 }
 
 export function orderDeclinePath(orderId: number | string): string {
