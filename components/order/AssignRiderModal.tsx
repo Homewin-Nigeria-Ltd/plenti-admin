@@ -100,7 +100,7 @@ function isFree(rider: AdminRider) {
   if (isOffline(rider) || status.includes("busy") || status.includes("deliver")) {
     return false;
   }
-  return rider.is_assignable !== false;
+  return true;
 }
 
 function isSoonFree(rider: AdminRider) {

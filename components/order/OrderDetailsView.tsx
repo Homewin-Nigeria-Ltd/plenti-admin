@@ -861,15 +861,13 @@ export default function OrderDetailsView({ orderId }: { orderId: string }) {
                     </p>
                   </div>
                 </div>
-                {phase !== "finding_rider" ? (
-                  <a
-                    href={`tel:${riderPhone.replace(/\s/g, "")}`}
-                    className="inline-flex items-center gap-1 text-[12px] font-medium text-[#2F5BDB]"
-                  >
-                    <Phone className="size-3.5" />
-                    Call
-                  </a>
-                ) : null}
+                <a
+                  href={`tel:${riderPhone.replace(/\s/g, "")}`}
+                  className="inline-flex items-center gap-1 text-[12px] font-medium text-[#2F5BDB]"
+                >
+                  <Phone className="size-3.5" />
+                  Call
+                </a>
               </div>
               <div className="grid grid-cols-3 gap-2 text-[12px]">
                 <div>
