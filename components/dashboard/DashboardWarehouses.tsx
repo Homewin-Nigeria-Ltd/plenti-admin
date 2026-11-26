@@ -99,7 +99,7 @@ export default function DashboardWarehouses({
             return (
               <article
                 key={warehouse.id}
-                className="min-w-[280px] w-[320px] shrink-0 snap-start rounded-2xl border border-[#EAECF0] bg-white p-4 cursor-pointer hover:border-[#D0D5DD]"
+                className="min-w-[280px] w-[320px] shrink-0 snap-start rounded-2xl border border-[#E4E6EB] bg-white p-4 cursor-pointer hover:border-[#E4E6EB]"
                 onClick={() => {
                   if (warehouse.id > 0) {
                     router.push(`/inventory/warehouse/${warehouse.id}`);
@@ -132,7 +132,7 @@ export default function DashboardWarehouses({
                     style={{ width: `${fill}%` }}
                   />
                 </div>
-                <span className="mt-2 inline-flex rounded-full border border-[#EAECF0] px-2.5 py-0.5 text-[12px] text-[#667085]">
+                <span className="mt-2 inline-flex rounded-full border border-[#E4E6EB] px-2.5 py-0.5 text-[12px] text-[#667085]">
                   {fill}% of space used
                 </span>
                 <div className="mt-2.5 flex items-center gap-3 text-[12px]">

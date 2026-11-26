@@ -20,6 +20,7 @@ import type { Order } from "@/types/OrderTypes";
 import type { WarehouseApi } from "@/types/InventoryTypes";
 import { formatDistanceToNow } from "date-fns";
 import { MapPin, ShoppingCart } from "lucide-react";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 
@@ -144,7 +145,9 @@ function paymentMeta(order: Order) {
   if (!isPaid(order) || cod) {
     return { paid: false, label: "Pay on delivery" };
   }
-  if (method.includes("wallet")) return { paid: true, label: "Paid · Wallet" };
+  if (method.includes("wallet")) return { paid: true, label: "Paid · Plenti wallet" };
+  if (method.includes("paystack")) return { paid: true, label: "Paid · Paystack" };
+  if (method.includes("monnify")) return { paid: true, label: "Paid · Monnify" };
   if (method.includes("transfer") || method.includes("bank")) {
     return { paid: true, label: "Paid · Transfer" };
   }
@@ -185,6 +188,7 @@ export default function DashboardIncomingOrders({
   warehouses = [],
   waitingCount,
 }: DashboardIncomingOrdersProps) {
+  const router = useRouter();
   const fetchOrders = useOrderStore((state) => state.fetchOrders);
   const fetchIncomingOrders = useOrderStore((state) => state.fetchIncomingOrders);
   const fetchOrderStats = useOrderStore((state) => state.fetchOrderStats);
@@ -201,11 +205,17 @@ export default function DashboardIncomingOrders({
   const [declineOpen, setDeclineOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
 
+  const openOrderPage = (row: IncomingRow) => {
+    if (row.order?.id != null) {
+      router.push(`/order/${row.order.id}?from=pending`);
+      return true;
+    }
+    return false;
+  };
+
   const openDetails = (row: IncomingRow) => {
-    if (row.order) {
-      setSelectedOrder(row.order);
-      setDetail(buildIncomingDetail(row.order, warehouses, row.color));
-    } else if (row.orderNumber === "ORD-2851") {
+    if (openOrderPage(row)) return;
+    if (row.orderNumber === "ORD-2851") {
       setSelectedOrder(null);
       setDetail(dummyIncomingDetail());
     } else {
@@ -217,7 +227,16 @@ export default function DashboardIncomingOrders({
   };
 
   const openDecline = (row: IncomingRow) => {
-    openDetails(row);
+    if (row.order) {
+      setSelectedOrder(row.order);
+      setDetail(buildIncomingDetail(row.order, warehouses, row.color));
+    } else if (row.orderNumber === "ORD-2851") {
+      setSelectedOrder(null);
+      setDetail(dummyIncomingDetail());
+    } else {
+      setSelectedOrder(null);
+      setDetail(dummyDetailFromRow(row));
+    }
     setDetailsOpen(false);
     setDeclineOpen(true);
   };
@@ -279,7 +298,7 @@ export default function DashboardIncomingOrders({
   };
 
   return (
-    <section className="rounded-2xl border border-[#EAECF0] bg-white p-4 sm:p-5 min-w-0">
+    <section className="rounded-2xl border border-[#E4E6EB] bg-white p-4 sm:p-5 min-w-0">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-start gap-2.5 min-w-0">
           <span className="size-8 rounded-lg bg-[#FFF6ED] text-[#F38744] inline-flex items-center justify-center shrink-0 mt-0.5">
@@ -308,7 +327,7 @@ export default function DashboardIncomingOrders({
         </button>
       </div>
 
-      <div className="divide-y divide-[#F2F4F7]">
+      <div className="divide-y divide-[#E4E6EB]">
         {rows.map((row) => (
           <div key={row.id} className="flex items-center gap-3 py-3 min-w-0">
             <button
@@ -363,7 +382,7 @@ export default function DashboardIncomingOrders({
               </p>
               <button
                 type="button"
-                className="h-8 px-3 rounded-lg border border-[#EAECF0] bg-white text-[12px] text-[#667085] hover:bg-[#F9FAFB]"
+                className="h-8 px-3 rounded-lg border border-[#E4E6EB] bg-white text-[12px] text-[#667085] hover:bg-[#F9FAFB]"
                 onClick={() => openDecline(row)}
               >
                 Decline

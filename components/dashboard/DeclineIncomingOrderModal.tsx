@@ -81,7 +81,7 @@ export default function DeclineIncomingOrderModal({
                       "flex items-center gap-3 rounded-lg border px-3 py-2.5 text-[13px] cursor-pointer",
                       selected
                         ? "border-[#2F5BDB] bg-[#F5F8FF] text-[#101828]"
-                        : "border-[#EAECF0] text-[#344054]",
+                        : "border-[#E4E6EB] text-[#344054]",
                     )}
                   >
                     <input
@@ -106,7 +106,7 @@ export default function DeclineIncomingOrderModal({
             <Textarea
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              className="min-h-24 rounded-lg border-[#EAECF0] text-[13px] shadow-none"
+              className="min-h-24 rounded-lg border-[#E4E6EB] text-[13px] shadow-none"
             />
           </div>
 
@@ -124,7 +124,7 @@ export default function DeclineIncomingOrderModal({
           <div className="flex items-center justify-between gap-3 pt-1">
             <button
               type="button"
-              className="h-10 px-4 rounded-lg border border-[#EAECF0] bg-white text-[13px] font-medium text-[#344054] hover:bg-[#F9FAFB]"
+              className="h-10 px-4 rounded-lg border border-[#E4E6EB] bg-white text-[13px] font-medium text-[#344054] hover:bg-[#F9FAFB]"
               onClick={onBack}
             >
               Go back

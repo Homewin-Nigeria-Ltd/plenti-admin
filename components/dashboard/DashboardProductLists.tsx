@@ -119,14 +119,14 @@ export default function DashboardProductLists({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <section className="rounded-2xl border border-[#EAECF0] bg-white p-4 sm:p-5">
+      <section className="rounded-2xl border border-[#E4E6EB] bg-white p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-[#101828]">Top products</h2>
           <span className="text-[12px] text-[#667085]">Past month</span>
         </div>
-        <div className="space-y-3">
+        <div className="divide-y divide-[#E4E6EB]">
             {top.map((product) => (
-              <div key={product.name} className="flex items-center gap-3">
+              <div key={product.name} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <div className="size-9 rounded-lg bg-[#F2F4F7] overflow-hidden shrink-0">
                   {product.image_url || product.image_urls?.[0] ? (
                     <Image
@@ -160,7 +160,7 @@ export default function DashboardProductLists({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-[#EAECF0] bg-white p-4 sm:p-5">
+      <section className="rounded-2xl border border-[#E4E6EB] bg-white p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-[#101828]">Recent stock intake</h2>
           <button
@@ -171,9 +171,9 @@ export default function DashboardProductLists({
             Audit log
           </button>
         </div>
-        <div className="space-y-3">
+        <div className="divide-y divide-[#E4E6EB]">
           {recent.map((item) => (
-            <div key={item.id} className="flex items-start gap-3">
+            <div key={item.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
               <span className="size-8 rounded-lg bg-[#ECFDF3] text-[#12B76A] inline-flex items-center justify-center shrink-0">
                 <Package className="size-4" />
               </span>

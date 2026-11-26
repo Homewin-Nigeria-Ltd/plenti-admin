@@ -181,7 +181,7 @@ function PeriodCard({
 }) {
   const up = change >= 0;
   return (
-    <article className="min-w-0 rounded-2xl border border-[#EAECF0] bg-white p-5 min-h-[228px] flex flex-col">
+    <article className="min-w-0 rounded-2xl border border-[#E4E6EB] bg-white p-5 min-h-[228px] flex flex-col">
       <div className="flex items-center justify-between text-[12px]">
         <span className="rounded-md bg-[#F2F4F7] px-2 py-0.5 text-[#344054] font-medium">
           {label}

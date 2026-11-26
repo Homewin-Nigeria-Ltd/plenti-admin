@@ -4,9 +4,6 @@ import { CalendarDays, ChevronDown, Download } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
-  FALLBACK_HEADER_ORDERS,
-  FALLBACK_HEADER_REVENUE,
-  FALLBACK_HEADER_WAITING,
   ORDER_PERIODS,
   type OrderPeriod,
 } from "@/components/order/orderManagementView";
@@ -17,6 +14,7 @@ type OrderManagementHeaderProps = {
   orderCount?: number;
   revenue?: number;
   waitingCount?: number;
+  exporting?: boolean;
   onExport: () => void;
 };
 
@@ -26,15 +24,20 @@ export default function OrderManagementHeader({
   orderCount,
   revenue,
   waitingCount,
+  exporting = false,
   onExport,
 }: OrderManagementHeaderProps) {
-  const orders = orderCount ?? FALLBACK_HEADER_ORDERS;
-  const amount =
+  const ordersLabel =
+    orderCount == null ? "-" : orderCount.toLocaleString("en-US");
+  const amountLabel =
     revenue != null && Number.isFinite(revenue)
-      ? revenue
-      : FALLBACK_HEADER_REVENUE;
-  const waiting = waitingCount ?? FALLBACK_HEADER_WAITING;
-  const subtitle = `Today: ${orders.toLocaleString("en-US")} orders · ${formatCurrency(amount)} · ${waiting.toLocaleString("en-US")} waiting for you`;
+      ? formatCurrency(revenue)
+      : "-";
+  const waitingLabel =
+    waitingCount == null ? "-" : waitingCount.toLocaleString("en-US");
+  const periodLabel =
+    ORDER_PERIODS.find((item) => item.id === period)?.label ?? "Today";
+  const subtitle = `${periodLabel}: ${ordersLabel} orders · ${amountLabel} · ${waitingLabel} waiting for you`;
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -62,14 +65,15 @@ export default function OrderManagementHeader({
         </div>
         <button
           type="button"
+          disabled={exporting}
           className={cn(
             "h-9 px-3.5 rounded-lg border border-[#EAECF0] bg-white text-[13px] font-medium text-[#344054]",
-            "inline-flex items-center gap-1.5 hover:bg-[#F9FAFB]",
+            "inline-flex items-center gap-1.5 hover:bg-[#F9FAFB] disabled:opacity-60",
           )}
           onClick={onExport}
         >
           <Download className="size-3.5" />
-          Export
+          {exporting ? "Exporting…" : "Export"}
         </button>
       </div>
     </div>

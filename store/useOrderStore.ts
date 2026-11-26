@@ -4,6 +4,7 @@ import { ORDERS_API } from "@/data/orders";
 import {
   Order,
   OrderState,
+  OrderStatusCounts,
   OrdersListResponse,
   OrderStatistics,
 } from "@/types/OrderTypes";
@@ -13,6 +14,46 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function parseStatusCounts(value: unknown): OrderStatusCounts | null {
+  const obj = asRecord(value);
+  if (!obj) return null;
+  const keys: (keyof OrderStatusCounts)[] = [
+    "all",
+    "pending",
+    "processing",
+    "accepted",
+    "packed",
+    "in_transit",
+    "delivered",
+    "cancelled",
+    "canceled",
+    "refund_pending",
+    "refunded",
+  ];
+  const counts: OrderStatusCounts = {};
+  let found = false;
+  for (const key of keys) {
+    const n = Number(obj[key]);
+    if (Number.isFinite(n)) {
+      counts[key] = n;
+      found = true;
+    }
+  }
+  return found ? counts : null;
+}
+
+function extractStatusCounts(body: unknown, depth = 0): OrderStatusCounts | null {
+  if (depth > 4) return null;
+  const direct = parseStatusCounts(body);
+  if (direct) return direct;
+  const root = asRecord(body);
+  if (!root) return null;
+  return (
+    parseStatusCounts(root.status_counts) ??
+    extractStatusCounts(root.data, depth + 1)
+  );
 }
 
 function unwrapIncoming(body: unknown): {
@@ -57,10 +98,12 @@ export const useOrderStore = create<OrderState>((set) => ({
   incomingOrders: [],
   singleOrder: null,
   orderStats: null,
+  statusCounts: null,
   loading: false,
   loadingIncoming: false,
   loadingSingle: false,
   loadingStats: false,
+  exporting: false,
   error: null,
   incomingError: null,
   statsError: null,
@@ -119,12 +162,14 @@ export const useOrderStore = create<OrderState>((set) => ({
       });
 
       const paginated = data.data;
+      const statusCounts = extractStatusCounts(data);
       set({
         orders: paginated.data ?? [],
         currentPage: paginated.current_page ?? 1,
         lastPage: paginated.last_page ?? 1,
         perPage: paginated.per_page ?? PAGE_SIZE,
         totalItems: paginated.total ?? 0,
+        ...(statusCounts ? { statusCounts } : {}),
       });
       return true;
     } catch (error) {
@@ -225,7 +270,100 @@ export const useOrderStore = create<OrderState>((set) => ({
     }
   },
 
+  exportOrders: async (params) => {
+    const search = params?.search?.trim() ?? "";
+    const deliveryProvider = params?.delivery_provider?.trim() ?? "";
+    const status = params?.status?.trim() ?? "";
+    const warehouseId = params?.warehouse_id?.trim() ?? "";
+    const paymentMethod = params?.payment_method?.trim() ?? "";
+    const startDate = params?.start_date?.trim() ?? "";
+    const endDate = params?.end_date?.trim() ?? "";
+    set({ exporting: true });
+    try {
+      const query: Record<string, string> = {};
+      if (search) query.search = search;
+      if (deliveryProvider) query.delivery_provider = deliveryProvider;
+      if (status) query.status = status;
+      if (warehouseId) query.warehouse_id = warehouseId;
+      if (paymentMethod) query.payment_method = paymentMethod;
+      if (startDate) query.start_date = startDate;
+      if (endDate) query.end_date = endDate;
+
+      const response = await api.get(ORDERS_API.exportOrders, {
+        params: query,
+        responseType: "blob",
+        headers: { Accept: "text/csv, application/octet-stream, */*" },
+      });
+
+      const blob =
+        response.data instanceof Blob
+          ? response.data
+          : new Blob([response.data], { type: "text/csv" });
+
+      if (blob.type.includes("application/json")) {
+        const text = await blob.text();
+        let message = "Failed to export orders";
+        try {
+          const parsed = JSON.parse(text) as { message?: string };
+          if (parsed.message?.trim()) message = parsed.message;
+        } catch {
+          if (text.trim()) message = text;
+        }
+        throw new Error(message);
+      }
+
+      const disposition = response.headers["content-disposition"];
+      const filename = filenameFromDisposition(disposition);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      return true;
+    } catch (error) {
+      console.error("Error exporting orders =>", error);
+      throw new Error(await messageFromExportBlob(error));
+    } finally {
+      set({ exporting: false });
+    }
+  },
+
   setSingleOrder: () => {
     set({ singleOrder: null });
   },
 }));
+
+function filenameFromDisposition(header: unknown): string {
+  if (typeof header !== "string" || !header) return "orders.csv";
+  const utfMatch = header.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utfMatch?.[1]) {
+    try {
+      return decodeURIComponent(utfMatch[1].trim());
+    } catch {
+      return utfMatch[1].trim();
+    }
+  }
+  const match = header.match(/filename="?([^"]+)"?/i);
+  return match?.[1]?.trim() || "orders.csv";
+}
+
+async function messageFromExportBlob(error: unknown): Promise<string> {
+  if (typeof error === "object" && error !== null) {
+    const data = (error as { response?: { data?: unknown } }).response?.data;
+    if (data instanceof Blob) {
+      const text = await data.text();
+      try {
+        const parsed = JSON.parse(text) as { message?: string };
+        if (parsed.message?.trim()) return parsed.message;
+      } catch {
+        if (text.trim()) return text;
+      }
+    }
+    const message = (error as { message?: string }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return "Failed to export orders";
+}

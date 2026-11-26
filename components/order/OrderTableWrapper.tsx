@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import dynamic from "next/dynamic";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { createPortal } from "react-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "use-debounce";
 import {
   Banknote,
@@ -20,21 +20,22 @@ import OrderManagementHeader from "@/components/order/OrderManagementHeader";
 import OrderStatusTabs from "@/components/order/OrderStatusTabs";
 import {
   AVATAR_COLORS,
-  acceptPlentiOrder,
+  acceptAllPendingOrders,
   customerInitial,
   customerAvatar,
   getDateRange,
+  itemProductName,
   itemSummary,
-  matchesPayment,
-  matchesPeriod,
-  matchesSeller,
-  matchesStatusTab,
-  matchesWarehouse,
+  ORDER_PAYMENT_FILTERS,
   orderDayLabel,
   orderTimeLabel,
-  ordersToCsv,
+  paidDateLabel,
+  paymentCardMeta,
   paymentMeta,
-  riderCell,
+  paymentStatusLabel,
+  type PaymentMethodKey,
+  deliveryProviderLabel,
+  riderName,
   shipsFrom,
   soldBy,
   statusLabel,
@@ -43,6 +44,15 @@ import {
   type OrderPeriod,
   type OrderStatusTab,
 } from "@/components/order/orderManagementView";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,17 +65,61 @@ import { useInventoryStore } from "@/store/useInventoryStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import type { Order } from "@/types/OrderTypes";
 
-const OrderDetailsModal = dynamic(
-  () => import("./OrderDetailsModal").then((mod) => mod.OrderDetailsModal),
-  { ssr: false },
-);
+function OrderItemsCell({ order }: { order: Order }) {
+  const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState({ x: 0, y: 0 });
+  const items = order.items ?? [];
+  const summary = itemSummary(order);
 
-function PaymentIcon({
-  kind,
-}: {
-  kind: "card" | "transfer" | "delivery" | "wallet";
-}) {
-  if (kind === "transfer" || kind === "wallet") {
+  return (
+    <>
+      <span
+        className="line-clamp-2 cursor-default underline decoration-dotted decoration-[#D0D5DD] underline-offset-2"
+        onMouseEnter={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          setPos({ x: rect.left, y: rect.bottom + 8 });
+          setOpen(true);
+        }}
+        onMouseLeave={() => setOpen(false)}
+      >
+        {summary}
+      </span>
+      {open
+        ? createPortal(
+            <div
+              style={{ left: pos.x, top: pos.y }}
+              className="pointer-events-none fixed z-[80] w-64 rounded-lg border border-[#E4E6EB] bg-white p-2.5 shadow-lg"
+            >
+              <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-[#98A2B3]">
+                Items
+              </p>
+              {items.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {items.map((item) => (
+                    <li key={item.id} className="flex items-start justify-between gap-3 text-[12px]">
+                      <span className="min-w-0 text-[#344054]">
+                        {itemProductName(item) || "Item"}
+                        <span className="text-[#98A2B3]"> × {item.quantity}</span>
+                      </span>
+                      <span className="shrink-0 font-medium text-[#101828]">
+                        {formatCurrency(Number(item.price) || 0)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[12px] text-[#344054]">{summary}</p>
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
+
+function PaymentIcon({ kind }: { kind: PaymentMethodKey }) {
+  if (kind === "wallet" || kind === "transfer") {
     return <Landmark className="size-3 text-[#12B76A]" />;
   }
   if (kind === "delivery") {
@@ -77,41 +131,36 @@ function PaymentIcon({
 export default function OrderTableWrapper() {
   const account = useAccountStore((state) => state.account);
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const orderIdParam = searchParams.get("orderId");
   const {
     orders,
-    incomingOrders,
     loading,
-    loadingIncoming,
-    loadingStats,
     currentPage,
     lastPage,
     totalItems,
-    incomingPage,
-    incomingLastPage,
     incomingTotal,
     orderStats,
+    statusCounts,
     fetchOrders,
     fetchIncomingOrders,
     fetchOrderStats,
-    setSingleOrder,
+    exportOrders,
+    exporting,
   } = useOrderStore();
   const warehouses = useInventoryStore((state) => state.warehouses);
   const fetchWarehouses = useInventoryStore((state) => state.fetchWarehouses);
 
-  const [open, setOpen] = React.useState(false);
-  const [selectedId, setSelectedId] = React.useState<number | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [debouncedSearch] = useDebounce(searchQuery, 400);
-  const [tab, setTab] = React.useState<OrderStatusTab>("pending");
+  const [tab, setTab] = React.useState<OrderStatusTab>("all");
   const [period, setPeriod] = React.useState<OrderPeriod>("7d");
   const [seller, setSeller] = React.useState("all");
   const [warehouseId, setWarehouseId] = React.useState("all");
   const [payment, setPayment] = React.useState("all");
   const [hasRequested, setHasRequested] = React.useState(false);
   const [acceptingAll, setAcceptingAll] = React.useState(false);
+  const [acceptAllOpen, setAcceptAllOpen] = React.useState(false);
   const { canViewOrderList, canViewOrderDetails, canViewOrderStats } =
     React.useMemo(() => getOrderPermissions(account), [account]);
 
@@ -122,16 +171,18 @@ export default function OrderTableWrapper() {
       status: statusQueryValue(tab),
       start_date: dateRange.start,
       end_date: dateRange.end,
+      warehouse_id: warehouseId === "all" ? undefined : warehouseId,
+      payment_method: payment === "all" ? undefined : payment,
+      delivery_provider: seller === "all" ? undefined : seller,
     }),
-    [debouncedSearch, tab, dateRange],
+    [debouncedSearch, tab, dateRange, warehouseId, payment, seller],
   );
 
   React.useEffect(() => {
     const id = Number(orderIdParam);
     if (!canViewOrderDetails || !Number.isFinite(id) || id <= 0) return;
-    setSelectedId(id);
-    setOpen(true);
-  }, [orderIdParam, canViewOrderDetails]);
+    router.replace(`/order/${id}`);
+  }, [orderIdParam, canViewOrderDetails, router]);
 
   React.useEffect(() => {
     fetchWarehouses({ per_page: 100 });
@@ -142,20 +193,22 @@ export default function OrderTableWrapper() {
     fetchOrderStats();
   }, [account, canViewOrderStats, fetchOrderStats]);
 
-  const isIncomingTab = tab === "pending";
-
   React.useEffect(() => {
     if (!canViewOrderList) return;
     let cancelled = false;
     (async () => {
+      const requests: Promise<boolean>[] = [
+        fetchOrders({ page: 1, ...listParams }),
+      ];
       if (tab === "pending") {
-        await fetchIncomingOrders({
-          page: 1,
-          search: listParams.search,
-        });
-      } else {
-        await fetchOrders({ page: 1, ...listParams });
+        requests.push(
+          fetchIncomingOrders({
+            page: 1,
+            search: listParams.search,
+          }),
+        );
       }
+      await Promise.all(requests);
       if (!cancelled) setHasRequested(true);
     })();
     return () => {
@@ -163,109 +216,44 @@ export default function OrderTableWrapper() {
     };
   }, [listParams, tab, fetchOrders, fetchIncomingOrders, canViewOrderList]);
 
-  const sourceOrders = isIncomingTab ? incomingOrders : orders;
+  const visibleOrders = orders;
 
-  const visibleOrders = React.useMemo(
-    () =>
-      sourceOrders.filter(
-        (order) =>
-          (isIncomingTab || matchesStatusTab(order, tab)) &&
-          matchesWarehouse(order, warehouseId) &&
-          matchesPayment(order, payment) &&
-          matchesSeller(order, seller) &&
-          (isIncomingTab ||
-            matchesPeriod(order, dateRange.start, dateRange.end)),
-      ),
-    [sourceOrders, tab, warehouseId, payment, seller, dateRange, isIncomingTab],
-  );
-
-  const listLoading = isIncomingTab ? loadingIncoming : loading;
-  const listPage = isIncomingTab ? incomingPage : currentPage;
-  const listLastPage = isIncomingTab ? incomingLastPage : lastPage;
-  const pendingCount = isIncomingTab
-    ? incomingTotal
-    : Number(orderStats?.pending_orders ?? incomingTotal);
-  const totalOrders =
-    orderStats?.total_orders ??
-    Number(orderStats?.pending_orders ?? 0) +
-      Number(orderStats?.processing_orders ?? 0) +
-      Number(orderStats?.accepted_orders ?? 0) +
-      Number(orderStats?.packed_orders ?? 0) +
-      Number(orderStats?.in_transit_orders ?? orderStats?.shipped_orders ?? 0) +
-      Number(orderStats?.delivered_orders ?? 0) +
-      Number(orderStats?.cancelled_orders ?? 0) +
-      Number(orderStats?.refund_pending_orders ?? 0) +
-      Number(orderStats?.refunded_orders ?? 0);
+  const listLoading = loading;
+  const listPage = currentPage;
+  const listLastPage = lastPage;
   const revenue =
     orderStats?.total_revenue != null ? Number(orderStats.total_revenue) : undefined;
-  const showBanner = tab === "pending" && pendingCount > 0;
+  const showBanner = tab === "pending" && incomingTotal > 0;
 
   const openOrder = (order: Order) => {
     if (!canViewOrderDetails || order.id == null) return;
-    setSelectedId(order.id);
-    setOpen(true);
+    router.push(`/order/${order.id}?from=${tab}`);
   };
 
-  const handleExport = () => {
-    const csv = ordersToCsv(visibleOrders);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `orders-${period}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    toast.success("Orders exported");
+  const handleExport = async () => {
+    try {
+      await exportOrders(listParams);
+      toast.success("Orders exported");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to export orders",
+      );
+    }
   };
 
   const goToPage = (page: number) => {
-    if (isIncomingTab) {
-      void fetchIncomingOrders({ page, search: listParams.search });
-      return;
-    }
     void fetchOrders({ page, ...listParams });
   };
 
   const handleAcceptAll = async () => {
     setAcceptingAll(true);
     try {
-      await fetchIncomingOrders({
-        page: 1,
-        search: listParams.search,
-        per_page: Math.max(pendingCount, incomingTotal, PAGE_SIZE),
-      });
-      const pending = useOrderStore
-        .getState()
-        .incomingOrders.filter((order) => !soldBy(order).vendor);
-      if (pending.length === 0) {
-        toast.error("No incoming Plenti orders to accept");
-        return;
-      }
-      const results = await Promise.allSettled(
-        pending.map((order) => acceptPlentiOrder(order)),
-      );
-      const accepted = results.filter((result) => result.status === "fulfilled").length;
-      const failed = results.length - accepted;
-      if (accepted > 0) {
-        toast.success(
-          failed > 0
-            ? `Accepted ${accepted} orders, ${failed} failed`
-            : `Accepted ${accepted} order${accepted === 1 ? "" : "s"}`,
-        );
-      } else {
-        const first = results.find((result) => result.status === "rejected") as
-          | PromiseRejectedResult
-          | undefined;
-        toast.error(
-          first?.reason instanceof Error
-            ? first.reason.message
-            : "Failed to accept orders",
-        );
-      }
+      const result = await acceptAllPendingOrders();
+      toast.success(result?.message?.trim() || "Accepted pending orders");
+      setAcceptAllOpen(false);
       await Promise.all([
         fetchIncomingOrders({ page: 1, search: listParams.search }),
+        fetchOrders({ page: 1, ...listParams }),
         fetchOrderStats(),
       ]);
     } catch (error) {
@@ -278,27 +266,25 @@ export default function OrderTableWrapper() {
   };
 
   const showing = visibleOrders.length;
-  const total = (isIncomingTab ? incomingTotal : totalItems) || showing;
+  const total = totalItems || showing;
 
   return (
     <div className="space-y-4">
       <OrderManagementHeader
         period={period}
         onPeriodChange={setPeriod}
-        orderCount={loadingStats ? undefined : totalOrders}
-        revenue={loadingStats ? undefined : revenue}
-        waitingCount={
-          loadingStats || pendingCount <= 0 ? undefined : pendingCount
-        }
-        onExport={handleExport}
+        orderCount={statusCounts?.all}
+        revenue={revenue}
+        waitingCount={statusCounts?.pending}
+        exporting={exporting}
+        onExport={() => void handleExport()}
       />
 
       {canViewOrderStats || canViewOrderList ? (
         <OrderStatusTabs
           value={tab}
           onChange={setTab}
-          stats={orderStats}
-          pendingCount={incomingTotal > 0 ? incomingTotal : undefined}
+          statusCounts={statusCounts}
         />
       ) : null}
 
@@ -315,13 +301,48 @@ export default function OrderTableWrapper() {
           <button
             type="button"
             disabled={acceptingAll}
-            onClick={() => void handleAcceptAll()}
+            onClick={() => setAcceptAllOpen(true)}
             className="h-9 shrink-0 rounded-lg bg-[#2F5BDB] px-3.5 text-[13px] font-medium text-white hover:bg-[#2F5BDB]/90 disabled:opacity-60"
           >
-            {acceptingAll ? "Accepting…" : `Accept all ${pendingCount}`}
+            {acceptingAll ? "Accepting…" : `Accept all ${incomingTotal}`}
           </button>
         </div>
       ) : null}
+
+      <AlertDialog
+        open={acceptAllOpen}
+        onOpenChange={(open) => {
+          if (!acceptingAll) setAcceptAllOpen(open);
+        }}
+      >
+        <AlertDialogContent className="rounded-xl border-0 p-6 sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[18px] font-semibold text-[#101828]">
+              Accept all pending orders?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-[#667085]">
+              This accepts incoming Plenti orders and sends them to riders near
+              each warehouse. Vendor orders stay with the vendor.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row gap-3 sm:justify-end">
+            <AlertDialogCancel
+              disabled={acceptingAll}
+              className="h-9 rounded-lg border border-[#EAECF0] bg-white text-[13px] font-medium text-[#344054]"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <button
+              type="button"
+              disabled={acceptingAll}
+              onClick={() => void handleAcceptAll()}
+              className="h-9 shrink-0 rounded-lg bg-[#2F5BDB] px-3.5 text-[13px] font-medium text-white hover:bg-[#2F5BDB]/90 disabled:opacity-60"
+            >
+              {acceptingAll ? "Accepting…" : `Accept all ${incomingTotal}`}
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {!canViewOrderList ? (
         <div className="rounded-xl border border-[#EAECF0] bg-white p-12 text-center">
@@ -336,7 +357,7 @@ export default function OrderTableWrapper() {
               <Search className="size-4 shrink-0 text-[#98A2B3]" />
               <Input
                 className="h-auto border-0 p-0 text-[13px] shadow-none placeholder:text-[#98A2B3] focus-visible:ring-0"
-                placeholder="Search order ID, customer or phone"
+                placeholder="Order number, payment reference, customer name or email"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
               />
@@ -364,12 +385,7 @@ export default function OrderTableWrapper() {
               <FilterSelect
                 value={payment}
                 onChange={setPayment}
-                options={[
-                  { value: "all", label: "Any payment" },
-                  { value: "card", label: "Card" },
-                  { value: "transfer", label: "Transfer" },
-                  { value: "delivery", label: "Pay on delivery" },
-                ]}
+                options={[...ORDER_PAYMENT_FILTERS]}
               />
             </div>
           </div>
@@ -383,7 +399,7 @@ export default function OrderTableWrapper() {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1180px] text-sm">
+                <table className="w-full min-w-[1320px] text-sm">
                   <thead>
                     <tr className="border-b border-[#EAECF0] text-left text-[12px] font-medium text-[#667085]">
                       <th className="px-4 py-3 font-medium">Order</th>
@@ -394,8 +410,11 @@ export default function OrderTableWrapper() {
                       <th className="px-4 py-3 font-medium">Sold by</th>
                       <th className="px-4 py-3 font-medium">Ships from</th>
                       <th className="px-4 py-3 font-medium">Amount</th>
+                      <th className="px-4 py-3 font-medium">Payment status</th>
+                      <th className="px-4 py-3 font-medium">Date paid</th>
                       <th className="px-4 py-3 font-medium">Status</th>
                       <th className="px-4 py-3 font-medium">Rider</th>
+                      <th className="px-4 py-3 font-medium">Delivery provider</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -404,8 +423,10 @@ export default function OrderTableWrapper() {
                       const avatar = customerAvatar(order);
                       const sellerInfo = soldBy(order);
                       const paymentInfo = paymentMeta(order);
+                      const card = paymentCardMeta(order);
                       const status = statusLabel(order);
-                      const rider = riderCell(order);
+                      const rider = riderName(order) || "-";
+                      const provider = deliveryProviderLabel(order);
                       return (
                         <tr
                           key={order.id}
@@ -452,7 +473,7 @@ export default function OrderTableWrapper() {
                             </div>
                           </td>
                           <td className="max-w-[220px] px-4 py-3.5 text-[13px] text-[#344054]">
-                            <span className="line-clamp-2">{itemSummary(order)}</span>
+                            <OrderItemsCell order={order} />
                           </td>
                           <td className="px-4 py-3.5">
                             <p className="text-[13px] font-medium text-[#101828]">
@@ -476,10 +497,36 @@ export default function OrderTableWrapper() {
                             <p className="text-[13px] font-semibold text-[#101828]">
                               {formatCurrency(Number(order.total) || 0)}
                             </p>
-                            <p className="mt-0.5 flex items-center gap-1 text-[12px] text-[#667085]">
+                            <p
+                              className={cn(
+                                "mt-0.5 flex items-center gap-1 text-[12px]",
+                                paymentInfo.label === "Payment failed"
+                                  ? "text-[#F04438]"
+                                  : "text-[#667085]",
+                              )}
+                            >
                               <PaymentIcon kind={paymentInfo.key} />
-                              {paymentInfo.label}
+                              {card.last4
+                                ? `${paymentInfo.label} · ••••${card.last4}`
+                                : paymentInfo.label}
                             </p>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5">
+                            <span
+                              className={cn(
+                                "text-[13px] font-medium",
+                                paymentStatusLabel(order).toLowerCase() === "paid"
+                                  ? "text-[#027A48]"
+                                  : paymentInfo.label === "Payment failed"
+                                    ? "text-[#F04438]"
+                                    : "text-[#F79009]",
+                              )}
+                            >
+                              {paymentStatusLabel(order)}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-[#667085]">
+                            {paidDateLabel(order)}
                           </td>
                           <td className="px-4 py-3.5">
                             <span
@@ -489,24 +536,18 @@ export default function OrderTableWrapper() {
                               )}
                             >
                               {status === "Pending" ||
-                              status === "Refund pending" ||
+                              status === "Refund Pending" ||
                               status === "Processing" ? (
                                 <Clock className="size-3.5" />
                               ) : null}
                               {status}
                             </span>
                           </td>
-                          <td
-                            className={cn(
-                              "whitespace-nowrap px-4 py-3.5 text-[13px]",
-                              rider.tone === "danger"
-                                ? "font-medium text-[#F04438]"
-                                : rider.tone === "muted"
-                                  ? "text-[#667085]"
-                                  : "text-[#101828]",
-                            )}
-                          >
-                            {rider.text}
+                          <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-[#101828]">
+                            {rider}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-[#344054]">
+                            {provider}
                           </td>
                         </tr>
                       );
@@ -547,18 +588,6 @@ export default function OrderTableWrapper() {
         </div>
       )}
 
-      <OrderDetailsModal
-        selectedId={selectedId}
-        isOpen={open}
-        onClose={() => {
-          setOpen(false);
-          setSingleOrder();
-          setSelectedId(null);
-          if (orderIdParam) {
-            router.replace(pathname);
-          }
-        }}
-      />
     </div>
   );
 }

@@ -58,6 +58,7 @@ export type OrderUser = {
   avatar?: string | null;
   avatar_url?: string | null;
   total_orders?: number;
+  amount_spent?: number | string;
 };
 
 export type OrderShipment = {
@@ -87,6 +88,31 @@ export type RiderInfo = {
   vehicle_type?: string | null;
 };
 
+export type PaymentCardDetails = {
+  bin?: string | null;
+  last4?: string | null;
+  expYear?: string | null;
+  bankCode?: string | null;
+  bankName?: string | null;
+  cardType?: string | null;
+  expMonth?: string | null;
+  maskedPan?: string | null;
+};
+
+export type PaymentGatewayResponse = {
+  rider_info?: RiderInfo;
+  gateway?: string | null;
+  provider?: string | null;
+  paidOn?: string | null;
+  currency?: string | null;
+  amountPaid?: string | null;
+  paymentMethod?: string | null;
+  paymentStatus?: string | null;
+  paymentReference?: string | null;
+  cardDetails?: PaymentCardDetails | null;
+  customer?: { name?: string | null; email?: string | null } | null;
+};
+
 export type KwikPickupLocation = {
   id: number;
   name: string;
@@ -111,6 +137,7 @@ export type Order = {
   id: number;
   user_id: number;
   subtotal: string;
+  discount?: number | string | null;
   tax: string;
   total: number;
   total_weight?: number | string | null;
@@ -120,12 +147,30 @@ export type Order = {
   payment_status: string;
   payment_method: string | null;
   payment_reference: string | null;
-  payment_gateway_response?: {
-    rider_info?: RiderInfo;
+  payment_session?: {
+    method?: string | null;
+    status?: string | null;
+    reason?: string | null;
     gateway?: string | null;
-    provider?: string | null;
   } | null;
+  payment_gateway_response?: PaymentGatewayResponse | null;
   paid_at: string | null;
+  payment_date?: string | null;
+  payment_time?: string | null;
+  payment_confirmed_at?: string | null;
+  checkout_date?: string | null;
+  checkout_time?: string | null;
+  assigned_to?: number | null;
+  assigned_at?: string | null;
+  accepted_at?: string | null;
+  accepted_by?: string | number | null;
+  declined_at?: string | null;
+  in_transit_at?: string | null;
+  refund_requested_at?: string | null;
+  has_plenti_delivery?: boolean;
+  is_broadcast?: boolean;
+  pickup_code?: string | null;
+  delivery_code?: string | null;
   shipping_address: string;
   phone_number?: string | null;
   shipping_details?: string | null;
@@ -162,6 +207,7 @@ export type Order = {
     type_label?: string;
     is_kwik?: boolean;
     is_plenti?: boolean;
+    is_plenti_intent?: boolean;
   } | null;
   delivery_fulfillment?: OrderDeliveryFulfillment | null;
   shipments?: OrderShipment[];
@@ -200,6 +246,20 @@ export type Order = {
   delivery_tracking?: string | null;
 };
 
+export type OrderStatusCounts = {
+  all?: number;
+  pending?: number;
+  processing?: number;
+  accepted?: number;
+  packed?: number;
+  in_transit?: number;
+  delivered?: number;
+  cancelled?: number;
+  canceled?: number;
+  refund_pending?: number;
+  refunded?: number;
+};
+
 export type OrdersListResponse = {
   status: string;
   data: {
@@ -208,6 +268,7 @@ export type OrdersListResponse = {
     last_page: number;
     per_page: number;
     total: number;
+    status_counts?: OrderStatusCounts;
   };
 };
 
@@ -216,10 +277,12 @@ export type OrderState = {
   incomingOrders: Order[];
   singleOrder: Order | null;
   orderStats: OrderStatistics | null;
+  statusCounts: OrderStatusCounts | null;
   loading: boolean;
   loadingIncoming: boolean;
   loadingSingle: boolean;
   loadingStats: boolean;
+  exporting: boolean;
   error: string | null;
   incomingError: string | null;
   statsError: string | null;
@@ -263,6 +326,15 @@ export type OrderState = {
     options?: { silent?: boolean },
   ) => Promise<boolean>;
   fetchOrderStats: (params?: {
+    start_date?: string;
+    end_date?: string;
+  }) => Promise<boolean>;
+  exportOrders: (params?: {
+    search?: string;
+    delivery_provider?: string;
+    status?: string;
+    warehouse_id?: string;
+    payment_method?: string;
     start_date?: string;
     end_date?: string;
   }) => Promise<boolean>;

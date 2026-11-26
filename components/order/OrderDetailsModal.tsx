@@ -80,11 +80,11 @@ const formatCurrency = (n: number) =>
   }).format(n);
 
 function formatProductWeight(raw: number | string | null | undefined) {
-  return raw == null ? "—" : `${raw} kg`;
+  return raw == null ? "-" : `${raw} kg`;
 }
 
 function formatOrderStatusLabel(raw: string | undefined | null) {
-  if (raw == null || String(raw).trim() === "") return "—";
+  if (raw == null || String(raw).trim() === "") return "-";
   return String(raw)
     .replace(/_/g, " ")
     .trim()
@@ -371,7 +371,7 @@ export function OrderDetailsModal({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <DialogTitle className="font-medium text-lg sm:text-[24px] break-words">
-                    Order Details – {singleOrder?.order_number ?? selectedId ?? "—"}
+                    Order Details - {singleOrder?.order_number ?? selectedId ?? "-"}
                   </DialogTitle>
                   <DialogDescription className="text-[#808080] text-sm font-normal">
                     Complete order information and actions
@@ -427,7 +427,7 @@ export function OrderDetailsModal({
                       {canMarkOrderInTransit && (
                         <DropdownMenuSeparator />
                       )}
-                      {/* Mark as in transit — hidden from menu
+                      {/* Mark as in transit - hidden from menu
                       {canMarkOrderInTransit && (
                         <>
                           <DropdownMenuItem
@@ -545,10 +545,10 @@ export function OrderDetailsModal({
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-[16px] text-[#1A1A1A]">
-                              {item.product_name || item.product?.name || "—"}
+                              {item.product_name || item.product?.name || "-"}
                             </p>
                             <p className="text-xs text-[#9B9B9B] truncate">
-                              {item.product?.description ?? "—"}
+                              {item.product?.description ?? "-"}
                             </p>
                             <div className="flex flex-wrap items-center mt-2 gap-x-6 gap-y-1 text-sm">
                               <span>
@@ -556,13 +556,13 @@ export function OrderDetailsModal({
                                 <span className="font-medium">
                                   {item.price != null
                                     ? formatCurrency(Number(item.price) || 0)
-                                    : "—"}
+                                    : "-"}
                                 </span>
                               </span>
                               <span className="text-[#9B9B9B]">
                                 QTY:{" "}
                                 <span className="text-black">
-                                  {item.quantity ?? "—"}
+                                  {item.quantity ?? "-"}
                                 </span>
                               </span>
                               <span className="text-[#9B9B9B]">
@@ -583,7 +583,7 @@ export function OrderDetailsModal({
                       <p className="text-[#1F3A78] font-semibold">
                         Order Items
                       </p>
-                      <p className="text-[#667085] text-sm mt-1">—</p>
+                      <p className="text-[#667085] text-sm mt-1">-</p>
                     </div>
                   )}
 
@@ -598,7 +598,7 @@ export function OrderDetailsModal({
                         </p>
                         <p className="text-[#667085] text-sm">
                           {singleOrder?.payment_method ?? (
-                            <span className="text-xs">–</span>
+                            <span className="text-xs">-</span>
                           )}
                         </p>
                       </div>
@@ -624,7 +624,7 @@ export function OrderDetailsModal({
                                 : "bg-amber-600"
                             }`}
                           />
-                          {singleOrder?.payment_status ?? "—"}
+                          {singleOrder?.payment_status ?? "-"}
                         </span>
                       </div>
                       <div className="space-y-1">
@@ -633,7 +633,7 @@ export function OrderDetailsModal({
                         </p>
                         <p className="text-[#98A2B3] text-sm">
                           {singleOrder?.payment_reference ?? (
-                            <span className="text-xs">–</span>
+                            <span className="text-xs">-</span>
                           )}
                         </p>
                       </div>
@@ -648,7 +648,7 @@ export function OrderDetailsModal({
                           Shipping Address
                         </p>
                         <p className="text-[#667085] text-sm">
-                          {singleOrder?.shipping_address ?? "—"}
+                          {singleOrder?.shipping_address ?? "-"}
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -659,7 +659,7 @@ export function OrderDetailsModal({
                           {singleOrder?.shipping_details ??
                             singleOrder?.shippingDetails ??
                             singleOrder?.delivery_tracking ??
-                            "—"}
+                            "-"}
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -709,7 +709,7 @@ export function OrderDetailsModal({
                             singleOrder?.delivery_selection?.type_label ??
                             singleOrder?.delivery_type ??
                             singleOrder?.delivery_selection?.type ??
-                            "—"}
+                            "-"}
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -722,7 +722,7 @@ export function OrderDetailsModal({
                         <p className="text-[#101928] font-medium">Delivery fee</p>
                         <p className="text-[#667085] text-sm">
                           {singleOrder?.delivery_economics?.customer_delivery_charge ??
-                            "—"}
+                            "-"}
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -731,7 +731,7 @@ export function OrderDetailsModal({
                         </p>
                         <p className="text-[#667085] text-sm">
                           {singleOrder?.delivery_pricing_snapshot?.kwik_provider_cost ??
-                            "—"}
+                            "-"}
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -739,7 +739,7 @@ export function OrderDetailsModal({
                         <p className="text-[#667085] text-sm">
                           {singleOrder?.delivery_economics?.delivery_margin != null
                             ? singleOrder.delivery_economics.delivery_margin
-                            : <span className="text-xs">–</span>}
+                            : <span className="text-xs">-</span>}
                         </p>
                       </div>
                     </div>
@@ -757,7 +757,7 @@ export function OrderDetailsModal({
                       <p className="text-[#101928] font-semibold">
                         {singleOrder?.total != null
                           ? formatCurrency(Number(singleOrder.total))
-                          : "—"}
+                          : "-"}
                       </p>
                     </div>
                   </div>

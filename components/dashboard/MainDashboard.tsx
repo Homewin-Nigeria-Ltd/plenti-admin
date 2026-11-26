@@ -29,6 +29,7 @@ export default function MainDashboard() {
     topProducts,
     fetchTopProducts,
     bestSellingCategories,
+    loadingBestSellingCategories,
     fetchBestSellingCategories,
   } = useDashboardStore();
   const fetchOrders = useOrderStore((state) => state.fetchOrders);
@@ -162,7 +163,10 @@ export default function MainDashboard() {
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-4">
         <DashboardRevenueTrend overview={overview} />
-        <DashboardSalesByCategory categories={categories} />
+        <DashboardSalesByCategory
+          categories={categories}
+          loading={loadingBestSellingCategories && categories.length === 0}
+        />
       </div>
       <DashboardWarehouses warehouses={warehouses} />
       <DashboardProductLists

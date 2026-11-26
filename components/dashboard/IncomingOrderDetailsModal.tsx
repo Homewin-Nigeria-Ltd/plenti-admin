@@ -2,6 +2,15 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -32,10 +41,15 @@ export default function IncomingOrderDetailsModal({
   onAccept,
 }: IncomingOrderDetailsModalProps) {
   const [warehouseId, setWarehouseId] = React.useState("");
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (detail) setWarehouseId(detail.warehouseId);
   }, [detail]);
+
+  React.useEffect(() => {
+    if (!open) setConfirmOpen(false);
+  }, [open]);
 
   if (!detail) return null;
   const warehouse =
@@ -105,7 +119,7 @@ export default function IncomingOrderDetailsModal({
             {detail.items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 rounded-xl border border-[#EAECF0] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-xl border border-[#E4E6EB] px-3 py-2.5"
               >
                 <div className="size-10 rounded-lg bg-[#F2F4F7] overflow-hidden shrink-0">
                   {item.image ? (
@@ -164,7 +178,7 @@ export default function IncomingOrderDetailsModal({
             <select
               value={warehouseId}
               onChange={(event) => setWarehouseId(event.target.value)}
-              className="h-10 w-full rounded-lg border border-[#EAECF0] bg-white px-3 text-[13px] text-[#344054] outline-none"
+              className="h-10 w-full rounded-lg border border-[#E4E6EB] bg-white px-3 text-[13px] text-[#344054] outline-none"
             >
               {detail.warehouses.map((option) => (
                 <option key={option.id} value={option.id}>
@@ -196,7 +210,7 @@ export default function IncomingOrderDetailsModal({
               type="button"
               className="h-10 px-4 rounded-lg bg-[#2F5BDB] text-white text-[13px] font-medium inline-flex items-center gap-1.5 hover:bg-[#2F5BDB]/90 disabled:opacity-60"
               disabled={submitting}
-              onClick={() => onAccept(warehouseId)}
+              onClick={() => setConfirmOpen(true)}
             >
               <Check className="size-4" />
               Accept and send to riders
@@ -204,6 +218,40 @@ export default function IncomingOrderDetailsModal({
           </div>
         </div>
       </DialogContent>
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(nextOpen) => {
+          if (!submitting) setConfirmOpen(nextOpen);
+        }}
+      >
+        <AlertDialogContent className="rounded-xl border-0 p-6 sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[18px] font-semibold text-[#101828]">
+              Accept this order?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-[#667085]">
+              This sends the order to riders near{" "}
+              {warehouse?.name || detail.warehouseName} warehouse.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row gap-3 sm:justify-end">
+            <AlertDialogCancel
+              disabled={submitting}
+              className="h-9 rounded-lg border border-[#EAECF0] bg-white text-[13px] font-medium text-[#344054]"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => onAccept(warehouseId)}
+              className="h-9 shrink-0 rounded-lg bg-[#2F5BDB] px-3.5 text-[13px] font-medium text-white hover:bg-[#2F5BDB]/90 disabled:opacity-60"
+            >
+              {submitting ? "Accepting…" : "Accept and send to riders"}
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
