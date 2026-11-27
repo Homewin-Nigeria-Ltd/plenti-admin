@@ -1,7 +1,8 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { Upload, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ImageIcon, Upload, X } from "lucide-react";
 import Image from "next/image";
 import * as React from "react";
 
@@ -13,6 +14,7 @@ type ProductImagesFieldProps = {
   onRemoveSelected: (index: number) => void;
   inputId: string;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
+  variant?: "default" | "cover";
 };
 
 export function ProductImagesField({
@@ -23,19 +25,21 @@ export function ProductImagesField({
   onRemoveSelected,
   inputId,
   fileInputRef,
+  variant = "default",
 }: ProductImagesFieldProps) {
   const [isDragging, setIsDragging] = React.useState(false);
   const hasImages = existingUrls.length > 0 || selectedPreviews.length > 0;
+  const isCover = variant === "cover";
 
   return (
     <div className="space-y-2">
-      <Label>Upload Product Images</Label>
+      {isCover ? null : <Label>Upload Product Images</Label>}
       {hasImages ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {existingUrls.map((url) => (
             <div
               key={url}
-              className="relative aspect-square rounded-md border border-neutral-200 overflow-hidden bg-neutral-100"
+              className="relative aspect-square overflow-hidden rounded-md border border-neutral-200 bg-neutral-100"
             >
               <Image
                 src={url}
@@ -49,7 +53,7 @@ export function ProductImagesField({
                 <button
                   type="button"
                   onClick={() => onRemoveExisting(url)}
-                  className="absolute top-1 right-1 size-6 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm"
+                  className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm"
                   aria-label="Remove image"
                 >
                   <X size={12} color="#0B1E66" />
@@ -60,7 +64,7 @@ export function ProductImagesField({
           {selectedPreviews.map((url, index) => (
             <div
               key={`${url}-${index}`}
-              className="relative aspect-square rounded-md border border-neutral-200 overflow-hidden bg-neutral-100"
+              className="relative aspect-square overflow-hidden rounded-md border border-neutral-200 bg-neutral-100"
             >
               <Image
                 src={url}
@@ -70,10 +74,15 @@ export function ProductImagesField({
                 className="object-cover"
                 unoptimized
               />
+              {index === 0 && isCover ? (
+                <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                  Cover
+                </span>
+              ) : null}
               <button
                 type="button"
                 onClick={() => onRemoveSelected(index)}
-                className="absolute top-1 right-1 size-6 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm"
+                className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm"
                 aria-label="Remove selected image"
               >
                 <X size={12} color="#0B1E66" />
@@ -93,11 +102,14 @@ export function ProductImagesField({
           setIsDragging(true);
         }}
         onDragLeave={() => setIsDragging(false)}
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+        className={cn(
+          "rounded-xl border-2 border-dashed p-6 text-center transition-colors",
           isDragging
             ? "border-primary bg-primary/5"
-            : "border-neutral-200 bg-neutral-50"
-        }`}
+            : isCover
+              ? "border-[#D0D5DD] bg-[#F8FAFC]"
+              : "border-neutral-200 bg-neutral-50",
+        )}
       >
         <input
           ref={fileInputRef}
@@ -112,14 +124,29 @@ export function ProductImagesField({
         />
         <label
           htmlFor={inputId}
-          className="cursor-pointer flex flex-col items-center gap-2"
+          className="flex cursor-pointer flex-col items-center gap-2"
         >
-          <Upload className="size-10 text-primary" />
-          <p className="font-medium text-primary">
-            {hasImages ? "Add more images" : "Upload images"}
+          {isCover ? (
+            <ImageIcon className="size-8 text-[#98A2B3]" />
+          ) : (
+            <Upload className="size-10 text-primary" />
+          )}
+          <p
+            className={cn(
+              "font-medium",
+              isCover ? "text-sm text-[#344054]" : "text-primary",
+            )}
+          >
+            {hasImages
+              ? "Add more images"
+              : isCover
+                ? "Drag photos here or browse"
+                : "Upload images"}
           </p>
-          <p className="text-sm text-neutral-500">
-            Click or drag PNG/JPG files. You can select multiple.
+          <p className="text-xs text-[#98A2B3]">
+            {isCover
+              ? "JPG or PNG. Square crops with a plain background work best."
+              : "Click or drag PNG/JPG files. You can select multiple."}
           </p>
         </label>
       </div>

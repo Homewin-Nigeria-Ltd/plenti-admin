@@ -134,6 +134,14 @@ export function mapAdminProductsToUi(
       categoriesTree
     );
 
+    const sellerRaw = p.seller;
+    const sellerName =
+      typeof sellerRaw === "string"
+        ? sellerRaw
+        : sellerRaw && typeof sellerRaw === "object"
+          ? sellerRaw.name
+          : null;
+
     return {
       id: p.id,
       name: p.name,
@@ -163,6 +171,14 @@ export function mapAdminProductsToUi(
       status,
       imageUrl,
       images,
+      sku: typeof p.sku === "string" && p.sku.trim() ? p.sku.trim() : null,
+      seller: sellerName?.trim() || "Plenti",
+      warehouseName:
+        p.warehouse?.name?.trim() || p.warehouse_name?.trim() || "Abuja North",
+      updatedAt:
+        typeof p.updated_at === "string" && p.updated_at.trim()
+          ? p.updated_at
+          : null,
     };
   });
 }

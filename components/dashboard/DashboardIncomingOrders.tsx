@@ -207,7 +207,7 @@ export default function DashboardIncomingOrders({
 
   const openOrderPage = (row: IncomingRow) => {
     if (row.order?.id != null) {
-      router.push(`/order/${row.order.id}?from=pending`);
+      router.push(`/order/${row.order.id}`);
       return true;
     }
     return false;

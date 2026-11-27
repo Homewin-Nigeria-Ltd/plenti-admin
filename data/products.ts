@@ -31,4 +31,8 @@ export type Product = {
   status: ProductStatus;
   imageUrl: string;
   images?: string[];
+  sku?: string | null;
+  seller?: string | null;
+  warehouseName?: string | null;
+  updatedAt?: string | null;
 };

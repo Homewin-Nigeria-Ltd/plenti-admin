@@ -10,37 +10,23 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { X, Loader2, Check, ChevronsUpDown } from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ChevronRight, Plus, Search, X } from "lucide-react";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { cn } from "@/lib/utils";
 import { useProductStore } from "@/store/useProductStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
+import { useAccountStore } from "@/store/useAccountStore";
 import api from "@/lib/api";
 import { INVENTORY_API } from "@/data/inventory";
+import { cn } from "@/lib/utils";
+import { MOCK_SUPPLIERS, naira } from "./inventoryView";
 
 function getApiErrorMessage(err: unknown): string | null {
   if (typeof err !== "object" || err === null) return null;
@@ -52,512 +38,824 @@ function getApiErrorMessage(err: unknown): string | null {
   return typeof message === "string" ? message : null;
 }
 
-const addStockFormSchemaWithWarehouse = z
-  .object({
-    product: z.object({ value: z.string(), label: z.string() }).nullable(),
-    warehouse: z.object({ value: z.string(), label: z.string() }).nullable(),
-    quantity: z
-      .number()
-      .int("Quantity must be a whole number")
-      .min(1, "Quantity must be at least 1"),
-  })
-  .refine((data) => data.product != null && data.product.value.length > 0, {
-    message: "Please select a product",
-    path: ["product"],
-  })
-  .refine((data) => data.warehouse != null && data.warehouse.value.length > 0, {
-    message: "Please select a warehouse",
-    path: ["warehouse"],
-  });
-
-const addStockFormSchemaQuantityOnly = z
-  .object({
-    product: z.object({ value: z.string(), label: z.string() }).nullable(),
-    quantity: z
-      .number()
-      .int("Quantity must be a whole number")
-      .min(1, "Quantity must be at least 1"),
-  })
-  .refine((data) => data.product != null && data.product.value.length > 0, {
-    message: "Please select a product",
-    path: ["product"],
-  });
-
-type AddStockFormValuesWithWarehouse = z.infer<typeof addStockFormSchemaWithWarehouse>;
-type AddStockFormValuesQuantityOnly = z.infer<typeof addStockFormSchemaQuantityOnly>;
-
 type AddNewStockModalProps = {
   isOpen: boolean;
   onClose: () => void;
   warehouseId?: string | number;
 };
 
+type DeliveryProduct = {
+  productId: string;
+  name: string;
+  sku: string;
+  category: string;
+  brand: string;
+  variant: string;
+  specs: string;
+  quantity: string;
+  unitCost: string;
+  damaged: string;
+  existing: boolean;
+};
+
+const emptyProduct = (): DeliveryProduct => ({
+  productId: "",
+  name: "",
+  sku: "",
+  category: "",
+  brand: "",
+  variant: "",
+  specs: "",
+  quantity: "",
+  unitCost: "",
+  damaged: "0",
+  existing: false,
+});
+
 export function AddNewStockModal({
   isOpen,
   onClose,
   warehouseId: warehouseIdProp,
 }: AddNewStockModalProps) {
-  const { products, loadingProducts, fetchProducts } = useProductStore();
-  const { warehouses, loadingWarehouses, fetchWarehouses, fetchInventory } =
-    useInventoryStore();
+  const { products, fetchProducts, loadingProducts } = useProductStore();
+  const { warehouses, fetchWarehouses, fetchInventory } = useInventoryStore();
+  const account = useAccountStore((s) => s.account);
 
-  const hasWarehouseContext =
-    warehouseIdProp != null && String(warehouseIdProp).trim() !== "";
+  const [step, setStep] = React.useState<1 | 2 | 3>(1);
+  const [saving, setSaving] = React.useState(false);
+  const [warehouseId, setWarehouseId] = React.useState(
+    warehouseIdProp ? String(warehouseIdProp) : "",
+  );
+  const [supplierId, setSupplierId] = React.useState("");
+  const [supplierQuery, setSupplierQuery] = React.useState("");
+  const [truckNumber, setTruckNumber] = React.useState("");
+  const [driverName, setDriverName] = React.useState("");
+  const [receivedOn, setReceivedOn] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [lines, setLines] = React.useState<DeliveryProduct[]>([emptyProduct()]);
+  const [invoiceNumber, setInvoiceNumber] = React.useState("");
+  const [invoiceDate, setInvoiceDate] = React.useState("");
+  const [invoiceAmount, setInvoiceAmount] = React.useState("");
+  const [payment, setPayment] = React.useState<"full" | "part" | "unpaid">(
+    "full",
+  );
+  const [amountPaid, setAmountPaid] = React.useState("");
+  const [balanceDue, setBalanceDue] = React.useState("");
+  const [showErrors, setShowErrors] = React.useState(false);
 
-  const formWithWarehouse = useForm<AddStockFormValuesWithWarehouse>({
-    resolver: zodResolver(addStockFormSchemaWithWarehouse),
-    defaultValues: { product: null, warehouse: null, quantity: 1 },
-  });
-
-  const formQuantityOnly = useForm<AddStockFormValuesQuantityOnly>({
-    resolver: zodResolver(addStockFormSchemaQuantityOnly),
-    defaultValues: { product: null, quantity: 1 },
-  });
+  const selectedSupplier = MOCK_SUPPLIERS.find((s) => s.id === supplierId);
+  const filteredSuppliers = MOCK_SUPPLIERS.filter((s) =>
+    s.name.toLowerCase().includes(supplierQuery.toLowerCase()),
+  );
+  const warehouseName =
+    warehouses.find((w) => String(w.id) === warehouseId)?.name || "warehouse";
+  const recorder = account?.name || "Adaeze Okafor";
 
   React.useEffect(() => {
-    if (isOpen) {
-      fetchProducts({ page: 1, categoryId: null, search: "" });
-      if (!hasWarehouseContext) fetchWarehouses();
-    } else {
-      formWithWarehouse.reset({ product: null, warehouse: null, quantity: 1 });
-      formQuantityOnly.reset({ product: null, quantity: 1 });
-    }
-  }, [isOpen, hasWarehouseContext, fetchProducts, fetchWarehouses, formWithWarehouse, formQuantityOnly]);
+    if (!isOpen) return;
+    fetchProducts({ page: 1, categoryId: null, search: "" });
+    fetchWarehouses({ per_page: 100 });
+  }, [isOpen, fetchProducts, fetchWarehouses]);
 
-  const submitPayload = (
-    values: AddStockFormValuesWithWarehouse | AddStockFormValuesQuantityOnly
-  ) => {
-    const productId = values.product?.value;
-    if (!productId) return;
-    const quantity = values.quantity;
-    const warehouse_id = hasWarehouseContext
-      ? Number(warehouseIdProp)
-      : Number.parseInt(
-          (values as AddStockFormValuesWithWarehouse).warehouse?.value ?? "0",
-          10
-        );
-    return { productId, warehouse_id, quantity };
+  React.useEffect(() => {
+    if (isOpen && warehouseIdProp) setWarehouseId(String(warehouseIdProp));
+  }, [isOpen, warehouseIdProp]);
+
+  React.useEffect(() => {
+    if (isOpen) return;
+    setStep(1);
+    setWarehouseId(warehouseIdProp ? String(warehouseIdProp) : "");
+    setSupplierId("");
+    setSupplierQuery("");
+    setTruckNumber("");
+    setDriverName("");
+    setReceivedOn("");
+    setDescription("");
+    setLines([emptyProduct()]);
+    setInvoiceNumber("");
+    setInvoiceDate("");
+    setInvoiceAmount("");
+    setPayment("full");
+    setAmountPaid("");
+    setBalanceDue("");
+    setShowErrors(false);
+  }, [isOpen, warehouseIdProp]);
+
+  const lineTotals = lines.map((line) => {
+    const qty = Number(line.quantity) || 0;
+    const cost = Number(line.unitCost) || 0;
+    return qty * cost;
+  });
+  const productsTotal = lineTotals.reduce((sum, n) => sum + n, 0);
+  const unitsTotal = lines.reduce(
+    (sum, line) => sum + (Number(line.quantity) || 0),
+    0,
+  );
+
+  const lineErrors = (line: DeliveryProduct) => {
+    const errors: string[] = [];
+    if (!line.productId) errors.push("product");
+    if (!line.brand.trim()) errors.push("brand");
+    if (!line.quantity || Number(line.quantity) <= 0) errors.push("quantity");
+    return errors;
   };
 
-  const onSubmit = async (
-    values: AddStockFormValuesWithWarehouse | AddStockFormValuesQuantityOnly
-  ) => {
-    const payload = submitPayload(values);
-    if (!payload) return;
+  const goStep2 = () => {
+    if (!warehouseId) {
+      toast.error("Please select a warehouse");
+      return;
+    }
+    if (!supplierId) {
+      toast.error("Please select a supplier");
+      return;
+    }
+    if (!truckNumber.trim()) {
+      toast.error("Please enter a truck number");
+      return;
+    }
+    if (!receivedOn) {
+      toast.error("Please pick when the delivery was received");
+      return;
+    }
+    setStep(2);
+  };
 
+  const goStep3 = () => {
+    const invalid = lines.some((line) => lineErrors(line).length > 0);
+    if (invalid) {
+      setShowErrors(true);
+      toast.error("Fix the highlighted product fields before you continue");
+      return;
+    }
+    setShowErrors(false);
+    if (!invoiceAmount) setInvoiceAmount(String(productsTotal));
+    setStep(3);
+  };
+
+  const saveStock = async () => {
+    setSaving(true);
     try {
-      const { data } = await api.patch<{
-        status?: string;
-        message?: string;
-      }>(`${INVENTORY_API.adjustStock}/${payload.productId}/adjust-stock`, {
-        product_id: Number(payload.productId),
-        warehouse_id: payload.warehouse_id,
-        quantity: payload.quantity,
-      });
-
-      if (data?.status === "success") {
-        toast.success("Stock adjusted successfully");
-        fetchInventory({ page: 1, search: "" });
-        formWithWarehouse.reset({ product: null, warehouse: null, quantity: 1 });
-        formQuantityOnly.reset({ product: null, quantity: 1 });
-        onClose();
-      } else {
-        const message =
-          typeof data?.message === "string"
-            ? data.message
-            : "Failed to adjust stock";
-        toast.error(message);
+      for (const line of lines) {
+        const { data } = await api.patch<{
+          status?: string;
+          message?: string;
+        }>(`${INVENTORY_API.adjustStock}/${line.productId}/adjust-stock`, {
+          product_id: Number(line.productId),
+          warehouse_id: Number(warehouseId),
+          quantity: Number(line.quantity),
+        });
+        if (data?.status !== "success") {
+          toast.error(data?.message || `Failed to add stock for ${line.name}`);
+          setSaving(false);
+          return;
+        }
       }
+      toast.success(
+        `Added ${unitsTotal} units to ${warehouseName} and wrote 2 entries to the audit log`,
+      );
+      fetchInventory({ page: 1, search: "" });
+      onClose();
     } catch (error) {
-      const message =
-        getApiErrorMessage(error) ?? "Failed to adjust stock";
-      console.error("Error adjusting stock =>", error);
-      toast.error(message);
+      toast.error(getApiErrorMessage(error) ?? "Failed to add stock");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const isSubmitting =
-    formWithWarehouse.formState.isSubmitting ||
-    formQuantityOnly.formState.isSubmitting;
-  const [productOpen, setProductOpen] = React.useState(false);
-  const [warehouseOpen, setWarehouseOpen] = React.useState(false);
+  const applyProduct = (index: number, productId: string) => {
+    const product = products.find((p) => String(p.id) === productId);
+    if (!product) return;
+    setLines((prev) =>
+      prev.map((line, i) =>
+        i === index
+          ? {
+              ...line,
+              productId,
+              name: product.name,
+              sku: product.sku || `SKU-${product.id}`,
+              category: String(product.category || ""),
+              brand: line.brand || product.name.split(" ")[0] || "",
+              variant: line.variant,
+              specs: line.specs || product.description || "",
+              existing: true,
+              unitCost: line.unitCost || String(product.price || ""),
+            }
+          : line,
+      ),
+    );
+  };
+
+  const errorCount = lines.reduce(
+    (sum, line) => sum + lineErrors(line).length,
+    0,
+  );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-139.25! sm:w-139.25! sm:max-w-139.25!"
+        className="flex max-h-[92vh] w-[95vw] max-w-[760px]! flex-col gap-0 p-0 sm:max-w-[760px]!"
         showCloseButton={false}
       >
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
-          <DialogTitle className="text-xl sm:text-2xl font-semibold">
+        <DialogHeader className="relative border-b border-[#EAECF0] px-5 py-4 sm:px-6">
+          <DialogTitle className="text-lg font-semibold text-[#101828]">
             Add New Stock
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-neutral-500">
-            Add new product to your inventory
+          <DialogDescription className="text-sm text-[#667085]">
+            {step === 1
+              ? "Record a delivery from a supplier. Everything here goes into the audit log."
+              : step === 2
+                ? "Add every product on this delivery."
+                : "Attach the supplier's invoice so Finance can reconcile payment."}
           </DialogDescription>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            disabled={isSubmitting}
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-[#F2F4F7]"
           >
-            <X color="#0B1E66" size={20} cursor="pointer" />
+            <X size={16} color="#344054" />
           </button>
+          <ol className="mt-4 flex gap-4 text-[12px] font-medium">
+            {(
+              [
+                [1, "Delivery"],
+                [2, "Products"],
+                [3, "Invoice & confirm"],
+              ] as const
+            ).map(([n, label]) => (
+              <li
+                key={n}
+                className={cn(
+                  "flex items-center gap-2",
+                  step === n
+                    ? "text-[#0B1E66]"
+                    : step > n
+                      ? "text-[#027A48]"
+                      : "text-[#98A2B3]",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex size-5 items-center justify-center rounded-full text-[11px]",
+                    step === n
+                      ? "bg-[#0B1E66] text-white"
+                      : step > n
+                        ? "bg-[#ECFDF3] text-[#027A48]"
+                        : "bg-[#F2F4F7] text-[#667085]",
+                  )}
+                >
+                  {n}
+                </span>
+                {label}
+              </li>
+            ))}
+          </ol>
         </DialogHeader>
 
-        {hasWarehouseContext ? (
-          <Form {...formQuantityOnly}>
-            <form
-              id="add-product-form"
-              onSubmit={formQuantityOnly.handleSubmit((values) =>
-                onSubmit(values)
-              )}
-              className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
-            >
-              <FormField
-                control={formQuantityOnly.control}
-                name="product"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product</FormLabel>
-                    <Popover open={productOpen} onOpenChange={setProductOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={productOpen}
-                            disabled={loadingProducts}
-                            className={cn(
-                              "form-control w-full justify-between font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value
-                              ? products.find(
-                                  (p) => String(p.id) === field.value?.value
-                                )?.name
-                              : loadingProducts
-                                ? "Loading products..."
-                                : "Select product..."}
-                            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-(--radix-popover-trigger-width)"
-                        align="start"
-                      >
-                        <Command>
-                          <CommandInput
-                            placeholder="Search product..."
-                            className="h-9"
-                          />
-                          <CommandList>
-                            <CommandEmpty>
-                              {loadingProducts
-                                ? "Loading products..."
-                                : "No product found."}
-                            </CommandEmpty>
-                            <CommandGroup>
-                              {products.map((p) => (
-                                <CommandItem
-                                  key={p.id}
-                                  value={p.name}
-                                  onSelect={() => {
-                                    const id = String(p.id);
-                                    field.onChange(
-                                      field.value?.value === id
-                                        ? null
-                                        : { value: id, label: p.name }
-                                    );
-                                    setProductOpen(false);
-                                  }}
-                                >
-                                  {p.name}
-                                  <Check
-                                    className={cn(
-                                      "ml-auto",
-                                      field.value?.value === String(p.id)
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={formQuantityOnly.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="50"
-                        min={1}
-                        className="form-control"
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={(e) => {
-                          const v = e.target.valueAsNumber;
-                          field.onChange(Number.isFinite(v) ? v : 0);
+        <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+          {step === 1 ? (
+            <div className="space-y-4">
+              <Field label="Warehouse receiving the stock" required>
+                <Select value={warehouseId} onValueChange={setWarehouseId}>
+                  <SelectTrigger className="h-10 w-full! rounded-lg border-[#EAECF0]">
+                    <SelectValue placeholder="Choose a warehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map((w) => (
+                      <SelectItem key={w.id} value={String(w.id)}>
+                        {w.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-[#98A2B3]">
+                  Pick this first. Products in the next step are matched to this
+                  warehouse&apos;s stock.
+                </p>
+              </Field>
+
+              <Field label="Supplier" required>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-10 flex-1 items-center gap-2 rounded-lg border border-[#EAECF0] px-3">
+                    <Search className="size-4 text-[#98A2B3]" />
+                    <Input
+                      className="h-9 border-0 p-0 shadow-none focus-visible:ring-0"
+                      placeholder="Search suppliers"
+                      value={selectedSupplier?.name ?? supplierQuery}
+                      onChange={(e) => {
+                        setSupplierId("");
+                        setSupplierQuery(e.target.value);
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="shrink-0 text-sm font-medium text-[#0B1E66]"
+                    onClick={() => toast.info("New supplier is coming soon")}
+                  >
+                    + New supplier
+                  </button>
+                </div>
+                {!selectedSupplier && supplierQuery ? (
+                  <div className="rounded-lg border border-[#EAECF0] bg-white">
+                    {filteredSuppliers.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className="block w-full px-3 py-2 text-left text-sm hover:bg-[#F9FAFB]"
+                        onClick={() => {
+                          setSupplierId(s.id);
+                          setSupplierQuery("");
                         }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  className="btn btn-primary w-full"
-                  disabled={isSubmitting || loadingProducts}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Adjusting Stock...
-                    </>
-                  ) : (
-                    "Adjust Stock"
-                  )}
-                </Button>
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {selectedSupplier ? (
+                  <div className="grid grid-cols-1 gap-2 rounded-lg border border-[#EAECF0] bg-[#F8FAFC] p-3 text-xs text-[#344054] sm:grid-cols-3">
+                    <div>
+                      <p className="text-[#98A2B3]">Contact</p>
+                      <p className="font-medium">{selectedSupplier.contact}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#98A2B3]">Phone</p>
+                      <p className="font-medium">{selectedSupplier.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#98A2B3]">Address</p>
+                      <p className="font-medium">{selectedSupplier.address}</p>
+                    </div>
+                    <p className="sm:col-span-3 text-[#667085]">
+                      Past deliveries {selectedSupplier.pastDeliveries} · last on{" "}
+                      {selectedSupplier.lastOn}
+                    </p>
+                  </div>
+                ) : null}
+              </Field>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Field label="Truck number" required>
+                  <Input
+                    placeholder="e.g. KJA 482 XY"
+                    value={truckNumber}
+                    onChange={(e) => setTruckNumber(e.target.value)}
+                    className="h-10 rounded-lg border-[#EAECF0]"
+                  />
+                </Field>
+                <Field label="Driver name (optional)">
+                  <Input
+                    placeholder="Driver's name"
+                    value={driverName}
+                    onChange={(e) => setDriverName(e.target.value)}
+                    className="h-10 rounded-lg border-[#EAECF0]"
+                  />
+                </Field>
+                <Field label="Received on" required>
+                  <Input
+                    type="datetime-local"
+                    value={receivedOn}
+                    onChange={(e) => setReceivedOn(e.target.value)}
+                    className="h-10 rounded-lg border-[#EAECF0]"
+                  />
+                </Field>
               </div>
-            </form>
-          </Form>
-        ) : (
-          <Form {...formWithWarehouse}>
-            <form
-              id="add-product-form"
-              onSubmit={formWithWarehouse.handleSubmit((values) =>
-                onSubmit(values)
-              )}
-              className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
-            >
-              <FormField
-                control={formWithWarehouse.control}
-                name="product"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product</FormLabel>
-                    <Popover open={productOpen} onOpenChange={setProductOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={productOpen}
-                            disabled={loadingProducts}
-                            className={cn(
-                              "form-control w-full justify-between font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value
-                              ? products.find(
-                                  (p) => String(p.id) === field.value?.value
-                                )?.name
-                              : loadingProducts
-                                ? "Loading products..."
-                                : "Select product..."}
-                            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-(--radix-popover-trigger-width)"
-                        align="start"
+
+              <Field label="Delivery description">
+                <textarea
+                  placeholder="What arrived, how it was packed, anything damaged"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="min-h-20 w-full resize-none rounded-lg border border-[#EAECF0] px-3 py-2 text-sm outline-none"
+                />
+              </Field>
+
+              <div className="rounded-xl border border-[#EAECF0] bg-[#F8FAFC] px-3 py-2 text-sm text-[#667085]">
+                Recorded by {recorder} (you). Added to the record automatically.
+              </div>
+            </div>
+          ) : null}
+
+          {step === 2 ? (
+            <div className="space-y-4">
+              <p className="text-sm text-[#667085]">
+                Into{" "}
+                <span className="font-medium text-[#101828]">
+                  {warehouseName} warehouse
+                </span>{" "}
+                · from {selectedSupplier?.name} · truck {truckNumber}{" "}
+                <button
+                  type="button"
+                  className="font-medium text-[#0B1E66]"
+                  onClick={() => setStep(1)}
+                >
+                  Change
+                </button>
+              </p>
+              {showErrors && errorCount > 0 ? (
+                <div className="rounded-lg border border-[#FECDCA] bg-[#FEF3F2] px-3 py-2 text-sm text-[#B42318]">
+                  {errorCount} fields need fixing before you can continue
+                </div>
+              ) : null}
+
+              {lines.map((line, index) => {
+                const errors = showErrors ? lineErrors(line) : [];
+                const total = lineTotals[index] || 0;
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      "space-y-3 rounded-xl border p-4",
+                      errors.length > 0
+                        ? "border-[#FDA29B]"
+                        : "border-[#EAECF0]",
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-[#101828]">
+                        {index + 1}{" "}
+                        {line.name || "Select a product"}
+                      </p>
+                      {line.existing ? (
+                        <span className="rounded-full bg-[#ECFDF3] px-2 py-0.5 text-[11px] font-medium text-[#027A48]">
+                          EXISTING
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <Field label="Product">
+                        <Select
+                          value={line.productId}
+                          onValueChange={(value) => applyProduct(index, value)}
+                          disabled={loadingProducts}
+                        >
+                          <SelectTrigger className="h-10 w-full! rounded-lg border-[#EAECF0]">
+                            <SelectValue placeholder="Choose product" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map((p) => (
+                              <SelectItem key={p.id} value={String(p.id)}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      <Field
+                        label="Brand"
+                        error={errors.includes("brand") ? "Add the brand" : undefined}
                       >
-                        <Command>
-                          <CommandInput
-                            placeholder="Search product..."
-                            className="h-9"
-                          />
-                          <CommandList>
-                            <CommandEmpty>
-                              {loadingProducts
-                                ? "Loading products..."
-                                : "No product found."}
-                            </CommandEmpty>
-                            <CommandGroup>
-                              {products.map((p) => (
-                                <CommandItem
-                                  key={p.id}
-                                  value={p.name}
-                                  onSelect={() => {
-                                    const id = String(p.id);
-                                    field.onChange(
-                                      field.value?.value === id
-                                        ? null
-                                        : { value: id, label: p.name }
-                                    );
-                                    setProductOpen(false);
-                                  }}
-                                >
-                                  {p.name}
-                                  <Check
-                                    className={cn(
-                                      "ml-auto",
-                                      field.value?.value === String(p.id)
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={formWithWarehouse.control}
-                name="warehouse"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Warehouse</FormLabel>
-                    <Popover
-                      open={warehouseOpen}
-                      onOpenChange={setWarehouseOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={warehouseOpen}
-                            disabled={loadingWarehouses}
-                            className={cn(
-                              "form-control w-full justify-between font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value
-                              ? warehouses.find(
-                                  (wh) =>
-                                    String(wh.id) === field.value?.value
-                                )?.name
-                              : loadingWarehouses
-                                ? "Loading warehouses..."
-                                : "Select warehouse..."}
-                            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-(--radix-popover-trigger-width)"
-                        align="start"
-                      >
-                        <Command>
-                          <CommandInput
-                            placeholder="Search warehouse..."
-                            className="h-9"
-                          />
-                          <CommandList>
-                            <CommandEmpty>
-                              {loadingWarehouses
-                                ? "Loading warehouses..."
-                                : "No warehouse found."}
-                            </CommandEmpty>
-                            <CommandGroup>
-                              {warehouses.map((wh) => (
-                                <CommandItem
-                                  key={wh.id}
-                                  value={wh.name}
-                                  onSelect={() => {
-                                    const id = String(wh.id);
-                                    field.onChange(
-                                      field.value?.value === id
-                                        ? null
-                                        : { value: id, label: wh.name }
-                                    );
-                                    setWarehouseOpen(false);
-                                  }}
-                                >
-                                  {wh.name}
-                                  <Check
-                                    className={cn(
-                                      "ml-auto",
-                                      field.value?.value === String(wh.id)
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={formWithWarehouse.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
+                        <Input
+                          placeholder="e.g. Oraimo"
+                          value={line.brand}
+                          onChange={(e) =>
+                            setLines((prev) =>
+                              prev.map((row, i) =>
+                                i === index
+                                  ? { ...row, brand: e.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                          className={cn(
+                            "h-10 rounded-lg",
+                            errors.includes("brand")
+                              ? "border-[#F04438]"
+                              : "border-[#EAECF0]",
+                          )}
+                        />
+                      </Field>
+                      <Field label="Size / variant">
+                        <Input
+                          placeholder="e.g. 128GB · Black"
+                          value={line.variant}
+                          onChange={(e) =>
+                            setLines((prev) =>
+                              prev.map((row, i) =>
+                                i === index
+                                  ? { ...row, variant: e.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                          className="h-10 rounded-lg border-[#EAECF0]"
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Specifications">
                       <Input
-                        type="number"
-                        placeholder="50"
-                        min={1}
-                        className="form-control"
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={(e) => {
-                          const v = e.target.valueAsNumber;
-                          field.onChange(Number.isFinite(v) ? v : 0);
-                        }}
+                        placeholder="Short spec line"
+                        value={line.specs}
+                        onChange={(e) =>
+                          setLines((prev) =>
+                            prev.map((row, i) =>
+                              i === index
+                                ? { ...row, specs: e.target.value }
+                                : row,
+                            ),
+                          )
+                        }
+                        className="h-10 rounded-lg border-[#EAECF0]"
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  className="btn btn-primary w-full"
-                  disabled={
-                    isSubmitting ||
-                    loadingProducts ||
-                    loadingWarehouses
-                  }
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Adjusting Stock...
-                    </>
-                  ) : (
-                    "Adjust Stock"
-                  )}
-                </Button>
+                    </Field>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <Field
+                        label="Quantity received"
+                        required
+                        error={
+                          errors.includes("quantity")
+                            ? "Enter how many arrived"
+                            : undefined
+                        }
+                      >
+                        <Input
+                          type="number"
+                          min={0}
+                          value={line.quantity}
+                          onChange={(e) =>
+                            setLines((prev) =>
+                              prev.map((row, i) =>
+                                i === index
+                                  ? { ...row, quantity: e.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                          className={cn(
+                            "h-10 rounded-lg",
+                            errors.includes("quantity")
+                              ? "border-[#F04438]"
+                              : "border-[#EAECF0]",
+                          )}
+                        />
+                      </Field>
+                      <Field label="Unit cost (₦)">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={line.unitCost}
+                          onChange={(e) =>
+                            setLines((prev) =>
+                              prev.map((row, i) =>
+                                i === index
+                                  ? { ...row, unitCost: e.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                          className="h-10 rounded-lg border-[#EAECF0]"
+                        />
+                      </Field>
+                      <Field label="Damaged on arrival">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={line.damaged}
+                          onChange={(e) =>
+                            setLines((prev) =>
+                              prev.map((row, i) =>
+                                i === index
+                                  ? { ...row, damaged: e.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                          className="h-10 rounded-lg border-[#EAECF0]"
+                        />
+                      </Field>
+                      <Field label="Line total">
+                        <p className="flex h-10 items-center text-sm font-semibold text-[#101828]">
+                          {naira(total)}
+                        </p>
+                      </Field>
+                    </div>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[#0B1E66]"
+                onClick={() => setLines((prev) => [...prev, emptyProduct()])}
+              >
+                <Plus className="size-4" />
+                Add another product
+              </button>
+            </div>
+          ) : null}
+
+          {step === 3 ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Field label="Invoice number" required>
+                  <Input
+                    value={invoiceNumber}
+                    onChange={(e) => setInvoiceNumber(e.target.value)}
+                    className="h-10 rounded-lg border-[#EAECF0]"
+                  />
+                </Field>
+                <Field label="Invoice date">
+                  <Input
+                    type="date"
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                    className="h-10 rounded-lg border-[#EAECF0]"
+                  />
+                </Field>
+                <Field label="Amount on invoice (₦)" required>
+                  <Input
+                    type="number"
+                    value={invoiceAmount}
+                    onChange={(e) => setInvoiceAmount(e.target.value)}
+                    className="h-10 rounded-lg border-[#EAECF0]"
+                  />
+                </Field>
               </div>
-            </form>
-          </Form>
-        )}
+              {Number(invoiceAmount) === productsTotal && productsTotal > 0 ? (
+                <p className="text-xs text-[#027A48]">
+                  Matches the products you entered ({naira(productsTotal)})
+                </p>
+              ) : null}
+
+              <div>
+                <p className="mb-2 text-[13px] font-medium text-[#344054]">
+                  Payment to supplier
+                </p>
+                <div className="flex flex-wrap gap-4 text-sm">
+                  {(
+                    [
+                      ["full", "Paid in full"],
+                      ["part", "Part paid"],
+                      ["unpaid", "Not paid yet"],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <label key={id} className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={payment === id}
+                        onChange={() => setPayment(id)}
+                        className="accent-[#0B1E66]"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                {payment === "part" ? (
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <Field label="Amount paid (₦)">
+                      <Input
+                        value={amountPaid}
+                        onChange={(e) => setAmountPaid(e.target.value)}
+                        className="h-10 rounded-lg border-[#EAECF0]"
+                      />
+                    </Field>
+                    <Field label="Balance">
+                      <Input
+                        value={
+                          amountPaid
+                            ? naira(
+                                Math.max(
+                                  0,
+                                  (Number(invoiceAmount) || 0) -
+                                    (Number(amountPaid) || 0),
+                                ),
+                              )
+                            : ""
+                        }
+                        readOnly
+                        className="h-10 rounded-lg border-[#FEDF89] bg-[#FFFAEB]"
+                      />
+                    </Field>
+                    <Field label="Balance due">
+                      <Input
+                        type="date"
+                        value={balanceDue}
+                        onChange={(e) => setBalanceDue(e.target.value)}
+                        className="h-10 rounded-lg border-[#EAECF0]"
+                      />
+                    </Field>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="rounded-xl border border-[#EAECF0] p-3">
+                <p className="mb-2 text-[12px] font-semibold tracking-wide text-[#667085]">
+                  CHECK BEFORE SAVING
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+                  <div>
+                    <p className="text-[#98A2B3]">Warehouse</p>
+                    <p className="font-medium text-[#101828]">{warehouseName}</p>
+                  </div>
+                  <div>
+                    <p className="text-[#98A2B3]">Supplier</p>
+                    <p className="font-medium text-[#101828]">
+                      {selectedSupplier?.name}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[#98A2B3]">Products</p>
+                    <p className="font-medium text-[#101828]">
+                      {lines.length} · {unitsTotal} units
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[#98A2B3]">Total cost</p>
+                    <p className="font-medium text-[#101828]">
+                      {naira(productsTotal)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col-reverse gap-2 border-t border-[#EAECF0] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="text-sm text-[#667085]">
+            {step === 2
+              ? `${lines.length} products · ${unitsTotal} units · ${naira(productsTotal)}`
+              : step === 3
+                ? `Adds ${unitsTotal} units to ${warehouseName} and 2 entries to the audit log`
+                : null}
+          </div>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            {step === 1 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-10 rounded-lg"
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-10 rounded-lg"
+                onClick={() => setStep((s) => (s === 3 ? 2 : 1))}
+              >
+                Back
+              </Button>
+            )}
+            {step === 1 ? (
+              <Button
+                type="button"
+                className="h-10 rounded-lg bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90"
+                onClick={goStep2}
+              >
+                Next: products
+                <ChevronRight className="size-4" />
+              </Button>
+            ) : null}
+            {step === 2 ? (
+              <Button
+                type="button"
+                className="h-10 rounded-lg bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90"
+                onClick={goStep3}
+              >
+                Next: invoice
+                <ChevronRight className="size-4" />
+              </Button>
+            ) : null}
+            {step === 3 ? (
+              <Button
+                type="button"
+                className="h-10 rounded-lg bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90"
+                disabled={saving}
+                onClick={saveStock}
+              >
+                {saving ? "Saving..." : "Save stock"}
+              </Button>
+            ) : null}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-[13px] font-medium text-[#344054]">
+        {label}
+        {required ? <span className="text-[#D92D20]"> *</span> : null}
+      </Label>
+      {children}
+      {error ? <p className="text-xs text-[#D92D20]">{error}</p> : null}
+    </div>
   );
 }

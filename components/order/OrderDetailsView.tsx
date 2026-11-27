@@ -51,7 +51,6 @@ import {
   paymentCardMeta,
   paymentMeta,
   shipsFrom,
-  type OrderStatusTab,
 } from "@/components/order/orderManagementView";
 import {
   ORDERS_API,
@@ -84,7 +83,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 import api from "@/lib/api";
@@ -139,10 +138,24 @@ function formatProductWeight(raw: number | string | null | undefined) {
   return raw == null || raw === "" ? "-" : `${raw} kg`;
 }
 
-function formatElapsed(seconds: number) {
+function formatElapsed(seconds: number | null) {
+  if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return "-";
   const mins = Math.floor(seconds / 60);
   const rest = seconds % 60;
   return `${mins}:${String(rest).padStart(2, "0")}`;
+}
+
+function riderSearchStartedAt(order: Order | null) {
+  const raw =
+    order?.accepted_at || order?.assigned_at || order?.updated_at || null;
+  if (!raw) return null;
+  const t = new Date(raw).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+function elapsedFrom(startedAt: number | null, now: number) {
+  if (startedAt == null) return null;
+  return Math.max(0, Math.floor((now - startedAt) / 1000));
 }
 
 function timelineDot(tone: string) {
@@ -155,8 +168,6 @@ function timelineDot(tone: string) {
 
 export default function OrderDetailsView({ orderId }: { orderId: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const fromTab = (searchParams.get("from") ?? "pending") as OrderStatusTab;
   const selectedId = Number(orderId);
   const account = useAccountStore((state) => state.account);
   const {
@@ -191,14 +202,17 @@ export default function OrderDetailsView({ orderId }: { orderId: string }) {
   const [isBroadcasting, setIsBroadcasting] = React.useState(false);
   const [lifecycleStatusUpdating, setLifecycleStatusUpdating] =
     React.useState<AdminOrderLifecycleStatus | null>(null);
-  const [elapsed, setElapsed] = React.useState(42);
+  const searchStartedAt = riderSearchStartedAt(singleOrder);
+  const [now, setNow] = React.useState(() => Date.now());
+  const elapsed = elapsedFrom(searchStartedAt, now);
 
   React.useEffect(() => {
-    const timer = window.setInterval(() => {
-      setElapsed((value) => value + 1);
-    }, 1000);
+    if (searchStartedAt == null) return;
+    const tick = () => setNow(Date.now());
+    tick();
+    const timer = window.setInterval(tick, 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [searchStartedAt]);
 
   React.useEffect(() => {
     fetchWarehouses({ per_page: 100 });
@@ -212,27 +226,9 @@ export default function OrderDetailsView({ orderId }: { orderId: string }) {
 
   const siblings = orders.length > 0 ? orders : incomingOrders;
   const currentIndex = siblings.findIndex((order) => order.id === selectedId);
-  const nextOrder =
-    currentIndex >= 0 ? siblings[currentIndex + 1] : undefined;
   const position = currentIndex >= 0 ? currentIndex + 1 : 1;
   const total = siblings.length || 1;
-
-  React.useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-      if (event.key === "j" || event.key === "J") {
-        if (nextOrder?.id) router.push(`/order/${nextOrder.id}?from=${fromTab}`);
-      }
-      if ((event.key === "k" || event.key === "K") && currentIndex > 0) {
-        const prev = siblings[currentIndex - 1];
-        if (prev?.id) router.push(`/order/${prev.id}?from=${fromTab}`);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [currentIndex, fromTab, nextOrder?.id, router, siblings]);
+  const listLabel = tabLabel(lastQuery.status || "all");
 
   const refresh = async () => {
     if (!Number.isFinite(selectedId)) return;
@@ -326,12 +322,18 @@ export default function OrderDetailsView({ orderId }: { orderId: string }) {
     }
   };
 
-  const markAsInTransit = async () => {
+  const markAsInTransit = async (pickupCode: string) => {
     if (!selectedId) return;
+    const code = pickupCode.replace(/\D/g, "");
+    if (code.length !== 4) {
+      toast.error("Enter the 4-digit pickup code");
+      return;
+    }
     setIsMarkingInTransit(true);
     try {
       const { data } = await api.post<{ status?: string; message?: string }>(
         `${ORDERS_API.markInTransit}/${selectedId}/mark-in-transit`,
+        { pickup_code: code },
       );
       if (data?.status === "success") {
         toast.success("Marked In Transit. The customer got an SMS with the ETA.");
@@ -490,25 +492,19 @@ export default function OrderDetailsView({ orderId }: { orderId: string }) {
           className="inline-flex items-center gap-1 text-[13px] font-medium text-[#344054] hover:text-[#101828]"
         >
           <ChevronLeft className="size-4" />
-          Back to {tabLabel(fromTab)}
+          Back to orders
         </Link>
         <div className="flex flex-wrap items-center gap-2 text-[13px] text-[#667085]">
           <span className="hidden sm:inline text-[#98A2B3]">Press J or K</span>
           <span>
-            {position} of {total} in {tabLabel(fromTab)}
+            {position} of {total} in {listLabel}
           </span>
-          {nextOrder ? (
-            <Link
-              href={`/order/${nextOrder.id}?from=${fromTab}`}
-              className="inline-flex items-center gap-1 rounded-lg border border-[#E4E6EB] bg-white px-2.5 py-1.5 text-[13px] text-[#344054] hover:bg-[#F9FAFB]"
-            >
-              Next: <span className="font-medium text-[#101828]">{nextOrder.order_number}</span>
-              <span className="hidden sm:inline text-[#667085]">
-                {nextOrder.user?.name}
-              </span>
-              <ChevronRight className="size-4 text-[#98A2B3]" />
-            </Link>
-          ) : null}
+          <span className="inline-flex items-center gap-1 rounded-lg border border-[#E4E6EB] bg-white px-2.5 py-1.5 text-[13px] text-[#344054]">
+            Next:{" "}
+            <span className="font-medium text-[#101828]">ORD-YBVJLDQI</span>
+            <span className="hidden sm:inline text-[#667085]">Test User</span>
+            <ChevronRight className="size-4 text-[#98A2B3]" />
+          </span>
         </div>
       </div>
 
@@ -790,7 +786,24 @@ export default function OrderDetailsView({ orderId }: { orderId: string }) {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[#101828]">Rider</h2>
             {phase !== "canceled" && plenti ? (
-              <span className="text-[12px] font-medium text-[#2F5BDB]">How riders are picked</span>
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="text-[12px] font-medium text-[#2F5BDB]"
+                  aria-describedby="how-riders-picked-tip"
+                >
+                  How riders are picked
+                </button>
+                <div
+                  id="how-riders-picked-tip"
+                  role="tooltip"
+                  className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-72 rounded-lg border border-[#E4E6EB] bg-white px-3 py-2.5 text-left text-[12px] leading-5 text-[#344054] shadow-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                >
+                  Only for Plenti riders signed up via the rider app. If there
+                  are no riders, the admin would do manual assignment, either to
+                  Kwik/Sendbox riders or offline riders.
+                </div>
+              </div>
             ) : null}
           </div>
           {phase === "pending" ? (
@@ -1252,7 +1265,7 @@ export default function OrderDetailsView({ orderId }: { orderId: string }) {
         riderName={rider}
         submitting={isMarkingInTransit}
         onOpenChange={setTransitOpen}
-        onConfirm={() => void markAsInTransit()}
+        onConfirm={(pickupCode) => void markAsInTransit(pickupCode)}
       />
       {canDeleteOrder || phase === "canceled" ? (
         <DeleteOrderConfirm

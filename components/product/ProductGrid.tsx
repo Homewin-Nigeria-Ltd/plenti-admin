@@ -1,42 +1,41 @@
 "use client";
 
-import * as React from "react";
 import { Product } from "@/data/products";
 import ProductCard from "./ProductCard";
+import ProductListFooter from "./ProductListFooter";
 
 type ProductGridProps = {
   products: Product[];
   total: number;
-  page: number;
-  pageCount: number;
+  loadedCount: number;
+  loadingMore?: boolean;
+  canLoadMore: boolean;
   canEditProducts: boolean;
   canDeleteProducts: boolean;
   canPublishProducts: boolean;
   selectedIds?: Set<number>;
   onSelectedChange?: (productId: number, checked: boolean) => void;
-  onPageChange: (page: number) => void;
+  onLoadMore: () => void;
   formatCurrency: (n: number) => string;
 };
 
 export default function ProductGrid({
   products,
   total,
-  page,
-  pageCount,
+  loadedCount,
+  loadingMore = false,
+  canLoadMore,
   canEditProducts,
   canDeleteProducts,
   canPublishProducts,
   selectedIds,
   onSelectedChange,
-  onPageChange,
+  onLoadMore,
   formatCurrency,
 }: ProductGridProps) {
-  const canPrev = page > 1;
-  const canNext = page < pageCount;
-
-  if (total === 0) {
+  if (total === 0 || products.length === 0) {
     return (
-      <div className="text-center py-12 text-neutral-500">
+      <div className="py-12 text-center text-sm text-[#667085]">
         No products found matching your search criteria.
       </div>
     );
@@ -44,7 +43,7 @@ export default function ProductGrid({
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {products.map((product) => (
           <ProductCard
             key={product.id}
@@ -62,32 +61,13 @@ export default function ProductGrid({
           />
         ))}
       </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white rounded-xl border border-neutral-100">
-        <p className="text-xs sm:text-sm text-neutral-500">
-          Page {page} of {pageCount}
-        </p>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
-            disabled={!canPrev}
-            onClick={() => onPageChange(page - 1)}
-            className={`flex-1 sm:flex-none rounded-full border border-neutral-100 px-3 py-1 text-xs sm:text-sm ${
-              !canPrev ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            Previous
-          </button>
-          <button
-            disabled={!canNext}
-            onClick={() => onPageChange(page + 1)}
-            className={`flex-1 sm:flex-none rounded-full border border-neutral-100 px-3 py-1 text-xs sm:text-sm ${
-              !canNext ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            Next
-          </button>
-        </div>
-      </div>
+      <ProductListFooter
+        loadedCount={loadedCount}
+        total={total}
+        canLoadMore={canLoadMore}
+        loadingMore={loadingMore}
+        onLoadMore={onLoadMore}
+      />
     </>
   );
 }
