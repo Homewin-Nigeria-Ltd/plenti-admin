@@ -9,46 +9,56 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
-import type { Product, ProductStatus } from "@/data/products";
-import { Ellipsis } from "lucide-react";
+import type { Product } from "@/data/products";
+import { Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import DataTable from "@/components/common/DataTable";
 import { EditProductModal } from "./EditProductModal";
 import { DeleteProductModal } from "./DeleteProductModal";
+import { UnpublishProductModal } from "./UnpublishProductModal";
 import { toast } from "sonner";
 import { resolveCategoryLabels } from "@/lib/mappers/categories";
 import { productDisplayImages } from "@/lib/mappers/products";
 import { useProductStore } from "@/store/useProductStore";
+import ProductListFooter from "./ProductListFooter";
+import {
+  listingBadgeClass,
+  productListingBadge,
+  productSeller,
+  productSku,
+  productStockLabel,
+  productUpdatedLabel,
+  stockToneClass,
+} from "./productManagementView";
 
 type ProductTableProps = {
   products: Product[];
   total: number;
-  page: number;
-  pageCount: number;
-  pageSize: number;
+  loadedCount: number;
+  loadingMore?: boolean;
+  canLoadMore: boolean;
   canEditProducts: boolean;
   canDeleteProducts: boolean;
   canPublishProducts: boolean;
   selectedIds?: Set<number>;
   onSelectedChange?: (productId: number, checked: boolean) => void;
   onToggleSelectAll?: (checked: boolean) => void;
-  onPageChange: (page: number) => void;
+  onLoadMore: () => void;
   formatCurrency: (n: number) => string;
 };
 
 export default function ProductTable({
   products,
   total,
-  page,
-  pageCount,
-  pageSize,
+  loadedCount,
+  loadingMore = false,
+  canLoadMore,
   canEditProducts,
   canDeleteProducts,
   canPublishProducts,
   selectedIds,
   onSelectedChange,
   onToggleSelectAll,
-  onPageChange,
+  onLoadMore,
   formatCurrency,
 }: ProductTableProps) {
   const { toggleProductStatus, togglingStatusById, categoriesTree } =
@@ -61,256 +71,18 @@ export default function ProductTable({
     null,
   );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+  const [productToUnpublish, setProductToUnpublish] =
+    React.useState<Product | null>(null);
 
   const pageIds = products
     .map((product) => Number(product.id))
     .filter((id) => Number.isFinite(id) && id > 0);
   const selectedOnPage = pageIds.filter((id) => selectedIds?.has(id)).length;
-  const allSelected =
-    pageIds.length > 0 && selectedOnPage === pageIds.length;
+  const allSelected = pageIds.length > 0 && selectedOnPage === pageIds.length;
 
-  const columns = [
-    ...(canDeleteProducts && onSelectedChange
-      ? [
-          {
-            key: "select",
-            label: (
-              <Checkbox
-                checked={allSelected}
-                onCheckedChange={(checked) => onToggleSelectAll?.(checked)}
-                aria-label="Select all products on this page"
-              />
-            ),
-            className: "w-10",
-          },
-        ]
-      : []),
-    { key: "brandName", label: "Brand Name" },
-    { key: "status", label: "Status" },
-    { key: "category", label: "Category" },
-    { key: "subCategory", label: "Sub category" },
-    { key: "amount", label: "Amount" },
-    { key: "discount", label: "Discount" },
-    { key: "bulkAmount", label: "Bulk Tiers" },
-    { key: "stockLevel", label: "Stock Level" },
-    { key: "actions", label: "Actions" },
-  ];
-
-  const tableRows = React.useMemo(() => {
-    return products.map((product) => {
-      const categoryLabels = resolveCategoryLabels(
-        typeof product.categoryId === "number" ? product.categoryId : null,
-        product.category,
-        categoriesTree
-      );
-
-      return {
-      select: canDeleteProducts && onSelectedChange ? (
-        <span onClick={(event) => event.stopPropagation()}>
-          <Checkbox
-            checked={selectedIds?.has(Number(product.id)) ?? false}
-            onCheckedChange={(checked) =>
-              onSelectedChange(Number(product.id), checked)
-            }
-            aria-label={`Select ${product.name}`}
-          />
-        </span>
-      ) : null,
-      brandName: (
-        <div className="flex items-center gap-3">
-          {(() => {
-            const urls = productDisplayImages(product);
-            const shown = urls.slice(0, 3);
-            const extra = urls.length - shown.length;
-            return (
-              <div className="flex items-center shrink-0">
-                {shown.length === 0 ? (
-                  <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#F2F4F7]" />
-                ) : (
-                  shown.map((url, index) => (
-                    <div
-                      key={`${url}-${index}`}
-                      className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-white bg-[#F2F4F7] shrink-0"
-                      style={{
-                        marginLeft: index === 0 ? 0 : -12,
-                        zIndex: shown.length - index,
-                      }}
-                    >
-                      <Image
-                        src={url}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                      {index === shown.length - 1 && extra > 0 ? (
-                        <span className="absolute inset-0 bg-[#0B1E66]/70 text-white text-[10px] font-medium flex items-center justify-center">
-                          +{extra}
-                        </span>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            );
-          })()}
-          <div>
-            <p className="font-medium text-primary-700">{product.name}</p>
-            <p className="text-neutral-500 text-xs">Product ID: {product.id}</p>
-            <p className="text-neutral-500 text-xs">{product.description}</p>
-          </div>
-        </div>
-      ),
-      status: (() => {
-        const getStatusBadgeClass = (status: ProductStatus) => {
-          switch (status) {
-            case "Available":
-              return "badge-success";
-            case "Unavailable":
-              return "badge-neutral";
-            case "LowStock":
-              return "badge-warning";
-            case "OutOfStock":
-              return "badge-danger";
-            default:
-              return "badge-neutral";
-          }
-        };
-        return (
-          <span className={`badge ${getStatusBadgeClass(product.status)}`}>
-            {product.status}
-          </span>
-        );
-      })(),
-      category: (
-        <span className="text-primary-700">{categoryLabels.category}</span>
-      ),
-      subCategory: (
-        <span className="text-primary-700">
-          {categoryLabels.subCategory || "-"}
-        </span>
-      ),
-      amount: (
-        <span className="font-semibold text-primary-700">
-          {formatCurrency(product.price)}
-        </span>
-      ),
-      discount: (
-        <span className="font-semibold text-primary-700">
-          {typeof product.discountPercent === "number" &&
-          product.discountPercent > 0
-            ? `${product.discountPercent}%`
-            : "-"}
-        </span>
-      ),
-      bulkAmount: (
-        <div className="space-y-1">
-          {(product.bulkTiers ?? []).length > 0 ? (
-            (product.bulkTiers ?? []).map((tier) => (
-              <p
-                key={`${product.id}-${tier.min_qty}-${tier.price}`}
-                className="font-semibold text-primary-700"
-              >
-                {tier.min_qty}+ · {formatCurrency(tier.price)}
-              </p>
-            ))
-          ) : (
-            <span className="font-semibold text-primary-700">
-              {formatCurrency(product.bulkPrice)}
-            </span>
-          )}
-        </div>
-      ),
-      stockLevel: (
-        <span
-          className={`font-semibold ${
-            product.stockLevel < 100 ? "text-red-600" : "text-green-600"
-          }`}
-        >
-          {new Intl.NumberFormat("en-US").format(product.stockLevel)}
-        </span>
-      ),
-      actions:
-        canEditProducts || canDeleteProducts || canPublishProducts ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Ellipsis className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="border-0">
-              {canEditProducts && (
-                <DropdownMenuItem
-                  className="text-[#0B1E66]"
-                  onClick={() => {
-                    setSelectedProduct(product);
-                    setIsEditModalOpen(true);
-                  }}
-                >
-                  Edit
-                </DropdownMenuItem>
-              )}
-              {canPublishProducts && (
-                <DropdownMenuItem
-                  disabled={!!togglingStatusById[String(product.id)]}
-                  className={
-                    product.status !== "Unavailable"
-                      ? "text-[#DD900D]"
-                      : "text-[#0F973D]"
-                  }
-                  onClick={async () => {
-                    const isActive = product.status !== "Unavailable";
-                    const ok = await toggleProductStatus(product.id);
-                    if (ok) {
-                      toast.success(
-                        isActive ? "Product unpublished" : "Product published",
-                      );
-                    } else {
-                      toast.error("Failed to update product status");
-                    }
-                  }}
-                >
-                  {product.status !== "Unavailable" ? "Unpublish" : "Publish"}
-                </DropdownMenuItem>
-              )}
-              {canDeleteProducts && (
-                <DropdownMenuItem
-                  className="text-red-500"
-                  onClick={() => {
-                    setProductToDelete(product);
-                    setIsDeleteModalOpen(true);
-                  }}
-                >
-                  Delete
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <span className="text-neutral-400">-</span>
-        ),
-      };
-    });
-  }, [
-    products,
-    categoriesTree,
-    formatCurrency,
-    toggleProductStatus,
-    togglingStatusById,
-    setSelectedProduct,
-    setIsEditModalOpen,
-    setProductToDelete,
-    setIsDeleteModalOpen,
-    canDeleteProducts,
-    canEditProducts,
-    canPublishProducts,
-    selectedIds,
-    onSelectedChange,
-  ]);
-
-  if (total === 0) {
+  if (total === 0 || products.length === 0) {
     return (
-      <div className="text-center py-12 text-neutral-500">
+      <div className="py-12 text-center text-sm text-[#667085]">
         No products found matching your search criteria.
       </div>
     );
@@ -318,17 +90,185 @@ export default function ProductTable({
 
   return (
     <>
-      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-        <DataTable
-          columns={columns}
-          rows={tableRows}
-          page={page}
-          pageCount={pageCount}
-          pageSize={pageSize}
-          total={total}
-          onPageChange={onPageChange}
-        />
+      <div className="overflow-x-auto rounded-xl border border-[#EAECF0] bg-white">
+        <table className="min-w-[920px] w-full text-left">
+          <thead>
+            <tr className="border-b border-[#EAECF0] text-[12px] font-medium text-[#667085]">
+              <th className="w-10 px-4 py-3">
+                {canDeleteProducts && onSelectedChange ? (
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={(checked) => onToggleSelectAll?.(checked)}
+                    aria-label="Select all products on this page"
+                  />
+                ) : null}
+              </th>
+              <th className="px-3 py-3">Product</th>
+              <th className="px-3 py-3">Category</th>
+              <th className="px-3 py-3">Seller</th>
+              <th className="px-3 py-3">Price</th>
+              <th className="px-3 py-3">Stock</th>
+              <th className="px-3 py-3">Status</th>
+              <th className="px-3 py-3">Last updated</th>
+              <th className="w-12 px-3 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((product) => {
+              const categoryLabels = resolveCategoryLabels(
+                typeof product.categoryId === "number"
+                  ? product.categoryId
+                  : null,
+                product.category,
+                categoriesTree,
+              );
+              const imageUrl =
+                productDisplayImages(product)[0] ?? product.imageUrl;
+              const badge = productListingBadge(product);
+              const stock = productStockLabel(product);
+              const isActive = product.status !== "Unavailable";
+
+              return (
+                <tr
+                  key={product.id}
+                  className="border-b border-[#EAECF0] last:border-0"
+                >
+                  <td className="px-4 py-3 align-middle">
+                    {canDeleteProducts && onSelectedChange ? (
+                      <span onClick={(event) => event.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedIds?.has(Number(product.id)) ?? false}
+                          onCheckedChange={(checked) =>
+                            onSelectedChange(Number(product.id), checked)
+                          }
+                          aria-label={`Select ${product.name}`}
+                        />
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-[#F8FAFC]">
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={product.name}
+                            fill
+                            className="object-contain p-1"
+                            unoptimized
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-medium text-[#101828]">
+                          {product.name}
+                        </p>
+                        <p className="text-[12px] text-[#98A2B3]">
+                          {productSku(product)}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-[13px] text-[#344054]">
+                    {categoryLabels.category}
+                  </td>
+                  <td className="px-3 py-3 text-[13px] text-[#344054]">
+                    {productSeller(product)}
+                  </td>
+                  <td className="px-3 py-3 text-[13px] font-medium text-[#101828]">
+                    {formatCurrency(product.price)}
+                  </td>
+                  <td
+                    className={`px-3 py-3 text-[13px] font-medium ${stockToneClass(stock.tone)}`}
+                  >
+                    {stock.text}
+                  </td>
+                  <td className="px-3 py-3">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${listingBadgeClass(badge)}`}
+                    >
+                      {badge}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-[13px] text-[#667085]">
+                    {productUpdatedLabel(product)}
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    {canEditProducts ||
+                    canDeleteProducts ||
+                    canPublishProducts ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-[#667085]"
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="border-0">
+                          {canEditProducts && (
+                            <DropdownMenuItem
+                              className="text-[#0B1E66]"
+                              onClick={() => {
+                                setSelectedProduct(product);
+                                setIsEditModalOpen(true);
+                              }}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+                          {canPublishProducts && (
+                            <DropdownMenuItem
+                              disabled={!!togglingStatusById[String(product.id)]}
+                              className={
+                                isActive ? "text-[#DD900D]" : "text-[#0F973D]"
+                              }
+                              onClick={async () => {
+                                if (isActive) {
+                                  setProductToUnpublish(product);
+                                  return;
+                                }
+                                const ok = await toggleProductStatus(product.id);
+                                if (ok) toast.success("Product published");
+                                else
+                                  toast.error("Failed to update product status");
+                              }}
+                            >
+                              {isActive ? "Unpublish" : "Publish"}
+                            </DropdownMenuItem>
+                          )}
+                          {canDeleteProducts && (
+                            <DropdownMenuItem
+                              className="text-red-500"
+                              onClick={() => {
+                                setProductToDelete(product);
+                                setIsDeleteModalOpen(true);
+                              }}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <span className="text-[#98A2B3]">-</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
+      <ProductListFooter
+        loadedCount={loadedCount}
+        total={total}
+        canLoadMore={canLoadMore}
+        loadingMore={loadingMore}
+        onLoadMore={onLoadMore}
+      />
       <EditProductModal
         isOpen={isEditModalOpen && canEditProducts}
         onClose={() => {
@@ -344,6 +284,11 @@ export default function ProductTable({
           setProductToDelete(null);
         }}
         product={productToDelete}
+      />
+      <UnpublishProductModal
+        isOpen={!!productToUnpublish && canPublishProducts}
+        onClose={() => setProductToUnpublish(null)}
+        product={productToUnpublish}
       />
     </>
   );

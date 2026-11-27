@@ -18,7 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { useProductStore } from "@/store/useProductStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
@@ -27,16 +28,16 @@ import { useImageCropQueue } from "@/lib/useImageCropQueue";
 import { uploadImages } from "@/lib/upload";
 import { ImageCropDialog } from "@/components/common/ImageCropDialog";
 import { ProductImagesField } from "@/components/product/ProductImagesField";
-import {
-  BulkTiersFields,
-  emptyBulkTierRow,
-  parseBulkTierRows,
-} from "@/components/product/BulkTiersFields";
+import { cn } from "@/lib/utils";
 
 type CreateProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
+
+type Visibility = "publish" | "unpublished" | "draft";
+
+const MAX_PHOTOS = 8;
 
 export function CreateProductModal({
   isOpen,
@@ -55,14 +56,21 @@ export function CreateProductModal({
   const [description, setDescription] = React.useState("");
   const [categoryId, setCategoryId] = React.useState<number | null>(null);
   const [subCategoryId, setSubCategoryId] = React.useState<number | null>(null);
+  const [brand, setBrand] = React.useState("");
+  const [modelName, setModelName] = React.useState("");
   const [amount, setAmount] = React.useState("");
-  const [initialStock, setInitialStock] = React.useState("");
+  const [compareAt, setCompareAt] = React.useState("");
+  const [sku, setSku] = React.useState("");
+  const [barcode, setBarcode] = React.useState("");
   const [weight, setWeight] = React.useState("");
+  const [hasVariants, setHasVariants] = React.useState(false);
+  const [visibility, setVisibility] = React.useState<Visibility>("publish");
+  const [specs, setSpecs] = React.useState<Array<{ key: string; value: string }>>(
+    [{ key: "", value: "" }],
+  );
   const [selectedWarehouseId, setSelectedWarehouseId] = React.useState<
     number | null
   >(null);
-  const [bulkTiers, setBulkTiers] = React.useState([emptyBulkTierRow()]);
-  const [discountPercent, setDiscountPercent] = React.useState("");
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
   const [uploadingImage, setUploadingImage] = React.useState(false);
   const selectedPreviews = useFilesPreview(selectedFiles);
@@ -74,7 +82,10 @@ export function CreateProductModal({
     handleApply: handleCropApply,
     resetQueue,
   } = useImageCropQueue((file) => {
-    setSelectedFiles((prev) => [...prev, file]);
+    setSelectedFiles((prev) => {
+      if (prev.length >= MAX_PHOTOS) return prev;
+      return [...prev, file].slice(0, MAX_PHOTOS);
+    });
   });
 
   React.useEffect(() => {
@@ -83,32 +94,53 @@ export function CreateProductModal({
     fetchWarehouses();
   }, [isOpen, fetchCategories, fetchWarehouses]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  React.useEffect(() => {
+    if (selectedWarehouseId != null) return;
+    if (warehouses.length === 0) return;
+    setSelectedWarehouseId(warehouses[0].id);
+  }, [warehouses, selectedWarehouseId]);
 
+  const resetForm = () => {
+    setProductName("");
+    setDescription("");
+    setCategoryId(null);
+    setSubCategoryId(null);
+    setBrand("");
+    setModelName("");
+    setAmount("");
+    setCompareAt("");
+    setSku("");
+    setBarcode("");
+    setWeight("");
+    setHasVariants(false);
+    setVisibility("publish");
+    setSpecs([{ key: "", value: "" }]);
+    setSelectedWarehouseId(warehouses[0]?.id ?? null);
+    setSelectedFiles([]);
+    resetQueue();
+  };
+
+  const submitProduct = async (mode: "draft" | "publish") => {
     const resolvedCategoryId = subCategoryId ?? categoryId;
     if (!resolvedCategoryId) {
       toast.error("Please select a category");
       return;
     }
-
+    if (!productName.trim()) {
+      toast.error("Please enter a product name");
+      return;
+    }
     if (selectedFiles.length === 0) {
       toast.error("Please upload at least one product image");
       return;
     }
 
     const price = Number(amount);
-    const stock = Number(initialStock);
-    const parsedTiers = parseBulkTierRows(bulkTiers);
-
     if (!Number.isFinite(price) || price <= 0) {
-      toast.error("Please enter a valid price");
+      toast.error("Please enter a valid selling price");
       return;
     }
-    if (!Number.isFinite(stock) || stock < 0) {
-      toast.error("Please enter a valid stock quantity");
-      return;
-    }
+
     const weightRaw = weight.trim();
     let weightValue: number | undefined;
     if (weightRaw !== "") {
@@ -118,29 +150,26 @@ export function CreateProductModal({
         return;
       }
     }
-    if (!parsedTiers.ok) {
-      toast.error(parsedTiers.message);
-      return;
-    }
-    if (parsedTiers.tiers.length === 0) {
-      toast.error("Please add at least one bulk tier");
-      return;
-    }
 
-    const discountRaw = discountPercent.trim();
+    const compareAtValue = Number(compareAt);
     let discount = 0;
-    if (discountRaw !== "") {
-      discount = Number(discountRaw);
-      if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
-        toast.error("Please enter a valid discount percent (0–100)");
+    if (compareAt.trim() !== "") {
+      if (!Number.isFinite(compareAtValue) || compareAtValue <= 0) {
+        toast.error("Please enter a valid compare-at price");
         return;
+      }
+      if (compareAtValue > price) {
+        discount = Math.round((1 - price / compareAtValue) * 100);
       }
     }
 
-    if (!selectedWarehouseId) {
+    const warehouseId = selectedWarehouseId ?? warehouses[0]?.id ?? null;
+    if (!warehouseId) {
       toast.error("Please select a warehouse");
       return;
     }
+
+    const isActive = mode === "publish" && visibility === "publish";
 
     setUploadingImage(true);
     const uploadResult = await uploadImages(selectedFiles, "product");
@@ -152,20 +181,20 @@ export function CreateProductModal({
     }
 
     const ok = await createProduct({
-      name: productName,
-      description,
+      name: productName.trim(),
+      description: description.trim(),
       price,
-      stock,
+      stock: 0,
       category_id: resolvedCategoryId,
-      is_active: true,
+      is_active: isActive,
       image_urls: uploadResult.urls,
-      bulk_tiers: parsedTiers.tiers,
+      bulk_tiers: [{ min_qty: 1, price }],
       discount_percent: discount,
       ...(weightValue != null ? { weight: weightValue } : {}),
       warehouses: [
         {
-          warehouse_id: selectedWarehouseId,
-          quantity: stock,
+          warehouse_id: warehouseId,
+          quantity: 0,
         },
       ],
     });
@@ -175,20 +204,16 @@ export function CreateProductModal({
       return;
     }
 
-    toast.success("Product created successfully");
-    setProductName("");
-    setDescription("");
-    setCategoryId(null);
-    setSubCategoryId(null);
-    setAmount("");
-    setInitialStock("");
-    setWeight("");
-    setSelectedWarehouseId(null);
-    setBulkTiers([emptyBulkTierRow()]);
-    setDiscountPercent("");
-    setSelectedFiles([]);
-    resetQueue();
+    toast.success(
+      mode === "draft" ? "Draft saved" : "Product created successfully",
+    );
+    resetForm();
     onClose();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitProduct(visibility === "draft" ? "draft" : "publish");
   };
 
   const selectedCategory = React.useMemo(
@@ -201,230 +226,440 @@ export function CreateProductModal({
     [selectedCategory],
   );
 
+  const busy = creatingProduct || uploadingImage;
+  const photoCount = selectedFiles.length;
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent
-          className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-[557px]! sm:w-[557px]! sm:max-w-[557px]!"
+          className="flex max-h-[92vh] w-[95vw] max-w-[980px]! flex-col gap-0 p-0 sm:max-w-[980px]!"
           showCloseButton={false}
         >
-          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
-            <DialogTitle className="text-xl sm:text-2xl font-semibold">
+          <DialogHeader className="relative border-b border-[#EAECF0] px-5 py-4 sm:px-6">
+            <DialogTitle className="text-lg font-semibold text-[#101828]">
               Create New Product
             </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm text-neutral-500">
-              Create a new product listing
+            <DialogDescription className="text-sm text-[#667085]">
+              Fields marked * are required
             </DialogDescription>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full"
+              className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-[#F2F4F7]"
             >
-              <X color="#0B1E66" size={20} cursor="pointer" />
+              <X color="#344054" size={16} />
             </button>
           </DialogHeader>
 
           <form
             id="create-product-form"
             onSubmit={handleSubmit}
-            className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
+            className="flex-1 overflow-y-auto px-5 py-5 sm:px-6"
           >
-            <div className="space-y-2">
-              <Label htmlFor="productName">Product Name</Label>
-              <Input
-                id="productName"
-                placeholder="Product Name"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                className="form-control"
-                required
-              />
-            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="space-y-6">
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[#101828]">
+                        Photos <span className="text-[#D92D20]">*</span>
+                      </p>
+                      <p className="text-xs text-[#98A2B3]">
+                        {photoCount}/{MAX_PHOTOS} · First photo is the cover
+                      </p>
+                    </div>
+                  </div>
+                  <ProductImagesField
+                    selectedPreviews={selectedPreviews}
+                    onFilesChosen={(files) => {
+                      const remaining = MAX_PHOTOS - selectedFiles.length;
+                      if (remaining <= 0) {
+                        toast.error("You can upload up to 8 photos");
+                        return;
+                      }
+                      enqueue(
+                        Array.from(files as FileList | File[]).slice(
+                          0,
+                          remaining,
+                        ),
+                      );
+                    }}
+                    onRemoveSelected={(index) => {
+                      setSelectedFiles((prev) =>
+                        prev.filter((_, i) => i !== index),
+                      );
+                    }}
+                    inputId="file-upload"
+                    fileInputRef={fileInputRef}
+                    variant="cover"
+                  />
+                </section>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Product Description</Label>
-              <textarea
-                id="description"
-                placeholder="Product Description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="form-control w-full h-auto! min-h-25 resize-none"
-                required
-              />
-            </div>
+                <section className="space-y-3">
+                  <p className="text-sm font-semibold text-[#101828]">
+                    Basic details
+                  </p>
+                  <Field label="Product name" required htmlFor="productName">
+                    <Input
+                      id="productName"
+                      placeholder="e.g. Galaxy A15 128GB"
+                      value={productName}
+                      onChange={(e) => setProductName(e.target.value)}
+                      className="h-10 rounded-lg border-[#EAECF0]"
+                      required
+                    />
+                  </Field>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field label="Category" required htmlFor="category">
+                      <Select
+                        value={categoryId == null ? "" : String(categoryId)}
+                        onValueChange={(value) => {
+                          const parsed = Number(value);
+                          setCategoryId(Number.isFinite(parsed) ? parsed : null);
+                          setSubCategoryId(null);
+                        }}
+                        disabled={loadingCategories}
+                      >
+                        <SelectTrigger
+                          id="category"
+                          className="h-10 w-full! rounded-lg border-[#EAECF0]"
+                        >
+                          <SelectValue placeholder="Pick a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categoriesTree.map((cat) => (
+                            <SelectItem key={cat.id} value={String(cat.id)}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label="Sub-category" htmlFor="subCategory">
+                      <Select
+                        value={
+                          subCategoryId == null ? "" : String(subCategoryId)
+                        }
+                        onValueChange={(value) => {
+                          const parsed = Number(value);
+                          setSubCategoryId(
+                            Number.isFinite(parsed) ? parsed : null,
+                          );
+                        }}
+                        disabled={
+                          !categoryId ||
+                          loadingCategories ||
+                          availableSubCategories.length === 0
+                        }
+                      >
+                        <SelectTrigger
+                          id="subCategory"
+                          className="h-10 w-full! rounded-lg border-[#EAECF0]"
+                        >
+                          <SelectValue placeholder="Pick a sub-category too" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableSubCategories.map((subCat) => (
+                            <SelectItem
+                              key={subCat.id}
+                              value={String(subCat.id)}
+                            >
+                              {subCat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </div>
+                  <p className="text-xs text-[#98A2B3]">
+                    Making categories? Categories and sub-categories are managed
+                    in System Config.
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field label="Brand" htmlFor="brand">
+                      <Input
+                        id="brand"
+                        placeholder="e.g. Samsung, Hisense"
+                        value={brand}
+                        onChange={(e) => setBrand(e.target.value)}
+                        className="h-10 rounded-lg border-[#EAECF0]"
+                      />
+                    </Field>
+                    <Field label="Model or size" htmlFor="modelName">
+                      <Input
+                        id="modelName"
+                        placeholder="e.g. A15, 128GB, 50kg"
+                        value={modelName}
+                        onChange={(e) => setModelName(e.target.value)}
+                        className="h-10 rounded-lg border-[#EAECF0]"
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Description" htmlFor="description">
+                    <textarea
+                      id="description"
+                      placeholder="What is it, what is in the box, why it's worth buying"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="min-h-24 w-full resize-none rounded-lg border border-[#EAECF0] px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#0B1E66]/20"
+                    />
+                  </Field>
+                </section>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="category">Select Category</Label>
-                <Select
-                  value={categoryId == null ? "" : String(categoryId)}
-                  onValueChange={(value) => {
-                    const parsed = Number(value);
-                    setCategoryId(Number.isFinite(parsed) ? parsed : null);
-                    setSubCategoryId(null);
-                  }}
-                  disabled={loadingCategories}
-                >
-                  <SelectTrigger id="category" className="form-control w-full!">
-                    <SelectValue placeholder="Select Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoriesTree.map((cat) => (
-                      <SelectItem key={cat.id} value={String(cat.id)}>
-                        {cat.name}
-                      </SelectItem>
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-[#101828]">
+                      Specifications
+                    </p>
+                    <p className="text-xs text-[#98A2B3]">
+                      Shown in a table on the product page
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {specs.map((spec, index) => (
+                      <div
+                        key={index}
+                        className="grid grid-cols-[1fr_1fr_auto] gap-2"
+                      >
+                        <Input
+                          placeholder="e.g. Storage"
+                          value={spec.key}
+                          onChange={(e) =>
+                            setSpecs((prev) =>
+                              prev.map((row, i) =>
+                                i === index
+                                  ? { ...row, key: e.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                          className="h-10 rounded-lg border-[#EAECF0]"
+                        />
+                        <Input
+                          placeholder="e.g. 128GB"
+                          value={spec.value}
+                          onChange={(e) =>
+                            setSpecs((prev) =>
+                              prev.map((row, i) =>
+                                i === index
+                                  ? { ...row, value: e.target.value }
+                                  : row,
+                              ),
+                            )
+                          }
+                          className="h-10 rounded-lg border-[#EAECF0]"
+                        />
+                        <button
+                          type="button"
+                          className="flex size-10 items-center justify-center text-[#98A2B3]"
+                          onClick={() =>
+                            setSpecs((prev) =>
+                              prev.length === 1
+                                ? [{ key: "", value: "" }]
+                                : prev.filter((_, i) => i !== index),
+                            )
+                          }
+                          aria-label="Remove specification"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="subCategory">Select Sub Category</Label>
-                <Select
-                  value={subCategoryId == null ? "" : String(subCategoryId)}
-                  onValueChange={(value) => {
-                    const parsed = Number(value);
-                    setSubCategoryId(Number.isFinite(parsed) ? parsed : null);
-                  }}
-                  disabled={
-                    !categoryId ||
-                    loadingCategories ||
-                    availableSubCategories.length === 0
-                  }
-                >
-                  <SelectTrigger
-                    id="subCategory"
-                    className="form-control w-full!"
+                  </div>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-[#0B1E66]"
+                    onClick={() =>
+                      setSpecs((prev) => [...prev, { key: "", value: "" }])
+                    }
                   >
-                    <SelectValue placeholder="Select Sub Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSubCategories.map((subCat) => (
-                      <SelectItem key={subCat.id} value={String(subCat.id)}>
-                        {subCat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <Plus className="size-4" />
+                    Add specification
+                  </button>
+                </section>
+              </div>
+
+              <div className="space-y-6">
+                <section className="space-y-3">
+                  <p className="text-sm font-semibold text-[#101828]">Pricing</p>
+                  <Field label="Selling price" required htmlFor="amount">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#667085]">
+                        ₦
+                      </span>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="215,000"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="h-10 rounded-lg border-[#EAECF0] pl-7"
+                        required
+                      />
+                    </div>
+                  </Field>
+                  <Field label="Compare-at price" htmlFor="compareAt">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#667085]">
+                        ₦
+                      </span>
+                      <Input
+                        id="compareAt"
+                        type="number"
+                        placeholder="Optional"
+                        value={compareAt}
+                        onChange={(e) => setCompareAt(e.target.value)}
+                        className="h-10 rounded-lg border-[#EAECF0] pl-7"
+                      />
+                    </div>
+                  </Field>
+                </section>
+
+                <section className="space-y-3">
+                  <p className="text-sm font-semibold text-[#101828]">
+                    Identification
+                  </p>
+                  <Field label="SKU" htmlFor="sku">
+                    <Input
+                      id="sku"
+                      placeholder="Auto-generated from name and brand"
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                      className="h-10 rounded-lg border-[#EAECF0]"
+                    />
+                  </Field>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field label="Barcode" htmlFor="barcode">
+                      <Input
+                        id="barcode"
+                        placeholder="If it has one"
+                        value={barcode}
+                        onChange={(e) => setBarcode(e.target.value)}
+                        className="h-10 rounded-lg border-[#EAECF0]"
+                      />
+                    </Field>
+                    <Field label="Weight" htmlFor="weight">
+                      <div className="relative">
+                        <Input
+                          id="weight"
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="kg"
+                          value={weight}
+                          onChange={(e) => setWeight(e.target.value)}
+                          className="h-10 rounded-lg border-[#EAECF0] pr-10"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#98A2B3]">
+                          kg
+                        </span>
+                      </div>
+                    </Field>
+                  </div>
+                  {warehouses.length > 1 ? (
+                    <Field label="Warehouse" htmlFor="warehouse">
+                      <Select
+                        value={
+                          selectedWarehouseId == null
+                            ? ""
+                            : String(selectedWarehouseId)
+                        }
+                        onValueChange={(value) => {
+                          const parsed = Number(value);
+                          setSelectedWarehouseId(
+                            Number.isFinite(parsed) ? parsed : null,
+                          );
+                        }}
+                      >
+                        <SelectTrigger
+                          id="warehouse"
+                          className="h-10 w-full! rounded-lg border-[#EAECF0]"
+                        >
+                          <SelectValue placeholder="Select warehouse" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {warehouses.map((w) => (
+                            <SelectItem key={w.id} value={String(w.id)}>
+                              {w.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  ) : null}
+                </section>
+
+                <section className="rounded-xl border border-[#EAECF0] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[#101828]">
+                        Variants
+                      </p>
+                      <p className="mt-1 text-xs text-[#667085]">
+                        Stock, colour, next-day vs pickup, second-screen
+                        listings. You&apos;ll set this up after you publish.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={hasVariants}
+                      onCheckedChange={setHasVariants}
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-3">
+                  <p className="text-sm font-semibold text-[#101828]">
+                    Visibility
+                  </p>
+                  <VisibilityOption
+                    checked={visibility === "publish"}
+                    onChange={() => setVisibility("publish")}
+                    title="Publish now"
+                    description="Live on the storefront as soon as you save."
+                  />
+                  <VisibilityOption
+                    checked={visibility === "unpublished"}
+                    onChange={() => setVisibility("unpublished")}
+                    title="Save as unpublished"
+                    description="In the catalog, hidden from shoppers."
+                  />
+                  <VisibilityOption
+                    checked={visibility === "draft"}
+                    onChange={() => setVisibility("draft")}
+                    title="Keep as draft"
+                    description="Come back to this later. Drafts stay in this list."
+                  />
+                </section>
               </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Enter Amount</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="Enter Amount"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="form-control"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="initialStock">Initial Stock Quantity</Label>
-                <Input
-                  id="initialStock"
-                  type="number"
-                  placeholder="Initial Stock Quantity"
-                  value={initialStock}
-                  onChange={(e) => setInitialStock(e.target.value)}
-                  className="form-control"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="e.g. 1.5"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  className="form-control"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="warehouse">Warehouse</Label>
-                <Select
-                  value={
-                    selectedWarehouseId == null
-                      ? ""
-                      : String(selectedWarehouseId)
-                  }
-                  onValueChange={(value) => {
-                    const parsed = Number(value);
-                    setSelectedWarehouseId(
-                      Number.isFinite(parsed) ? parsed : null,
-                    );
-                  }}
-                >
-                  <SelectTrigger
-                    id="warehouse"
-                    className="form-control w-full!"
-                  >
-                    <SelectValue placeholder="Select Warehouse" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {warehouses.map((w) => (
-                      <SelectItem key={w.id} value={String(w.id)}>
-                        {w.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <BulkTiersFields
-              idPrefix="create-bulk"
-              value={bulkTiers}
-              onChange={setBulkTiers}
-            />
-
-            <div className="space-y-2">
-              <Label htmlFor="discountPercent">Discount %</Label>
-              <Input
-                id="discountPercent"
-                type="number"
-                min={0}
-                max={100}
-                step="0.01"
-                placeholder="Discount %"
-                value={discountPercent}
-                onChange={(e) => setDiscountPercent(e.target.value)}
-                className="form-control"
-              />
-              <p className="text-xs text-[#667085]">
-                Permanent product discount. It does not expire. Timed promotions
-                belong on Flash Sales.
-              </p>
-            </div>
-
-            <ProductImagesField
-              selectedPreviews={selectedPreviews}
-              onFilesChosen={enqueue}
-              onRemoveSelected={(index) => {
-                setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-              }}
-              inputId="file-upload"
-              fileInputRef={fileInputRef}
-            />
           </form>
 
-          <div className="px-4 sm:px-6 py-4 border-t border-neutral-100">
+          <div className="flex flex-col-reverse gap-2 border-t border-[#EAECF0] px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-10 rounded-lg text-[#344054]"
+              onClick={onClose}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded-lg border-[#D0D5DD] text-[#344054]"
+              disabled={busy}
+              onClick={() => submitProduct("draft")}
+            >
+              Save as draft
+            </Button>
             <Button
               type="submit"
               form="create-product-form"
-              className="btn btn-primary w-full"
-              disabled={creatingProduct || uploadingImage}
+              className="h-10 rounded-lg bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90"
+              disabled={busy}
             >
               {uploadingImage
                 ? selectedFiles.length > 1
@@ -432,7 +667,7 @@ export function CreateProductModal({
                   : "Uploading image..."
                 : creatingProduct
                   ? "Creating product..."
-                  : "Create New Product"}
+                  : "Publish product"}
             </Button>
           </div>
         </DialogContent>
@@ -447,5 +682,62 @@ export function CreateProductModal({
         title="Crop Product Image"
       />
     </>
+  );
+}
+
+function Field({
+  label,
+  required,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={htmlFor} className="text-[13px] font-medium text-[#344054]">
+        {label}
+        {required ? <span className="text-[#D92D20]"> *</span> : null}
+      </Label>
+      {children}
+    </div>
+  );
+}
+
+function VisibilityOption({
+  checked,
+  onChange,
+  title,
+  description,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  title: string;
+  description: string;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3",
+        checked ? "border-[#0B1E66] bg-[#F8FAFF]" : "border-[#EAECF0] bg-white",
+      )}
+    >
+      <input
+        type="radio"
+        name="visibility"
+        checked={checked}
+        onChange={onChange}
+        className="mt-1 size-4 accent-[#0B1E66]"
+      />
+      <span>
+        <span className="block text-sm font-medium text-[#101828]">{title}</span>
+        <span className="mt-0.5 block text-xs text-[#667085]">
+          {description}
+        </span>
+      </span>
+    </label>
   );
 }

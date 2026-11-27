@@ -227,7 +227,7 @@ export default function OrderTableWrapper() {
 
   const openOrder = (order: Order) => {
     if (!canViewOrderDetails || order.id == null) return;
-    router.push(`/order/${order.id}?from=${tab}`);
+    router.push(`/order/${order.id}`);
   };
 
   const handleExport = async () => {

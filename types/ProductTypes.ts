@@ -124,7 +124,12 @@ export type ProductState = {
   perPage: number;
   categoryOptions: Array<{ id: number; name: string }>;
   categoriesTree: AdminCategory[];
-  lastQuery: { page: number; categoryId: number | null; search: string };
+  lastQuery: {
+    page: number;
+    categoryId: number | null;
+    search: string;
+    append?: boolean;
+  };
 
   fetchCategories: () => Promise<boolean>;
   createProduct: (payload: CreateProductRequest) => Promise<boolean>;
@@ -136,6 +141,7 @@ export type ProductState = {
     page?: number;
     categoryId?: number | null;
     search?: string;
+    append?: boolean;
   }) => Promise<boolean>;
 
   toggleProductStatus: (productId: string | number) => Promise<boolean>;
@@ -156,6 +162,10 @@ export type AdminProductsResponse = {
       id: number;
       name: string;
       sku?: string | null;
+      seller?: string | { name?: string | null } | null;
+      warehouse?: { name?: string | null } | null;
+      warehouse_name?: string | null;
+      updated_at?: string | null;
       slug?: string | null;
       description: string | null;
       category_id: number | null;

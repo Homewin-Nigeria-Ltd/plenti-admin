@@ -12,43 +12,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { X, Loader2, Check, ChevronsUpDown, Plus, Trash2 } from "lucide-react";
+import { ArrowLeftRight, Plus, X } from "lucide-react";
 import { toast } from "sonner";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { cn } from "@/lib/utils";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import api from "@/lib/api";
 import { INVENTORY_API } from "@/data/inventory";
-import type { InventoryListResponse } from "@/types/InventoryTypes";
+import type { InventoryItemApi, InventoryListResponse } from "@/types/InventoryTypes";
+import { TRANSFER_REASONS, qtyAtWarehouse } from "./inventoryView";
+import { cn } from "@/lib/utils";
 
 function getApiErrorMessage(err: unknown): string | null {
   if (typeof err !== "object" || err === null) return null;
@@ -60,39 +37,7 @@ function getApiErrorMessage(err: unknown): string | null {
   return typeof message === "string" ? message : null;
 }
 
-const newTransferFormSchema = z
-  .object({
-    from_warehouse_id: z.string().min(1, "Please select source warehouse"),
-    to_warehouse_id: z.string().min(1, "Please select destination warehouse"),
-    note: z.string().optional(),
-    items: z
-      .array(
-        z.object({
-          product_id: z.string().min(1, "Please select a product"),
-          quantity: z
-            .number()
-            .int("Quantity must be a whole number")
-            .min(1, "Quantity must be at least 1"),
-        })
-      )
-      .min(1, "Add at least one item"),
-  })
-  .refine(
-    (data) => data.from_warehouse_id !== data.to_warehouse_id,
-    { message: "Source and destination must be different", path: ["to_warehouse_id"] }
-  )
-  .superRefine((data, ctx) => {
-    const ids = data.items.map((i) => i.product_id).filter(Boolean);
-    if (new Set(ids).size !== ids.length) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Duplicate products are not allowed",
-        path: ["items"],
-      });
-    }
-  });
-
-type NewTransferFormValues = z.infer<typeof newTransferFormSchema>;
+type Line = { product_id: string; quantity: number };
 
 type NewStockTransferModalProps = {
   isOpen: boolean;
@@ -105,54 +50,26 @@ export function NewStockTransferModal({
   onClose,
   onSuccess,
 }: NewStockTransferModalProps) {
-  const { warehouses, loadingWarehouses, fetchWarehouses } = useInventoryStore();
-  const [sourceProducts, setSourceProducts] = React.useState<
-    { id: number; name: string }[]
-  >([]);
+  const { warehouses, fetchWarehouses } = useInventoryStore();
+  const [fromId, setFromId] = React.useState("");
+  const [toId, setToId] = React.useState("");
+  const [reason, setReason] = React.useState("");
+  const [truck, setTruck] = React.useState("");
+  const [note, setNote] = React.useState("");
+  const [lines, setLines] = React.useState<Line[]>([{ product_id: "", quantity: 1 }]);
+  const [sourceProducts, setSourceProducts] = React.useState<InventoryItemApi[]>([]);
   const [loadingProducts, setLoadingProducts] = React.useState(false);
-  const [openProductRow, setOpenProductRow] = React.useState<number | null>(null);
-  const prevFromWarehouseRef = React.useRef<string>("");
-
-  const form = useForm<NewTransferFormValues>({
-    resolver: zodResolver(newTransferFormSchema),
-    defaultValues: {
-      from_warehouse_id: "",
-      to_warehouse_id: "",
-      note: "",
-      items: [{ product_id: "", quantity: 1 }],
-    },
-  });
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "items",
-  });
-
-  const fromWarehouseId = useWatch({
-    control: form.control,
-    name: "from_warehouse_id",
-  });
+  const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
-    if (isOpen) fetchWarehouses();
+    if (isOpen) fetchWarehouses({ per_page: 100 });
   }, [isOpen, fetchWarehouses]);
 
   React.useEffect(() => {
-    if (!isOpen) return;
-
-    if (!fromWarehouseId) {
+    if (!isOpen || !fromId) {
       setSourceProducts([]);
-      setLoadingProducts(false);
-      form.setValue("items", [{ product_id: "", quantity: 1 }]);
-      prevFromWarehouseRef.current = "";
       return;
     }
-
-    if (prevFromWarehouseRef.current !== fromWarehouseId) {
-      prevFromWarehouseRef.current = fromWarehouseId;
-      form.setValue("items", [{ product_id: "", quantity: 1 }]);
-      setOpenProductRow(null);
-    }
-
     let cancelled = false;
     setLoadingProducts(true);
     api
@@ -161,13 +78,11 @@ export function NewStockTransferModal({
           page: 1,
           per_page: 200,
           search: "",
-          warehouse_id: Number(fromWarehouseId),
+          warehouse_id: Number(fromId),
         },
       })
       .then((res) => {
-        if (cancelled) return;
-        const list = res.data?.data?.data ?? [];
-        setSourceProducts(list.map((item) => ({ id: item.id, name: item.name })));
+        if (!cancelled) setSourceProducts(res.data?.data?.data ?? []);
       })
       .catch(() => {
         if (!cancelled) setSourceProducts([]);
@@ -175,381 +90,365 @@ export function NewStockTransferModal({
       .finally(() => {
         if (!cancelled) setLoadingProducts(false);
       });
-
     return () => {
       cancelled = true;
     };
-  }, [isOpen, fromWarehouseId, form]);
+  }, [isOpen, fromId]);
 
   React.useEffect(() => {
-    if (!isOpen) {
-      form.reset({
-        from_warehouse_id: "",
-        to_warehouse_id: "",
-        note: "",
-        items: [{ product_id: "", quantity: 1 }],
-      });
-      setSourceProducts([]);
-      setOpenProductRow(null);
-      prevFromWarehouseRef.current = "";
+    if (isOpen) return;
+    setFromId("");
+    setToId("");
+    setReason("");
+    setTruck("");
+    setNote("");
+    setLines([{ product_id: "", quantity: 1 }]);
+    setSourceProducts([]);
+  }, [isOpen]);
+
+  const swapWarehouses = () => {
+    const nextFrom = toId;
+    const nextTo = fromId;
+    setFromId(nextFrom);
+    setToId(nextTo);
+    setLines([{ product_id: "", quantity: 1 }]);
+  };
+
+  const units = lines.reduce((sum, line) => sum + (Number(line.quantity) || 0), 0);
+  const productCount = lines.filter((l) => l.product_id).length;
+
+  const submit = async () => {
+    if (!fromId || !toId) {
+      toast.error("Choose both warehouses");
+      return;
     }
-  }, [isOpen, form]);
-
-  const onSubmit = async (values: NewTransferFormValues) => {
+    if (fromId === toId) {
+      toast.error("Source and destination must be different");
+      return;
+    }
+    if (!reason) {
+      toast.error("Please choose a reason");
+      return;
+    }
+    const sanitized = lines
+      .filter((item) => item.product_id && item.quantity > 0)
+      .map((item) => ({
+        productId: Number(item.product_id),
+        qty: item.quantity,
+        product_id: Number(item.product_id),
+        quantity: item.quantity,
+      }));
+    if (sanitized.length === 0) {
+      toast.error("Please add at least one product");
+      return;
+    }
+    setSaving(true);
     try {
-      const sanitizedItems = values.items
-        .filter(
-          (item) =>
-            typeof item.product_id === "string" &&
-            item.product_id.trim() !== "" &&
-            Number.isFinite(item.quantity) &&
-            item.quantity > 0
-        )
-        .map((item) => {
-          const productId = Number.parseInt(item.product_id, 10);
-          const quantity = item.quantity;
-          return {
-            // Send both key styles for temporary backend compatibility.
-            productId,
-            qty: quantity,
-            product_id: productId,
-            quantity,
-          };
-        });
-
-      if (sanitizedItems.length === 0) {
-        toast.error("Please add at least one valid item");
-        return;
-      }
-
+      const composedNote = [reason, truck && `Truck ${truck}`, note.trim()]
+        .filter(Boolean)
+        .join(" · ");
       const { data } = await api.post<{ status?: string; message?: string }>(
         INVENTORY_API.transfer,
         {
-          source_warehouse_id: Number.parseInt(values.from_warehouse_id, 10),
-          destination_warehouse_id: Number.parseInt(values.to_warehouse_id, 10),
-          note: values.note?.trim() || undefined,
-          items: sanitizedItems,
-        }
+          source_warehouse_id: Number(fromId),
+          destination_warehouse_id: Number(toId),
+          note: composedNote || undefined,
+          items: sanitized,
+        },
       );
-
       if (data?.status !== "success") {
-        const msg =
-          typeof data?.message === "string"
-            ? data.message
-            : "Failed to initiate transfer";
-        toast.error(msg);
+        toast.error(data?.message || "Failed to initiate transfer");
         return;
       }
-
-      toast.success("Stock transfer initiated successfully");
+      toast.success("Stock transfer requested");
       onSuccess?.();
-      form.reset({
-        from_warehouse_id: "",
-        to_warehouse_id: "",
-        note: "",
-        items: [{ product_id: "", quantity: 1 }],
-      });
       onClose();
     } catch (error) {
-      const message =
-        getApiErrorMessage(error) ?? "Failed to initiate transfer";
-      console.error("Error initiating transfer =>", error);
-      toast.error(message);
+      toast.error(getApiErrorMessage(error) ?? "Failed to initiate transfer");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const isSubmitting = form.formState.isSubmitting;
-  const rootItemsError = form.formState.errors.items?.message;
-  const toWarehouseOptions = warehouses.filter(
-    (wh) => String(wh.id) !== fromWarehouseId
-  );
+  const fromName = warehouses.find((w) => String(w.id) === fromId)?.name || "source";
+  const toName = warehouses.find((w) => String(w.id) === toId)?.name || "destination";
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-h-[90vh] flex flex-col p-0 w-[95vw] max-w-lg sm:max-w-lg"
+        className="flex max-h-[92vh] w-[95vw] max-w-[720px]! flex-col gap-0 p-0 sm:max-w-[720px]!"
         showCloseButton={false}
       >
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-neutral-100 relative">
-          <DialogTitle className="text-xl sm:text-2xl font-semibold">
-            New Stock Transfer
+        <DialogHeader className="relative border-b border-[#EAECF0] px-5 py-4 sm:px-6">
+          <DialogTitle className="text-lg font-semibold text-[#101828]">
+            Transfer stock
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-neutral-500">
-            Move stock between warehouses. Ensure sufficient stock is available
-            at the source.
+          <DialogDescription className="text-sm text-[#667085]">
+            Move stock between warehouses. A manager at the sending warehouse
+            approves it first.
           </DialogDescription>
           <button
             type="button"
             onClick={onClose}
+            className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-[#F2F4F7]"
             aria-label="Close dialog"
-            disabled={isSubmitting}
-            className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center justify-center size-7.5 bg-[#E8EEFF] rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <X color="#0B1E66" size={20} cursor="pointer" />
+            <X size={16} color="#344054" />
           </button>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 sm:space-y-6"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="from_warehouse_id"
-                render={({ field }) => (
-                  <FormItem className="min-w-0 w-full">
-                    <FormLabel>Source Warehouse</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={loadingWarehouses}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="form-control w-full min-w-0 overflow-hidden **:data-[slot=select-value]:truncate">
-                          <SelectValue placeholder="Select warehouse" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {warehouses.map((wh) => (
-                          <SelectItem key={wh.id} value={String(wh.id)}>
-                            {wh.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="to_warehouse_id"
-                render={({ field }) => (
-                  <FormItem className="min-w-0 w-full">
-                    <FormLabel>Destination Warehouse</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={loadingWarehouses}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="form-control w-full min-w-0 overflow-hidden **:data-[slot=select-value]:truncate">
-                          <SelectValue placeholder="Select warehouse" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {toWarehouseOptions.map((wh) => (
-                          <SelectItem key={wh.id} value={String(wh.id)}>
-                            {wh.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+            <label className="space-y-1.5">
+              <span className="text-[13px] font-medium text-[#344054]">
+                From <span className="text-[#D92D20]">*</span>
+              </span>
+              <Select value={fromId} onValueChange={setFromId}>
+                <SelectTrigger className="h-10 w-full! rounded-lg border-[#EAECF0]">
+                  <SelectValue placeholder="Choose a warehouse" />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses.map((w) => (
+                    <SelectItem key={w.id} value={String(w.id)}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <button
+              type="button"
+              onClick={swapWarehouses}
+              className="mb-1 flex size-10 items-center justify-center rounded-lg border border-[#EAECF0] text-[#667085]"
+              aria-label="Swap warehouses"
+            >
+              <ArrowLeftRight className="size-4" />
+            </button>
+            <label className="space-y-1.5">
+              <span className="text-[13px] font-medium text-[#344054]">
+                To <span className="text-[#D92D20]">*</span>
+              </span>
+              <Select value={toId} onValueChange={setToId}>
+                <SelectTrigger className="h-10 w-full! rounded-lg border-[#EAECF0]">
+                  <SelectValue placeholder="Choose a warehouse" />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses
+                    .filter((w) => String(w.id) !== fromId)
+                    .map((w) => (
+                      <SelectItem key={w.id} value={String(w.id)}>
+                        {w.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </label>
+          </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <FormLabel>Select Product</FormLabel>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-primary"
-                  onClick={() => append({ product_id: "", quantity: 1 })}
-                  disabled={!fromWarehouseId || loadingProducts || isSubmitting}
-                >
-                  <Plus className="size-4 mr-1" />
-                  Add item
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                {fields.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="grid grid-cols-1 sm:grid-cols-[1fr_130px_40px] gap-2 items-start"
-                  >
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.product_id`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <Popover
-                            open={openProductRow === index}
-                            onOpenChange={(open) =>
-                              setOpenProductRow(open ? index : null)
+          <div>
+            <p className="mb-2 text-[13px] font-medium text-[#344054]">
+              Products <span className="text-[#D92D20]">*</span>
+            </p>
+            <div className="overflow-hidden rounded-xl border border-[#EAECF0]">
+              <table className="w-full text-left text-[13px]">
+                <thead>
+                  <tr className="border-b border-[#EAECF0] bg-[#F9FAFB] text-[12px] text-[#667085]">
+                    <th className="px-3 py-2">Product</th>
+                    <th className="px-3 py-2">At {fromName}</th>
+                    <th className="px-3 py-2">At {toName}</th>
+                    <th className="px-3 py-2">Send</th>
+                    <th className="w-8" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {lines.map((line, index) => {
+                    const product = sourceProducts.find(
+                      (p) => String(p.id) === line.product_id,
+                    );
+                    const atFrom = product
+                      ? Number(product.stock) || 0
+                      : "-";
+                    const atTo = product
+                      ? qtyAtWarehouse(product, Number(toId) || 0)
+                      : "-";
+                    return (
+                      <tr key={index} className="border-b border-[#EAECF0] last:border-0">
+                        <td className="px-3 py-2">
+                          <Select
+                            value={line.product_id}
+                            onValueChange={(value) =>
+                              setLines((prev) =>
+                                prev.map((row, i) =>
+                                  i === index
+                                    ? { ...row, product_id: value }
+                                    : row,
+                                ),
+                              )
+                            }
+                            disabled={!fromId || loadingProducts}
+                          >
+                            <SelectTrigger className="h-9 w-full! rounded-lg border-[#EAECF0]">
+                              <SelectValue
+                                placeholder={
+                                  loadingProducts
+                                    ? "Loading..."
+                                    : "Choose product"
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sourceProducts.map((p) => (
+                                <SelectItem key={p.id} value={String(p.id)}>
+                                  {p.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {product?.sku ? (
+                            <p className="mt-0.5 text-[11px] text-[#98A2B3]">
+                              {product.sku}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2 font-medium text-[#101828]">
+                          {atFrom}
+                          {typeof atFrom === "number" && atFrom > 0 ? (
+                            <p className="text-[11px] font-normal text-[#98A2B3]">
+                              3 held for orders
+                            </p>
+                          ) : null}
+                        </td>
+                        <td
+                          className={cn(
+                            "px-3 py-2 font-medium",
+                            typeof atTo === "number" && atTo <= 0
+                              ? "text-[#B42318]"
+                              : "text-[#B54708]",
+                          )}
+                        >
+                          {atTo}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={line.quantity}
+                            onChange={(e) =>
+                              setLines((prev) =>
+                                prev.map((row, i) =>
+                                  i === index
+                                    ? {
+                                        ...row,
+                                        quantity: Number(e.target.value) || 0,
+                                      }
+                                    : row,
+                                ),
+                              )
+                            }
+                            className="h-9 w-20 rounded-lg border-[#EAECF0]"
+                          />
+                        </td>
+                        <td className="px-1">
+                          <button
+                            type="button"
+                            className="text-[#98A2B3]"
+                            onClick={() =>
+                              setLines((prev) =>
+                                prev.length === 1
+                                  ? [{ product_id: "", quantity: 1 }]
+                                  : prev.filter((_, i) => i !== index),
+                              )
                             }
                           >
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  role="combobox"
-                                  aria-expanded={openProductRow === index}
-                                  disabled={!fromWarehouseId || loadingProducts}
-                                  className={cn(
-                                    "form-control w-full justify-between font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value
-                                    ? sourceProducts.find(
-                                        (p) => String(p.id) === field.value
-                                      )?.name
-                                    : !fromWarehouseId
-                                      ? "Select source warehouse first"
-                                      : loadingProducts
-                                        ? "Loading products..."
-                                        : "Select product"}
-                                  <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-(--radix-popover-trigger-width) p-0"
-                              align="start"
-                            >
-                              <Command>
-                                <CommandInput
-                                  placeholder="Search product..."
-                                  className="h-9"
-                                />
-                                <CommandList>
-                                  <CommandEmpty>
-                                    {loadingProducts
-                                      ? "Loading..."
-                                      : "No product found in this warehouse."}
-                                  </CommandEmpty>
-                                  <CommandGroup>
-                                    {sourceProducts.map((product) => (
-                                      <CommandItem
-                                        key={product.id}
-                                        value={product.name}
-                                        onSelect={() => {
-                                          field.onChange(String(product.id));
-                                          setOpenProductRow(null);
-                                        }}
-                                      >
-                                        {product.name}
-                                        <Check
-                                          className={cn(
-                                            "ml-auto",
-                                            field.value === String(product.id)
-                                              ? "opacity-100"
-                                              : "opacity-0"
-                                          )}
-                                        />
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.quantity`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="QTY"
-                              min={1}
-                              className="form-control"
-                              {...field}
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const v = e.target.valueAsNumber;
-                                field.onChange(Number.isFinite(v) ? v : 0);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-[53px] px-0 text-neutral-500 hover:text-red-600"
-                      onClick={() => {
-                        if (fields.length <= 1) return;
-                        remove(index);
-                        setOpenProductRow((current) => {
-                          if (current == null) return null;
-                          if (current === index) return null;
-                          if (current > index) return current - 1;
-                          return current;
-                        });
-                      }}
-                      disabled={fields.length <= 1 || isSubmitting}
-                    >
-                      <Trash2 className="size-5" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-
-              {typeof rootItemsError === "string" ? (
-                <p className="text-sm text-red-600">{rootItemsError}</p>
-              ) : null}
+                            <X className="size-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
+            <button
+              type="button"
+              className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#0B1E66]"
+              onClick={() =>
+                setLines((prev) => [...prev, { product_id: "", quantity: 1 }])
+              }
+              disabled={!fromId}
+            >
+              <Plus className="size-4" />
+              Add product
+            </button>
+          </div>
 
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Note <span className="text-neutral-400">(Optional)</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Add a note for this transfer"
-                      rows={3}
-                      className="form-control min-h-[96px] resize-y"
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="space-y-1.5">
+              <span className="text-[13px] font-medium text-[#344054]">
+                Reason <span className="text-[#D92D20]">*</span>
+              </span>
+              <Select value={reason} onValueChange={setReason}>
+                <SelectTrigger className="h-10 w-full! rounded-lg border-[#EAECF0]">
+                  <SelectValue placeholder="Choose reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TRANSFER_REASONS.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-[13px] font-medium text-[#344054]">
+                Truck or bike (optional)
+              </span>
+              <Input
+                placeholder="Enter truck or bike"
+                value={truck}
+                onChange={(e) => setTruck(e.target.value)}
+                className="h-10 rounded-lg border-[#EAECF0]"
+              />
+            </label>
+          </div>
+
+          <label className="block space-y-1.5">
+            <span className="text-[13px] font-medium text-[#344054]">
+              Note for the receiving team (optional)
+            </span>
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Write note for the receiving team"
+              className="min-h-20 rounded-lg border-[#EAECF0]"
             />
+          </label>
+        </div>
 
-            <div className="pt-4">
-              <Button
-                type="submit"
-                className="btn btn-primary w-full bg-[#0B1E66] hover:bg-[#0B1E66]"
-                disabled={
-                  isSubmitting || loadingWarehouses || loadingProducts
-                }
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Initiating...
-                  </>
-                ) : (
-                  "Initiate Transfer"
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+        <div className="flex flex-col gap-2 border-t border-[#EAECF0] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p className="text-sm text-[#667085]">
+            {units} units · {productCount} products · about 3 hours by road
+          </p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-10 rounded-lg"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="h-10 rounded-lg bg-[#0B1E66] text-white hover:bg-[#0B1E66]/90"
+              disabled={saving}
+              onClick={submit}
+            >
+              {saving ? "Requesting..." : "Request transfer"}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

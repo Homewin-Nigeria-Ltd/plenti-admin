@@ -3,14 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ALL_PRODUCTS_CATEGORY } from "@/data/products";
+import { getTopLevelCategories } from "@/lib/mappers/categories";
 import { getProductPermissions } from "@/lib/modulePermissions";
 import { cn } from "@/lib/utils";
 import { useAccountStore } from "@/store/useAccountStore";
 import { useProductStore } from "@/store/useProductStore";
-import { Plus, Search } from "lucide-react";
-import Image from "next/image";
+import { LayoutGrid, List, Plus, Search, Upload } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
@@ -18,6 +16,13 @@ import { CreateProductModal } from "./CreateProductModal";
 import { BulkDeleteProductModal } from "./DeleteProductModal";
 import ProductGrid from "./ProductGrid";
 import ProductTable from "./ProductTable";
+import {
+  FALLBACK_PUBLISHED_COUNT,
+  FALLBACK_UNPUBLISHED_COUNT,
+  FALLBACK_VENDOR_PENDING,
+  productMatchesListingFilter,
+  type ProductListingFilter,
+} from "./productManagementView";
 
 export default function ProductCatalog() {
   const account = useAccountStore((state) => state.account);
@@ -26,7 +31,7 @@ export default function ProductCatalog() {
     loadingProducts,
     fetchProducts,
     fetchCategories,
-    categoryOptions,
+    categoriesTree,
     currentPage,
     lastPage,
     totalItems,
@@ -37,11 +42,15 @@ export default function ProductCatalog() {
   >(null);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
+  const [listingFilter, setListingFilter] =
+    React.useState<ProductListingFilter>("all");
+  const [sellerFilter, setSellerFilter] = React.useState("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [selectedIds, setSelectedIds] = React.useState<Set<number>>(
     () => new Set(),
   );
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = React.useState(false);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const pageSize = perPage || 20;
   const [debouncedSearch] = useDebounce(searchQuery, 400);
   const {
@@ -64,7 +73,6 @@ export default function ProductCatalog() {
       minimumFractionDigits: 0,
     }).format(n);
 
-  // Fetch products when filters/search change (reset to page 1).
   React.useEffect(() => {
     if (!canViewProducts) return;
     fetchProducts({
@@ -103,17 +111,50 @@ export default function ProductCatalog() {
     [products],
   );
 
-  const categories = React.useMemo(() => {
-    return [
-      { value: ALL_PRODUCTS_CATEGORY, label: ALL_PRODUCTS_CATEGORY },
-      ...categoryOptions
-        .filter((c) => c.id > 0)
-        .map((c) => ({ value: String(c.id), label: c.name })),
-    ];
-  }, [categoryOptions]);
+  const parentCategories = React.useMemo(
+    () => getTopLevelCategories(categoriesTree).filter((c) => c.id > 0),
+    [categoriesTree],
+  );
+
+  const visibleProducts = React.useMemo(() => {
+    return products.filter((product) => {
+      if (!productMatchesListingFilter(product, listingFilter)) return false;
+      if (sellerFilter !== "all") {
+        const seller = (product.seller ?? "Plenti").toLowerCase();
+        if (seller !== sellerFilter.toLowerCase()) return false;
+      }
+      return true;
+    });
+  }, [products, listingFilter, sellerFilter]);
+
+  const productCountLabel = loadingProducts
+    ? "-"
+    : totalItems.toLocaleString("en-US");
+  const publishedLabel = loadingProducts
+    ? "-"
+    : FALLBACK_PUBLISHED_COUNT.toLocaleString("en-US");
+  const unpublishedLabel = loadingProducts
+    ? "-"
+    : FALLBACK_UNPUBLISHED_COUNT.toLocaleString("en-US");
+
+  const toggleListingFilter = (value: ProductListingFilter) => {
+    setListingFilter((prev) => (prev === value ? "all" : value));
+  };
+
+  const loadMore = async () => {
+    if (loadingMore || currentPage >= lastPage) return;
+    setLoadingMore(true);
+    await fetchProducts({
+      page: currentPage + 1,
+      categoryId: selectedCategoryId,
+      search: debouncedSearch,
+      append: true,
+    });
+    setLoadingMore(false);
+  };
 
   return (
-    <div className="min-w-0 space-y-4 md:space-y-6">
+    <div className="min-w-0 space-y-4 md:space-y-5">
       {!canViewProducts ? (
         <div className="rounded-xl border border-[#EAECF0] bg-[#F9FAFB] p-12 text-center">
           <p className="text-sm text-[#667085]">
@@ -122,24 +163,22 @@ export default function ProductCatalog() {
         </div>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <div className="border border-neutral-100 rounded-xl h-12.5 flex items-center gap-1 p-2 px-4 shadow-sm flex-1 max-w-full sm:max-w-md">
-              <Search className="size-5 text-neutral-500 shrink-0" />
-              <Input
-                className="w-full placeholder:text-primary-700 border-0 outline-none focus-visible:ring-0 shadow-none"
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="text-[24px] leading-8 font-semibold text-[#101828] tracking-tight">
+                Product Management
+              </h1>
+              <p className="mt-1 text-sm text-[#667085]">
+                {productCountLabel} products · {publishedLabel} published ·{" "}
+                {unpublishedLabel} unpublished
+              </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {canDeleteProducts ? (
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {canDeleteProducts && selectedIds.size > 0 ? (
                 <Button
                   variant="outline"
-                  className="btn btn-outline w-full sm:w-auto rounded-lg"
-                  disabled={selectedIds.size === 0}
+                  className="h-9 rounded-lg border-[#EAECF0] text-[13px] font-medium text-[#344054]"
                   onClick={() => {
-                    if (selectedIds.size === 0) return;
                     if (selectedIds.size > 100) {
                       toast.error("You can delete up to 100 products at once");
                       return;
@@ -147,196 +186,223 @@ export default function ProductCatalog() {
                     setIsBulkDeleteOpen(true);
                   }}
                 >
-                  Delete Selected
+                  Delete selected
                 </Button>
               ) : null}
-              {canCreateProducts && (
-                <Button
-                  className="btn btn-primary w-full sm:w-auto rounded-lg"
-                  onClick={() => setIsCreateModalOpen(true)}
+              {canCreateProducts ? (
+                <>
+                  <Button
+                    variant="outline"
+                    className="h-9 rounded-lg border-[#D0D5DD] bg-white text-[13px] font-medium text-[#344054]"
+                    onClick={() =>
+                      toast.info("Bulk upload is not available yet")
+                    }
+                  >
+                    <Upload className="size-3.5" />
+                    Bulk upload
+                  </Button>
+                  <Button
+                    className="h-9 rounded-lg bg-[#0B1E66] hover:bg-[#0B1E66]/90 text-[13px] font-medium text-white"
+                    onClick={() => setIsCreateModalOpen(true)}
+                  >
+                    <Plus className="size-3.5" />
+                    Add New Product
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-xl border border-[#FEDF89] bg-[#FFFAEB] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-[#B54708]">
+              {FALLBACK_VENDOR_PENDING} vendor listings are waiting for
+              approval. They show up here with the seller&apos;s name once
+              approved.
+            </p>
+            <button
+              type="button"
+              className="shrink-0 text-sm font-semibold text-[#B54708] underline-offset-2 hover:underline"
+              onClick={() => toast.info("Vendor listing review is coming soon")}
+            >
+              Review listings
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <div className="flex min-w-max items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setSelectedCategoryId(null)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium whitespace-nowrap",
+                  selectedCategoryId == null
+                    ? "bg-[#0B1E66] text-white"
+                    : "text-[#667085] hover:bg-[#F2F4F7]",
+                )}
+              >
+                All
+                <span
+                  className={cn(
+                    "text-[12px]",
+                    selectedCategoryId == null
+                      ? "text-white/80"
+                      : "text-[#98A2B3]",
+                  )}
                 >
-                  <Plus className="size-4" />
-                  <span className="hidden sm:inline">Add New Product</span>
-                  <span className="sm:hidden">Add</span>
-                </Button>
-              )}
+                  {loadingProducts ? "-" : totalItems.toLocaleString("en-US")}
+                </span>
+              </button>
+              {parentCategories.map((category) => {
+                const active = selectedCategoryId === category.id;
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => setSelectedCategoryId(category.id)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium whitespace-nowrap",
+                      active
+                        ? "bg-[#0B1E66] text-white"
+                        : "text-[#667085] hover:bg-[#F2F4F7]",
+                    )}
+                  >
+                    {category.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex h-10 flex-1 items-center gap-2 rounded-lg border border-[#EAECF0] bg-white px-3 max-w-full lg:max-w-md">
+              <Search className="size-4 shrink-0 text-[#98A2B3]" />
+              <Input
+                className="h-9 border-0 p-0 shadow-none placeholder:text-[#98A2B3] focus-visible:ring-0"
+                placeholder="Search name, brand or SKU"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={sellerFilter}
+                onChange={(event) => setSellerFilter(event.target.value)}
+                className="h-9 rounded-lg border border-[#EAECF0] bg-white px-3 text-[13px] text-[#344054] outline-none"
+              >
+                <option value="all">All sellers</option>
+                <option value="Plenti">Plenti</option>
+              </select>
+              <FilterChip
+                active={listingFilter === "published"}
+                onClick={() => toggleListingFilter("published")}
+              >
+                Published
+              </FilterChip>
+              <FilterChip
+                active={listingFilter === "unpublished"}
+                onClick={() => toggleListingFilter("unpublished")}
+              >
+                Unpublished
+              </FilterChip>
+              <FilterChip
+                active={listingFilter === "out_of_stock"}
+                onClick={() => toggleListingFilter("out_of_stock")}
+              >
+                Out of stock
+              </FilterChip>
+              <div className="ml-auto flex items-center rounded-lg border border-[#EAECF0] p-0.5">
+                <button
+                  type="button"
+                  aria-label="List view"
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-md",
+                    viewMode === "list"
+                      ? "bg-[#F2F4F7] text-[#101828]"
+                      : "text-[#98A2B3]",
+                  )}
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Grid view"
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-md",
+                    viewMode === "grid"
+                      ? "bg-[#F2F4F7] text-[#101828]"
+                      : "text-[#98A2B3]",
+                  )}
+                  onClick={() => setViewMode("grid")}
+                >
+                  <LayoutGrid className="size-4" />
+                </button>
+              </div>
             </div>
           </div>
 
           {loadingProducts ? (
             viewMode === "grid" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {Array.from({ length: 8 }).map((_, idx) => (
                   <div
                     key={idx}
-                    className="bg-white rounded-xl border border-neutral-100 shadow-xs relative overflow-hidden"
+                    className="overflow-hidden rounded-xl border border-[#EAECF0] bg-white"
                   >
-                    <Skeleton className="h-48 w-full" />
-                    <div className="p-4 sm:p-5 space-y-3">
-                      <div className="space-y-2">
-                        <Skeleton className="h-5 w-3/4" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-2/3" />
-                      </div>
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-1/2" />
-                      </div>
-                      <div className="pt-2 border-t border-neutral-100 flex items-center justify-between gap-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-6 w-10 rounded-full" />
-                      </div>
+                    <Skeleton className="h-44 w-full" />
+                    <div className="space-y-2 p-3">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-20" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-xl border border-neutral-100 overflow-x-auto">
-                <div className="min-w-180">
-                  <div className="grid grid-cols-8 gap-4 px-4 py-3 border-b border-neutral-100">
-                    {Array.from({ length: 8 }).map((_, idx) => (
-                      <Skeleton key={idx} className="h-4 w-20" />
+              <div className="overflow-hidden rounded-xl border border-[#EAECF0] bg-white">
+                {Array.from({ length: pageSize }).map((_, rowIdx) => (
+                  <div
+                    key={rowIdx}
+                    className="grid grid-cols-8 gap-4 border-b border-[#EAECF0] px-4 py-4"
+                  >
+                    {Array.from({ length: 8 }).map((_, cellIdx) => (
+                      <Skeleton key={cellIdx} className="h-4 w-full" />
                     ))}
                   </div>
-                  {Array.from({ length: pageSize }).map((_, rowIdx) => (
-                    <div
-                      key={rowIdx}
-                      className="grid grid-cols-8 gap-4 px-4 py-4 border-b border-neutral-100"
-                    >
-                      {Array.from({ length: 8 }).map((_, cellIdx) => (
-                        <Skeleton key={cellIdx} className="h-4 w-full" />
-                      ))}
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <Skeleton className="h-4 w-32" />
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-8 w-24 rounded-full" />
-                      <Skeleton className="h-8 w-24 rounded-full" />
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             )
           ) : null}
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              {/* <Tabs
-            value={
-              selectedCategoryId == null
-                ? ALL_PRODUCTS_CATEGORY
-                : String(selectedCategoryId)
-            }
-            onValueChange={(value) => {
-              if (value === ALL_PRODUCTS_CATEGORY) {
-                setSelectedCategoryId(null);
-              } else {
-                const parsed = Number(value);
-                setSelectedCategoryId(
-                  Number.isFinite(parsed) && parsed > 0 ? parsed : null
-                );
-              }
-            }}
-          >
-            <TabsList className="bg-transparent border-0 p-3 h-auto gap-2 max-w-[60vw] overflow-x-auto">
-              {categories.map((category) => (
-                <TabsTrigger
-                  key={category.value}
-                  value={category.value}
-                  className="data-[state=active]:bg-[#E8EEFF] data-[state=active]:text-[#0B1E66] data-[state=active]:shadow-sm rounded-[3px] px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-[#808080]"
-                >
-                  {category.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs> */}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="icon"
-                className={cn(
-                  viewMode === "list" ? "bg-[#E8EEFF]" : "",
-                  "size-8 border-0 rounded-0 hover:bg-[#E8EEFF] shadow-none",
-                )}
-                onClick={() => setViewMode("list")}
-              >
-                <Image
-                  src={
-                    viewMode === "list"
-                      ? "/icons/list-bottom-active.png"
-                      : "/icons/list-bottom.png"
-                  }
-                  alt="List view"
-                  width={20}
-                  height={20}
-                />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className={cn(
-                  viewMode === "grid" ? "bg-[#E8EEFF]" : "",
-                  "size-8 border-0 rounded-0 hover:bg-[#E8EEFF] shadow-none",
-                )}
-                onClick={() => setViewMode("grid")}
-              >
-                <Image
-                  src={
-                    viewMode === "grid"
-                      ? "/icons/grid-nine-active.png"
-                      : "/icons/grid-nine.png"
-                  }
-                  alt="Grid view"
-                  width={20}
-                  height={20}
-                />
-              </Button>
-            </div>
-          </div>
-
           {!loadingProducts && viewMode === "grid" ? (
             <ProductGrid
-              products={products}
+              products={visibleProducts}
               total={totalItems}
-              page={currentPage}
-              pageCount={lastPage}
+              loadedCount={visibleProducts.length}
+              loadingMore={loadingMore}
+              canLoadMore={currentPage < lastPage}
               canEditProducts={canEditProducts}
               canDeleteProducts={canDeleteProducts}
               canPublishProducts={canPublishProducts}
               selectedIds={selectedIds}
               onSelectedChange={handleSelectedChange}
-              onPageChange={(nextPage) => {
-                fetchProducts({
-                  page: nextPage,
-                  categoryId: selectedCategoryId,
-                  search: debouncedSearch,
-                });
-              }}
+              onLoadMore={loadMore}
               formatCurrency={formatCurrency}
             />
           ) : !loadingProducts ? (
             <ProductTable
-              products={products}
+              products={visibleProducts}
               total={totalItems}
-              page={currentPage}
-              pageCount={lastPage}
-              pageSize={pageSize}
+              loadedCount={visibleProducts.length}
+              loadingMore={loadingMore}
+              canLoadMore={currentPage < lastPage}
               canEditProducts={canEditProducts}
               canDeleteProducts={canDeleteProducts}
               canPublishProducts={canPublishProducts}
               selectedIds={selectedIds}
               onSelectedChange={handleSelectedChange}
               onToggleSelectAll={handleToggleSelectAll}
-              onPageChange={(nextPage) => {
-                fetchProducts({
-                  page: nextPage,
-                  categoryId: selectedCategoryId,
-                  search: debouncedSearch,
-                });
-              }}
+              onLoadMore={loadMore}
               formatCurrency={formatCurrency}
             />
           ) : null}
@@ -354,5 +420,30 @@ export default function ProductCatalog() {
         </>
       )}
     </div>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "h-9 rounded-lg border px-3 text-[13px] font-medium",
+        active
+          ? "border-[#0B1E66] bg-[#EEF2FF] text-[#0B1E66]"
+          : "border-[#EAECF0] bg-white text-[#344054] hover:bg-[#F9FAFB]",
+      )}
+    >
+      {children}
+    </button>
   );
 }

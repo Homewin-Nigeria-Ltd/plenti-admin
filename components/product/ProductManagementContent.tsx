@@ -9,36 +9,36 @@ export default function ProductManagementContent() {
   const [activeTab, setActiveTab] = React.useState("products");
 
   return (
-    <div className="min-w-0 space-y-4 sm:space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-5">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
-        <TabsList className="bg-transparent p-0 h-auto gap-2 overflow-x-auto justify-start max-w-full">
+        <TabsList className="h-auto max-w-full justify-start gap-1 overflow-x-auto bg-transparent p-0">
           <TabsTrigger
             value="products"
-            className="data-[state=active]:bg-[#E8EEFF] data-[state=active]:text-[#0B1E66] data-[state=active]:shadow-sm px-4 py-2 text-[#808080] shrink-0"
+            className="shrink-0 rounded-lg px-3 py-1.5 text-[13px] text-[#667085] data-[state=active]:bg-[#F2F4F7] data-[state=active]:text-[#101828] data-[state=active]:shadow-none"
           >
             Products
           </TabsTrigger>
           <TabsTrigger
             value="parent-category"
-            className="data-[state=active]:bg-[#E8EEFF] data-[state=active]:text-[#0B1E66] data-[state=active]:shadow-sm px-4 py-2 text-[#808080] shrink-0"
+            className="shrink-0 rounded-lg px-3 py-1.5 text-[13px] text-[#667085] data-[state=active]:bg-[#F2F4F7] data-[state=active]:text-[#101828] data-[state=active]:shadow-none"
           >
             Parent Categories
           </TabsTrigger>
           <TabsTrigger
             value="sub-category"
-            className="data-[state=active]:bg-[#E8EEFF] data-[state=active]:text-[#0B1E66] data-[state=active]:shadow-sm px-4 py-2 text-[#808080] shrink-0"
+            className="shrink-0 rounded-lg px-3 py-1.5 text-[13px] text-[#667085] data-[state=active]:bg-[#F2F4F7] data-[state=active]:text-[#101828] data-[state=active]:shadow-none"
           >
             Sub Categories
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="products" className="mt-4 sm:mt-6">
+        <TabsContent value="products" className="mt-3">
           <ProductCatalog />
         </TabsContent>
-        <TabsContent value="parent-category" className="mt-4 sm:mt-6">
+        <TabsContent value="parent-category" className="mt-3">
           <CategoryContent kind="parent" />
         </TabsContent>
-        <TabsContent value="sub-category" className="mt-4 sm:mt-6">
+        <TabsContent value="sub-category" className="mt-3">
           <CategoryContent kind="sub" />
         </TabsContent>
       </Tabs>

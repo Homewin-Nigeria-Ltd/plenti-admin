@@ -8,16 +8,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Switch } from "@/components/ui/switch";
-import type { Product, ProductStatus } from "@/data/products";
+import type { Product } from "@/data/products";
 import { resolveCategoryLabels } from "@/lib/mappers/categories";
+import { productDisplayImages } from "@/lib/mappers/products";
 import { useProductStore } from "@/store/useProductStore";
 import { Ellipsis } from "lucide-react";
+import Image from "next/image";
 import * as React from "react";
 import { toast } from "sonner";
 import { DeleteProductModal } from "./DeleteProductModal";
 import { EditProductModal } from "./EditProductModal";
-import { ProductImageGallery } from "./ProductImageGallery";
+import { UnpublishProductModal } from "./UnpublishProductModal";
+import {
+  listingBadgeClass,
+  productListingBadge,
+  productSeller,
+  productStockLabel,
+  stockToneClass,
+} from "./productManagementView";
 
 type ProductCardProps = {
   product: Product;
@@ -43,72 +51,48 @@ export default function ProductCard({
   const categoryLabels = resolveCategoryLabels(
     typeof product.categoryId === "number" ? product.categoryId : null,
     product.category,
-    categoriesTree
+    categoriesTree,
   );
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+  const [isUnpublishModalOpen, setIsUnpublishModalOpen] = React.useState(false);
   const isToggling = !!togglingStatusById[String(product.id)];
   const isActive = product.status !== "Unavailable";
-  const discountPercent =
-    typeof product.discountPercent === "number" &&
-    Number.isFinite(product.discountPercent) &&
-    product.discountPercent > 0
-      ? product.discountPercent
-      : null;
-  const bulkTiers = product.bulkTiers ?? [];
-
-  const getStatusBadgeClass = (status: ProductStatus) => {
-    switch (status) {
-      case "Available":
-        return "badge-success";
-      case "Unavailable":
-        return "badge-neutral";
-      case "LowStock":
-        return "badge-warning";
-      case "OutOfStock":
-        return "badge-danger";
-      default:
-        return "badge-neutral";
-    }
-  };
+  const badge = productListingBadge(product);
+  const stock = productStockLabel(product);
+  const imageUrl = productDisplayImages(product)[0] ?? product.imageUrl;
 
   return (
-    <div className="bg-white rounded-xl border border-neutral-100 shadow-xs relative overflow-hidden">
-      <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2">
+    <div className="relative overflow-hidden rounded-xl border border-[#EAECF0] bg-white">
+      <div className="absolute left-3 top-3 z-10 flex items-center gap-2">
         {canDeleteProducts && onSelectedChange ? (
           <span
-            className="inline-flex rounded-sm bg-white/90 p-0.5 shadow-sm"
+            className="inline-flex rounded-sm bg-white/95 p-0.5 shadow-sm"
             onClick={(event) => event.stopPropagation()}
           >
             <Checkbox
               checked={selected}
               onCheckedChange={onSelectedChange}
-              className="h-5 w-5 border-[#D0D5DD]"
+              className="h-4 w-4 border-[#D0D5DD]"
               aria-label={`Select ${product.name}`}
             />
           </span>
         ) : null}
-        <span className={`badge ${getStatusBadgeClass(product.status)}`}>
-          {product.status}
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${listingBadgeClass(badge)}`}
+        >
+          {badge}
         </span>
-        {discountPercent !== null && (
-          <span className="badge badge-danger">{discountPercent}% off</span>
-        )}
       </div>
 
-      {/* Top Right Action Buttons */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute right-3 top-3 z-10">
         {canEditProducts || canDeleteProducts || canPublishProducts ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="size-7 bg-[#E8EEFF] backdrop-blur-[5.974740982055664px]"
-                style={{
-                  boxShadow:
-                    "-1.57px 1.57px 1.57px 0px #FFFFFF16 inset, 1.57px -1.57px 1.57px 0px #A5A5A516 inset",
-                }}
+                className="size-7 bg-white/90 shadow-sm"
               >
                 <Ellipsis className="size-4" />
               </Button>
@@ -126,19 +110,16 @@ export default function ProductCard({
                 <DropdownMenuItem
                   disabled={isToggling}
                   className={
-                    product.status !== "Unavailable"
-                      ? "text-[#DD900D]"
-                      : "text-[#0F973D]"
+                    isActive ? "text-[#DD900D]" : "text-[#0F973D]"
                   }
                   onClick={async () => {
-                    const ok = await toggleProductStatus(product.id);
-                    if (ok) {
-                      toast.success(
-                        isActive ? "Product unpublished" : "Product published",
-                      );
-                    } else {
-                      toast.error("Failed to update product status");
+                    if (isActive) {
+                      setIsUnpublishModalOpen(true);
+                      return;
                     }
+                    const ok = await toggleProductStatus(product.id);
+                    if (ok) toast.success("Product published");
+                    else toast.error("Failed to update product status");
                   }}
                 >
                   {isActive ? "Unpublish" : "Publish"}
@@ -157,108 +138,32 @@ export default function ProductCard({
         ) : null}
       </div>
 
-      <ProductImageGallery product={product} />
-
-      <div className="p-4 sm:p-5 space-y-3">
-        <div>
-          <h3 className="font-semibold text-primary text-base sm:text-lg mb-1 line-clamp-2">
-            {product.name}
-          </h3>
-          <p className="text-neutral-500 text-xs sm:text-sm line-clamp-2">
-            {product.description}
-          </p>
-          <p className="text-neutral-500 text-xs sm:text-sm mt-1">
-            Product ID: {product.id}
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-neutral-500">Price:</span>
-            <span className="font-semibold text-primary">
-              {formatCurrency(product.price)}
-            </span>
-          </div>
-
-          {discountPercent !== null && (
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-neutral-500">Discount:</span>
-              <span className="font-semibold text-[#DD900D]">
-                {discountPercent}%
-              </span>
-            </div>
-          )}
-
-          {bulkTiers.length > 0 && (
-            <div className="space-y-1.5">
-              <span className="text-neutral-500 text-sm">Bulk Tiers:</span>
-              {bulkTiers.map((tier) => (
-                <div
-                  key={`${tier.min_qty}-${tier.price}`}
-                  className="flex justify-between items-center text-sm"
-                >
-                  <span className="text-neutral-500">{tier.min_qty}+ qty</span>
-                  <span className="font-semibold text-primary">
-                    {formatCurrency(tier.price)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-neutral-500">Category:</span>
-            <span className="font-semibold text-primary">
-              {categoryLabels.category}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-neutral-500">Sub-category:</span>
-            <span className="font-semibold text-primary">
-              {categoryLabels.subCategory || "-"}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-neutral-500">Stock Level:</span>
-            <span
-              className={`font-semibold ${
-                product.stockLevel < 100 ? "text-danger-500" : "text-[#0F973D]"
-              }`}
-            >
-              {new Intl.NumberFormat("en-US").format(product.stockLevel)}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-neutral-500">Weight:</span>
-            <span className="font-semibold text-primary">
-              {product.weight == null ? "—" : `${product.weight} kg`}
-            </span>
-          </div>
-        </div>
-
-        {/* Bottom CTA Section */}
-        <div className="pt-2 border-t border-neutral-100 flex items-center justify-end gap-2">
-          {/* <button className="flex items-center gap-1 sm:gap-2 text-primary font-medium text-xs sm:text-sm hover:underline shrink-0">
-            <span className="hidden sm:inline">View Product</span>
-            <span className="sm:hidden">View</span>
-            <ArrowRight className="size-3 sm:size-4" />
-          </button> */}
-          <Switch
-            checked={isActive}
-            disabled={isToggling || !canPublishProducts}
-            onCheckedChange={async () => {
-              if (!canPublishProducts) return;
-              const ok = await toggleProductStatus(product.id);
-              if (ok) {
-                toast.success("Product status updated");
-              } else {
-                toast.error("Failed to update product status");
-              }
-            }}
+      <div className="relative h-44 w-full bg-[#F8FAFC]">
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={product.name}
+            fill
+            className="object-contain p-4"
+            unoptimized
           />
+        ) : null}
+      </div>
+
+      <div className="space-y-1 p-3.5">
+        <p className="text-[12px] text-[#98A2B3]">
+          {categoryLabels.category || product.category} · {productSeller(product)}
+        </p>
+        <h3 className="line-clamp-2 text-[14px] font-semibold leading-5 text-[#101828]">
+          {product.name}
+        </h3>
+        <div className="flex items-end justify-between gap-2 pt-1">
+          <p className="text-[15px] font-semibold text-[#101828]">
+            {formatCurrency(product.price)}
+          </p>
+          <p className={`text-[12px] font-medium ${stockToneClass(stock.tone)}`}>
+            {stock.text}
+          </p>
         </div>
       </div>
 
@@ -271,6 +176,11 @@ export default function ProductCard({
       <DeleteProductModal
         isOpen={isDeleteModalOpen && canDeleteProducts}
         onClose={() => setIsDeleteModalOpen(false)}
+        product={product}
+      />
+      <UnpublishProductModal
+        isOpen={isUnpublishModalOpen && canPublishProducts}
+        onClose={() => setIsUnpublishModalOpen(false)}
         product={product}
       />
     </div>

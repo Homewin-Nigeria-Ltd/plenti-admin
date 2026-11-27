@@ -176,8 +176,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
     const categoryId =
       categoryIdRaw && categoryIdRaw > 0 ? categoryIdRaw : null;
     const search = params?.search?.trim() ?? "";
-    set({ lastQuery: { page, categoryId, search } });
-    set({ loadingProducts: true, error: null });
+    const append = params?.append === true && page > 1;
+    set({ lastQuery: { page, categoryId, search, append } });
+    set({ loadingProducts: !append, error: null });
     try {
       const query: Record<string, string | number> = { page };
       if (categoryId != null) query.category_id = categoryId;
@@ -194,12 +195,13 @@ export const useProductStore = create<ProductState>((set, get) => ({
         data.data.data,
         get().categoriesTree
       );
+      const products = append ? [...get().products, ...mapped] : mapped;
 
       const nextState: Partial<ProductState> = {
-        products: mapped,
+        products,
         currentPage: data.data.current_page ?? 1,
         lastPage: data.data.last_page ?? 1,
-        totalItems: data.data.total ?? mapped.length,
+        totalItems: data.data.total ?? products.length,
         perPage: data.data.per_page ?? 20,
       };
 
